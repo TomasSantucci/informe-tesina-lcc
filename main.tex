@@ -1,0 +1,86 @@
+\documentclass[a4paper,	11pt]{report}
+
+% Include preambles
+\input{preamble.tex}
+\input{math_preamble.tex}
+
+% Document settings
+\input{settings.tex}
+
+\begin{document}
+
+
+% Title Page
+\titleGP
+\newpage
+\thispagestyle{empty}
+
+% Table of Contents
+\tableofcontents
+
+% Abstract
+\chapter*{Resumen}
+\label{sec:abstract}
+\input{src/abstract.tex}
+
+\chapter*{Agradecimientos}
+\label{sec:acknowledgment}
+\input{src/acknowledgment.tex}
+
+% Preliminaries
+\chapter{Introducción}
+\label{sec:introduction}
+\input{src/introduction.tex}
+
+\section{Motivación}
+\label{sec:motivation}
+\input{src/motivation.tex}
+
+\section{Objetivo}
+\label{sec:objective}
+\input{src/objective.tex}
+
+\section{Trabajos publicados durante la tesina}
+\label{sec:publications}
+\input{src/publications.tex}
+
+\section{Estructura del informe}
+\label{sec:struture}
+\input{src/struture.tex}
+
+\chapter{Trabajos Relacionados}
+\label{sec:related}
+\input{src/related.tex}
+
+\chapter{Conceptos Previos}
+\label{sec:prev_concepts}
+\input{src/prev_concepts.tex}
+
+% Contributions
+\chapter{Método}
+\label{sec:method}
+\input{src/method.tex}
+
+\chapter{Experimentos}
+\label{sec:experiments}
+\input{src/experiments.tex}
+
+% Conclusions and Future Work
+\chapter{Conclusiones y Trabajo Futuro}
+\label{sec:conclusions}
+\input{src/conclusions.tex}
+
+\appendix
+\label{sec:appendix}
+\include{src/appendix.tex}
+
+% just to avoid warning "Empty `thebibliography' environment". Remove after adding some citations
+\nocite{*}
+
+% Bibliography
+\bibliographystyle{elsarticle-num}
+\begin{small}
+\bibliography{tesina}
+\end{small}
+
+\end{document}

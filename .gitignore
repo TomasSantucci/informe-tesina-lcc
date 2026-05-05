@@ -1,0 +1,23 @@
+# LaTeX generated files
+*.aux
+*.log
+*.out
+*.toc
+*.bbl
+*.blg
+*.synctex.gz
+*.fls
+*.fdb_latexmk
+*.idx
+*.ind
+*.ilg
+*.lof
+*.lot
+*.lol
+*.nav
+*.snm
+*.vrb
+texput.log
+
+# Output PDF (regenerate from source)
+main.pdf

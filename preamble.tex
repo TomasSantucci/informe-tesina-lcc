@@ -1,0 +1,89 @@
+% ---------------- Packages ----------------
+%\usepackage{hyphenat}
+
+\usepackage[utf8]{inputenc}
+\usepackage{graphicx}
+% \usepackage[fleqn]{amsmath}
+\usepackage{amsmath}
+\usepackage{listings}
+\usepackage[hidelinks]{hyperref}
+% \usepackage{dtsyntax}
+% \usepackage[colorinlistoftodos,prependcaption,textsize=tiny]{todonotes}
+\usepackage[normalem]{ulem}
+\usepackage{pdflscape}
+\usepackage{amssymb}
+\usepackage{longtable}
+%\usepackage{tikz}
+%\usepackage{algorithm}
+
+\usepackage{placeins}
+
+\usepackage[a4paper,top=2.5cm,bottom=3cm,inner=2.5cm,outer=2.5cm]{geometry}
+
+
+\usepackage{multirow}
+% For \includegraphics with valign
+\usepackage[export]{adjustbox}
+
+\usepackage{tablefootnote}
+
+% M: Tabla en vez de Cuadro
+\usepackage[spanish,es-tabla]{babel}
+
+\usepackage{xargs} % Use more than one optional parameter in a new commands
+
+% Algorithms boxes
+\usepackage{algorithm}
+\usepackage{algorithmic}
+
+% For \qtyrange and \hertz
+\usepackage{siunitx}
+\usepackage{textcomp}
+\DeclareSIUnit{\pixel}{px}
+\DeclareSIUnit{\fps}{fps}
+
+\usepackage{subfig}
+% \usepackage{subcaption}
+
+% Code c++
+\usepackage{listings}
+\usepackage{xcolor}
+\renewcommand{\lstlistingname}{Código}
+
+% ---------------- Macros / Custom commands ----------------
+
+% Title page
+\newcommand*{\titleGP}{\begingroup
+    \centering
+    \vspace*{\baselineskip}
+    \thispagestyle{empty}
+
+    \rule{\textwidth}{1.6pt}\vspace*{-\baselineskip}\vspace*{2pt}
+    \rule{\textwidth}{0.4pt}\\[\baselineskip]
+
+    {\LARGE Título de la tesina } \\[0.2\baselineskip]
+
+    \rule{\textwidth}{0.4pt}\vspace*{-\baselineskip}\vspace{3.2pt}
+    \rule{\textwidth}{1.6pt}\\[\baselineskip]
+
+    \vspace*{2\baselineskip}
+
+    \includegraphics[width=0.3\textwidth]{img/logo-unr.png}
+
+    \vspace*{2\baselineskip}
+
+    \scshape
+    Tesina de Grado\\[\baselineskip]
+    Licenciatura en Ciencias de la Computación\par
+
+    \vspace*{2\baselineskip}
+
+    {\Large Autor: \\}
+    {Legajo: }
+    \vspace*{2\baselineskip}
+    {\Large \\ Director: } \vfill
+
+    \vspace*{2\baselineskip}
+    {\scshape \today} \\[0.3\baselineskip]
+
+\endgroup}
