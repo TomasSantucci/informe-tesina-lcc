@@ -16,12 +16,19 @@
 %\usepackage{tikz}
 %\usepackage{algorithm}
 
+\usepackage{subcaption}  % add to preamble
+
+\usepackage[section]{placeins}
 \usepackage{placeins}
+
+\let\oldsubsection\subsection
+\renewcommand{\subsection}{\FloatBarrier\oldsubsection}
 
 \usepackage[a4paper,top=2.5cm,bottom=3cm,inner=2.5cm,outer=2.5cm]{geometry}
 
 
 \usepackage{multirow}
+\usepackage{booktabs}
 % For \includegraphics with valign
 \usepackage[export]{adjustbox}
 
@@ -42,8 +49,8 @@
 \DeclareSIUnit{\pixel}{px}
 \DeclareSIUnit{\fps}{fps}
 
-\usepackage{subfig}
-% \usepackage{subcaption}
+% \usepackage{subfig}
+% \usepackage{subcaption}  % loaded above
 
 % Code c++
 \usepackage{listings}
@@ -68,7 +75,7 @@
 
     \vspace*{2\baselineskip}
 
-    \includegraphics[width=0.3\textwidth]{img/logo-unr.png}
+    \includegraphics[width=0.3\textwidth]{img/preamble/logo-unr.png}
 
     \vspace*{2\baselineskip}
 
