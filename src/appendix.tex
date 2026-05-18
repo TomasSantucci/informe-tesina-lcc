@@ -1,0 +1,445 @@
+\section{BasaltSLAM en su versión asíncrona}
+
+\begin{table}[ht]
+\centering
+\caption{tumvi: Mean Frame Processing Time [ms]}
+\label{tab:tumvi_mean_frame_time}
+\begin{tabular}{lr}
+\toprule
+\textbf{Dataset} & \textbf{Basalt SLAM} [ms] \\
+\midrule
+% --- corridor ---
+TC1 & 6.62 \\
+TC2 & 6.98 \\
+TC3 & 6.93 \\
+TC4 & 6.64 \\
+TC5 & 6.94 \\
+\midrule
+% --- magistrale ---
+TM1 & 7.98 \\
+TM2 & 8.11 \\
+TM3 & 7.66 \\
+TM4 & 7.79 \\
+TM5 & 7.78 \\
+TM6 & 7.65 \\
+\midrule
+% --- outdoors ---
+TO1 & 8.74 \\
+TO2 & 8.46 \\
+TO3 & 8.30 \\
+TO4 & 5.44 \\
+TO5 & 7.67 \\
+TO6 & 8.21 \\
+TO7 & 7.87 \\
+TO8 & 7.70 \\
+\midrule
+% --- room ---
+TR1 & 6.82 \\
+TR2 & 7.06 \\
+TR3 & 6.80 \\
+TR4 & 6.84 \\
+TR5 & 6.87 \\
+TR6 & 6.85 \\
+\midrule
+% --- slides ---
+TS1 & 7.52 \\
+TS2 & 7.47 \\
+TS3 & 7.72 \\
+\midrule
+Median & 7.59 \\
+Mean   & 7.41 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{table}[ht]
+\centering
+\caption{euroc: Mean Frame Processing Time [ms]}
+\label{tab:euroc_mean_frame_time}
+\begin{tabular}{lr}
+\toprule
+\textbf{Dataset} & \textbf{Basalt SLAM} [ms] \\
+\midrule
+% --- MH ---
+EMH01 & 6.22 \\
+EMH02 & 6.55 \\
+EMH03 & 5.74 \\
+EMH04 & 4.87 \\
+EMH05 & 4.84 \\
+\midrule
+% --- V1 ---
+EV101 & 4.30 \\
+EV102 & 4.39 \\
+EV103 & 4.02 \\
+\midrule
+% --- V2 ---
+EV201 & 4.47 \\
+EV202 & 4.56 \\
+EV203 & 4.11 \\
+\midrule
+Median & 4.56 \\
+Mean   & 4.92 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{longtable}{lr}
+
+\caption{msd: Mean Frame Processing Time [ms]}
+\label{tab:msd_mean_frame_time} \\
+
+\toprule
+\textbf{Dataset} & \textbf{Basalt SLAM} [ms] \\
+\midrule
+\endfirsthead
+
+\toprule
+\textbf{Dataset} & \textbf{Basalt SLAM} [ms] \\
+\midrule
+\endhead
+
+\bottomrule
+\endfoot
+
+% --- msdmi ---
+MIO01 & 12.05 \\
+MIO02 & 11.94 \\
+MIO03 & 12.13 \\
+MIO04 & 11.63 \\
+MIO05 & 12.14 \\
+MIO06 & 11.94 \\
+MIO07 & 11.76 \\
+MIO08 & 11.39 \\
+MIO09 & 11.59 \\
+MIO10 & 11.38 \\
+MIO11 & 11.37 \\
+MIO12 & 12.58 \\
+MIO13 & 12.46 \\
+MIO14 & 12.06 \\
+MIO15 & 12.25 \\
+MIO16 & 12.12 \\
+MIPB01 & 12.72 \\
+MIPB02 & 12.14 \\
+MIPB03 & 12.66 \\
+MIPB04 & 12.19 \\
+MIPB05 & 12.64 \\
+MIPB06 & 12.39 \\
+MIPB07 & 12.65 \\
+MIPB08 & 12.66 \\
+MIPP01 & 11.99 \\
+MIPP02 & 11.97 \\
+MIPP03 & 11.82 \\
+MIPP04 & 11.93 \\
+MIPP05 & 11.86 \\
+MIPP06 & 12.02 \\
+MIPT01 & 12.77 \\
+MIPT02 & 12.93 \\
+MIPT03 & 13.07 \\
+\midrule
+% --- msdgo ---
+MGO01 & 9.56 \\
+MGO02 & 9.48 \\
+MGO03 & 9.54 \\
+MGO04 & 9.37 \\
+MGO05 & 9.61 \\
+MGO06 & 9.57 \\
+MGO07 & 8.95 \\
+MGO08 & 8.86 \\
+MGO09 & 9.41 \\
+MGO10 & 8.97 \\
+MGO11 & 8.99 \\
+MGO12 & 9.93 \\
+MGO13 & 8.75 \\
+MGO14 & 9.67 \\
+MGO15 & 9.78 \\
+\midrule
+% --- msmoo ---
+MOO01 & 4.81 \\
+MOO02 & 4.83 \\
+MOO03 & 4.85 \\
+MOO04 & 4.55 \\
+MOO05 & 4.61 \\
+MOO06 & 4.84 \\
+MOO07 & 4.59 \\
+MOO08 & 4.50 \\
+MOO09 & 4.67 \\
+MOO10 & 4.55 \\
+MOO11 & 4.45 \\
+MOO12 & 5.08 \\
+MOO13 & 4.42 \\
+MOO14 & 4.62 \\
+MOO15 & 5.05 \\
+MOO16 & 6.23 \\
+\midrule
+Median & 11.38 \\
+Mean   & 9.66 \\
+\end{longtable}
+
+
+\section{ATE de RootBA: float vs double}
+
+\begin{table}[ht]
+\centering
+\caption{msdmi: ATE [cm]}
+\label{tab:msdmi_ate}
+\begin{tabular}{lrr}
+\toprule
+\textbf{Dataset} & \textbf{RootBA (float)} & \textbf{RootBA (double)} \\
+\midrule
+MIO01 & \textbf{20.6} & \textbf{20.6} \\
+MIO02 & \textbf{15.8} & \textbf{15.8} \\
+MIO03 & \textbf{2.4} & 2.5 \\
+MIO04 & \textbf{8.2} & \textbf{8.2} \\
+MIO05 & \textbf{1.5} & \textbf{1.5} \\
+MIO06 & \textbf{2.8} & \textbf{2.8} \\
+MIO07 & \textbf{1.4} & \textbf{1.4} \\
+MIO08 & \textbf{6.9} & \textbf{6.9} \\
+MIO09 & \textbf{0.2} & \textbf{0.2} \\
+MIO10 & \textbf{1.7} & \textbf{1.7} \\
+MIO11 & \textbf{2.3} & 2.4 \\
+MIO12 & \textbf{5.4} & 5.9 \\
+MIO13 & \textbf{24.0} & 24.1 \\
+MIO14 & \textbf{3.4} & 4.1 \\
+MIO15 & 12.4 & \textbf{12.3} \\
+MIO16 & 19.4 & \textbf{17.5} \\
+MIPB01 & 1.4 & \textbf{1.3} \\
+MIPB02 & \textbf{2.4} & \textbf{2.4} \\
+MIPB03 & \textbf{2.7} & \textbf{2.7} \\
+MIPB04 & \textbf{3.7} & \textbf{3.7} \\
+MIPB05 & \textbf{1.3} & \textbf{1.3} \\
+MIPB06 & \textbf{2.4} & \textbf{2.4} \\
+MIPB07 & \textbf{1.8} & \textbf{1.8} \\
+MIPB08 & \textbf{3.3} & 3.4 \\
+MIPP01 & \textbf{3.3} & 3.4 \\
+MIPP02 & \textbf{3.9} & \textbf{3.9} \\
+MIPP03 & \textbf{4.2} & 4.3 \\
+MIPP04 & \textbf{2.5} & \textbf{2.5} \\
+MIPP05 & \textbf{2.9} & 3.0 \\
+MIPP06 & 3.1 & \textbf{3.0} \\
+MIPT01 & \textbf{1.5} & \textbf{1.5} \\
+MIPT02 & \textbf{2.1} & \textbf{2.1} \\
+MIPT03 & \textbf{2.6} & \textbf{2.6} \\
+\midrule
+Median & \textbf{2.8} & \textbf{2.8} \\
+Mean & 5.3 & \textbf{5.2} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{table}[ht]
+\centering
+\caption{msdgo: ATE [cm]}
+\label{tab:msdgo_ate}
+\begin{tabular}{lrr}
+\toprule
+\textbf{Dataset} & \textbf{RootBA (float)} & \textbf{RootBA (double)} \\
+\midrule
+MGO01 & \textbf{11.9} & \textbf{11.9} \\
+MGO02 & \textbf{7.7} & \textbf{7.7} \\
+MGO03 & \textbf{2.0} & 2.1 \\
+MGO04 & \textbf{5.3} & 5.4 \\
+MGO05 & \textbf{1.6} & \textbf{1.6} \\
+MGO06 & \textbf{4.7} & \textbf{4.7} \\
+MGO07 & \textbf{1.3} & \textbf{1.3} \\
+MGO08 & \textbf{5.4} & 5.8 \\
+MGO09 & \textbf{1.1} & \textbf{1.1} \\
+MGO10 & \textbf{1.4} & \textbf{1.4} \\
+MGO11 & \textbf{1.0} & \textbf{1.0} \\
+MGO12 & \textbf{5.9} & \textbf{5.9} \\
+MGO13 & 8.4 & \textbf{8.2} \\
+MGO14 & \textbf{2.1} & \textbf{2.1} \\
+MGO15 & 2.8 & \textbf{2.6} \\
+\midrule
+Median & 2.8 & \textbf{2.6} \\
+Mean & \textbf{4.2} & \textbf{4.2} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{table}[ht]
+\centering
+\caption{msmoo: ATE [cm]}
+\label{tab:msmoo_ate}
+\begin{tabular}{lrr}
+\toprule
+\textbf{Dataset} & \textbf{RootBA (float)} & \textbf{RootBA (double)} \\
+\midrule
+MOO01 & \textbf{3.2} & \textbf{3.2} \\
+MOO02 & \textbf{4.9} & \textbf{4.9} \\
+MOO03 & \textbf{3.7} & \textbf{3.7} \\
+MOO04 & 4.1 & \textbf{3.9} \\
+MOO05 & \textbf{1.2} & \textbf{1.2} \\
+MOO06 & \textbf{2.5} & \textbf{2.5} \\
+MOO07 & \textbf{1.3} & \textbf{1.3} \\
+MOO08 & 3.0 & \textbf{2.6} \\
+MOO09 & \textbf{0.5} & \textbf{0.5} \\
+MOO10 & \textbf{1.4} & \textbf{1.4} \\
+MOO11 & \textbf{1.9} & \textbf{1.9} \\
+MOO12 & 9.1 & \textbf{9.0} \\
+MOO13 & \textbf{7.5} & 9.0 \\
+MOO14 & \textbf{2.8} & \textbf{2.8} \\
+MOO15 & 74.7 & \textbf{72.2} \\
+MOO16 & \textbf{2.2} & \textbf{2.2} \\
+\midrule
+Median & 2.9 & \textbf{2.7} \\
+Mean & 7.7 & \textbf{7.6} \\
+\bottomrule
+\end{tabular}
+\end{table}
+\begin{table}[ht]
+\centering
+\caption{corridor: ATE [cm]}
+\label{tab:corridor_ate}
+\begin{tabular}{lrr}
+\toprule
+\textbf{Dataset} & \textbf{RootBA (float)} & \textbf{RootBA (double)} \\
+\midrule
+TC1 & \textbf{1.1} & \textbf{1.1} \\
+TC2 & \textbf{7.0} & \textbf{7.0} \\
+TC3 & \textbf{6.9} & \textbf{6.9} \\
+TC4 & \textbf{21.0} & 21.6 \\
+TC5 & 2.6 & \textbf{2.2} \\
+\midrule
+Median & \textbf{6.9} & \textbf{6.9} \\
+Mean & \textbf{7.7} & 7.8 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{table}[ht]
+\centering
+\caption{magistrale: ATE [cm]}
+\label{tab:magistrale_ate}
+\begin{tabular}{lrr}
+\toprule
+\textbf{Dataset} & \textbf{RootBA (float)} & \textbf{RootBA (double)} \\
+\midrule
+TM1 & \textbf{3.0} & 3.1 \\
+TM2 & \textbf{89.2} & 91.5 \\
+TM3 & 187.8 & \textbf{184.9} \\
+TM4 & \textbf{161.3} & 162.2 \\
+TM5 & 93.2 & \textbf{89.5} \\
+TM6 & \textbf{1.7} & 1.8 \\
+\midrule
+Median & 91.2 & \textbf{90.5} \\
+Mean & 89.4 & \textbf{88.8} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{table}[ht]
+\centering
+\caption{outdoors: ATE [cm]}
+\label{tab:outdoors_ate}
+\begin{tabular}{lrr}
+\toprule
+\textbf{Dataset} & \textbf{RootBA (float)} & \textbf{RootBA (double)} \\
+\midrule
+TO1 & 28503.7 & \textbf{28502.0} \\
+TO2 & 5681.4 & \textbf{5680.9} \\
+TO3 & 3591.5 & \textbf{3591.3} \\
+TO4 & \textbf{1303.6} & 1305.3 \\
+TO5 & \textbf{4.1} & \textbf{4.1} \\
+TO6 & 7645.4 & \textbf{7645.3} \\
+TO7 & \textbf{218.0} & 224.2 \\
+TO8 & \textbf{1113.1} & 1113.2 \\
+\midrule
+Median & \textbf{2447.5} & 2448.3 \\
+Mean & \textbf{6007.6} & 6008.3 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{table}[ht]
+\centering
+\caption{room: ATE [cm]}
+\label{tab:room_ate}
+\begin{tabular}{lrr}
+\toprule
+\textbf{Dataset} & \textbf{RootBA (float)} & \textbf{RootBA (double)} \\
+\midrule
+TR1 & \textbf{0.8} & \textbf{0.8} \\
+TR2 & \textbf{0.7} & \textbf{0.7} \\
+TR3 & \textbf{1.1} & \textbf{1.1} \\
+TR4 & \textbf{1.0} & \textbf{1.0} \\
+TR5 & \textbf{0.9} & \textbf{0.9} \\
+TR6 & \textbf{0.9} & \textbf{0.9} \\
+\midrule
+Median & \textbf{0.9} & \textbf{0.9} \\
+Mean & \textbf{0.9} & \textbf{0.9} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{table}[ht]
+\centering
+\caption{slides: ATE [cm]}
+\label{tab:slides_ate}
+\begin{tabular}{lrr}
+\toprule
+\textbf{Dataset} & \textbf{RootBA (float)} & \textbf{RootBA (double)} \\
+\midrule
+TS1 & \textbf{1.8} & \textbf{1.8} \\
+TS2 & 94.6 & \textbf{94.5} \\
+TS3 & \textbf{150.5} & \textbf{150.5} \\
+\midrule
+Median & 94.6 & \textbf{94.5} \\
+Mean & \textbf{82.3} & \textbf{82.3} \\
+\bottomrule
+\end{tabular}
+\end{table}
+\begin{table}[ht]
+\centering
+\caption{MH: ATE [cm]}
+\label{tab:MH_ate}
+\begin{tabular}{lrr}
+\toprule
+\textbf{Dataset} & \textbf{RootBA (float)} & \textbf{RootBA (double)} \\
+\midrule
+EMH01 & \textbf{7.5} & \textbf{7.5} \\
+EMH02 & \textbf{5.3} & \textbf{5.3} \\
+EMH03 & \textbf{5.2} & \textbf{5.2} \\
+EMH04 & \textbf{13.4} & \textbf{13.4} \\
+EMH05 & \textbf{9.4} & \textbf{9.4} \\
+\midrule
+Median & \textbf{7.5} & \textbf{7.5} \\
+Mean & \textbf{8.2} & \textbf{8.2} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{table}[ht]
+\centering
+\caption{V1: ATE [cm]}
+\label{tab:V1_ate}
+\begin{tabular}{lrr}
+\toprule
+\textbf{Dataset} & \textbf{RootBA (float)} & \textbf{RootBA (double)} \\
+\midrule
+EV101 & \textbf{4.1} & \textbf{4.1} \\
+EV102 & \textbf{3.0} & \textbf{3.0} \\
+EV103 & 14.1 & \textbf{13.8} \\
+\midrule
+Median & \textbf{4.1} & \textbf{4.1} \\
+Mean & 7.1 & \textbf{7.0} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{table}[ht]
+\centering
+\caption{V2: ATE [cm]}
+\label{tab:V2_ate}
+\begin{tabular}{lrr}
+\toprule
+\textbf{Dataset} & \textbf{RootBA (float)} & \textbf{RootBA (double)} \\
+\midrule
+EV201 & \textbf{3.8} & \textbf{3.8} \\
+EV202 & 10.0 & \textbf{9.8} \\
+EV203 & \textbf{13.8} & 14.6 \\
+\midrule
+Median & 10.0 & \textbf{9.8} \\
+Mean & \textbf{9.2} & 9.4 \\
+\bottomrule
+\end{tabular}
+\end{table}

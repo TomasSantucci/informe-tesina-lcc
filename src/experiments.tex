@@ -18,300 +18,337 @@
 % https://mateosss.pages.freedesktop.org/-/basalt/-/jobs/99426109/artifacts/report.html
 % report job: https://gitlab.freedesktop.org/mateosss/basalt/-/jobs/99426109
 
+% 6- Corridas de basalt con loop closure y rootba (timing-evalsets, determinista)
+% guardo kf_timings para las secuencias MGO12, MOO12 y MIPB08
+% https://mateosss.pages.freedesktop.org/-/basalt/-/jobs/100094149/artifacts/report.html
+% report job: https://gitlab.freedesktop.org/mateosss/basalt/-/jobs/100094149
+
 En este capítulo se presentan los experimentos realizados para evaluar BasaltSLAM y el análisis
 de los resultados obtenidos. Primero se buscó dimensionar el impacto de las mejoras descritas
 en la sección x para lo cual se realizó un estudio de ablación que compara Basalt original
 con distintas versiones del sistema que incorporan las funcionalidades del mapa de distintas maneras. Luego se evaluó
 el sistema propuesto contra ORB-SLAM3 y OKVIS2 como referencia del estado del arte. En todos estos experimentos, no solo
-se evaluaron métricas de error de trayectoria, sino también se hizo un énfasis en la performance, para determinar si
-el sistema propuesto cumple con las limitaciones impuestas para funcionar en tiempo real.
+se evaluaron métricas de error de trayectoria, sino también se hizo énfasis en la performance, para determinar si
+el sistema propuesto cumple con las limitaciones impuestas para funcionar en tiempo real. Finalmente, se concluye con
+un análisis de performance detallado, que tiene en cuenta la arquitectura del sistema propuesto y las mejoras implementadas
+para utilizar una optimización de bundle adjustment basada en RootBA.
 
 Algunos experimentos fueron realizados en un servidor, que cuenta con un procesador Intel Core i5-13600 13th Gen con 32 GB de RAM.
 Mientras que, aquellos que por diferentes motivos no se pudieron ejecutar allí, fueron realizados en una computadora que cuenta con
-un procesador Intel Core Ultra 9 285H con 32 GB de RAM.
+un procesador Intel Core Ultra 9 285H con 32 GB de RAM. Cuando sea el caso de esto último, se aclarará.
 
 Para llevarlos a cabo se utilizaron todas las secuencias de los siguientes conjuntos de datos creados para la evaluación
 de sistemas SLAM: EuRoC, TUM-VI benchmark, y el Monado SLAM Dataset que es un dataset específico de XR que representa mejor
 el uso esperado del sistema. A continuación se detallan las características de los mismos.
 
-\subsection{Datasets utilizados}
+\section{Datasets utilizados} \label{sec:datasets}
 
-Contar las características de cada dataset, como cantidad de secuencias, duración, tipo de cámara, etc.
-
-Poner fotos de los datasets como ejemplo.
-
-
-\subsubsection*{EuRoC}
+\subsection*{EuRoC}
 El dataset EuRoC (European Robotics Challenge) MAV (Micro Aerial Vehicle) es uno de
 los datasets más populares y utilizados en la comunidad de robótica y visión por computadora.
 Consiste en 11 secuencias grabadas en tres entornos diferentes: una sala de máquinas (Machine Hall) y dos salas
 de laboratorio de la Escuela Politécnica de Zurich (Vicon Room 1 y 2). En la Figura 5.1 se pueden observar estos
 entornos. Cada secuencia incluye datos de ground truth con una precisión milimétrica y están
-disponibles los datos de calibración tanto intrínseca como transformaciones extrínsecas entre los sensores.
+disponibles los datos de calibración tanto intrínseca como extrínseca.
 Todas las secuencias fueron capturadas utilizando un helicóptero Asctec Firefly equipado con
 una cámara estéreo de resolución WVGA (752 x 480 px) a 20 fps y una IMU modelo ADIS16448
 a 200 Hz.
 
-Eleven datasets are provided in total, ranging from slow flights under good visual conditions to dynamic flights
-with motion blur and poor illumination, enabling researchers to thoroughly test and evaluate their algorithms.
-All datasets contain raw sensor measurements, spatio-temporally aligned sensor data and ground truth, extrinsic
-and intrinsic calibrations and datasets for custom calibrations.
+Contiene secuencias de los siguientes tipos:
+\begin{itemize}
+    \item Machine Hall: Secuencias grabadas en una sala de máquinas equipada con maquinaria pesada, proporcionando un entorno con
+desafíos de iluminación y superficies reflectantes.
+    \item Vicon Room 1 y 2: Secuencias grabadas en salas de laboratorio controladas, equipadas con un sistema de captura de movimiento Vicon,
+diseñadas para experimentos de robótica con condiciones bien definidas y texturas variadas
+\end{itemize}
 
+% might be useful too:
+% Eleven datasets are provided in total, ranging from slow flights under good visual conditions to dynamic flights
+% with motion blur and poor illumination, enabling researchers to thoroughly test and evaluate their algorithms.
+% All datasets contain raw sensor measurements, spatio-temporally aligned sensor data and ground truth, extrinsic
+% and intrinsic calibrations and datasets for custom calibrations.
 
-\subsubsection*{TUM-VI benchmark}
+\begin{figure}[ht]
+    \centering
+    \begin{subfigure}[b]{0.32\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{img/experiments/example_frames/MH03.png}
+        \caption{Machine Hall}
+        \label{fig:experiments_figure15}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}[b]{0.32\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{img/experiments/example_frames/V102.png}
+        \caption{Vicon Room 1}
+        \label{fig:experiments_figure16}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}[b]{0.32\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{img/experiments/example_frames/V202.png}
+        \caption{Vicon Room 2}
+        \label{fig:experiments_figure18}
+    \end{subfigure}
+    \caption{Frames from the EuRoC MAV dataset.}
+    \label{fig:mipp01_maps}
+\end{figure}
+
+\subsection*{TUM-VI benchmark}
 El TUM-VI Benchmark (Technical University of Munich Visual-Inertial Benchmark) es
 otro dataset de referencia para la comunidad de visión por computadora ya que el mismo incluye
 secuencias grabadas en diversos entornos, tanto interiores como exteriores, proporcionando un
-amplio espectro de condiciones y desafíos para los sistemas de odometría visual-inercial.
+amplio espectro de condiciones y desafíos para los sistemas de SLAM visual-inercial.
 
-
-Cada secuencia fue capturada con un dispositivo sostenido con la mano (handheld ) lo cual lo
-hace particularmente interesante para evaluar la localizaci´on de sistemas XR. Para grabarlo se
-utiliz´o una c´amara est´ereo con 512 × 512 px de resoluci´on a 20 fps y una IMU de alta precisi´on
-a 200 Hz, asegurando una correlaci´on precisa entre los datos visuales y inerciales. Adem´as, el
-benchmark incluye trayectorias de referencia obtenidas mediante m´etodos de captura de mo-
-vimiento, garantizando un ground truth de alta calidad para la evaluaci´on cuantitativa de los
+Cada secuencia fue capturada con un dispositivo sostenido con la mano (handheld) lo cual lo
+hace particularmente interesante para evaluar la localización de sistemas XR. Para grabarlo se
+utilizó una cámara estéreo de 512 x 512 px de resolución a 20 fps y una IMU de alta precisión
+a 200 Hz, asegurando una correlación precisa entre los datos visuales e inerciales. Además, el
+benchmark incluye trayectorias de referencia obtenidas mediante métodos de captura de mo-
+vimiento, garantizando un ground truth de alta calidad para la evaluación de los
 algoritmos
 
-\subsubsection*{Monado SLAM Dataset}
+Contiene secuencias de los siguientes tipos:
+\begin{itemize}
+    \item Corridor: Secuencias en el pasillo y varias oficinas donde las poses de ground truth están disponibles para los segmentos de inicio y fin.
+    \item Magistrale: Secuencias en un gran hall, donde las poses de ground truth están disponibles para los segmentos de inicio y fin.
+    \item Outdoors: Secuencias al aire libre, donde las poses de ground truth están disponibles para los segmentos de inicio y fin.
+    \item Room: Secuencias en una sala con un sistema de captura de movimiento, donde las poses de ground truth están disponibles para toda la trayectoria.
+    \item Slides: Secuencias especialmente desafiantes que contienen deslizamientos en un tubo cerrado con muy mala iluminación en el interior.
+    Las poses de ground truth están disponibles para los segmentos de inicio y fin.
+\end{itemize}
 
-Poner fotos de los distintos tipos de cascos.
+\begin{figure}[ht]
+    \centering
+    \begin{subfigure}[b]{0.19\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{img/experiments/example_frames/TC1.png}
+        \caption{Corridor}
+        \label{fig:experiments_figure15}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}[b]{0.19\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{img/experiments/example_frames/TM1.png}
+        \caption{Magistrale}
+        \label{fig:experiments_figure16}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}[b]{0.19\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{img/experiments/example_frames/TO2.png}
+        \caption{Outdoors}
+        \label{fig:experiments_figure18}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}[b]{0.19\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{img/experiments/example_frames/TR4.png}
+        \caption{Room}
+        \label{fig:experiments_figure20}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}[b]{0.19\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{img/experiments/example_frames/TS1.png}
+        \caption{Slides}
+        \label{fig:experiments_figure19}
+    \end{subfigure}
+    \caption{Frames from the TUM-VI benchmark dataset.}
+    \label{fig:mipp01_maps}
+\end{figure}
+
+\subsection*{Monado SLAM Dataset}
+
+El Monado SLAM Dataset (MSD) es un dataset visual-inertial de licencia permisiva creado
+específicamente para el caso de uso de aplicaciones XR. En el mismo se incluyen varios tipos
+de secuencias, desde juegos de VR hasta escenarios de inspección y mapeo de una habitación,
+proporcionando una amplia variedad de datos para evaluar algoritmos de SLAM en contextos
+de XR. El dataset contiene un ground truth con una precisión de 1 cm,
+capturado mediante un sistema de tres sensores externos lighthouses.
+Cuenta con 64 secuencias, con un total de 5 horas y 15 minutos de grabación en escenarios del mundo real,
+incluyendo secuencias largas e ininterrumpidas de hasta aproximadamente 40 minutos y secuencias de juego de ritmo rápido.
+
+Todas las secuencias son capturadas por una persona utilizando diferentes cascos XR de uso comercial para aumentar
+la diversidad de los datos, como se puede ver en la figura 1: un Valve Index, un HP Reverb G2 y un Samsung Odyssey+.
+
+\begin{figure}[ht]
+    \centering
+    \begin{subfigure}[b]{0.32\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{img/experiments/headset.VI.png}
+        \caption{Valve Index}
+        \label{fig:valve_index_headset}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}[b]{0.32\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{img/experiments/headset.RG2V2.png}
+        \caption{HP Reverb G2}
+        \label{fig:hp_reverb_g2_headset}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}[b]{0.32\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{img/experiments/headset.OPlus.png}
+        \caption{Samsung Odyssey+}
+        \label{fig:samsung_odyssey_plus_headset}
+    \end{subfigure}
+    \caption{Headsets used in the dataset: Valve Index, HP Reverb G2, and Samsung Odyssey+.}
+    \label{fig:headsets}
+\end{figure}
 
 
 
-\subsection{Métricas}
-Métricas de error: ATE, RTE y completion.
+Contiene secuencias de los siguientes tipos, que se distinguen por el tipo de casco utilizado para grabarlas:
+\begin{itemize}
+    \item MI*: Conjunto de secuencias grabadas con el casco Valve Index que cuenta con dos cámaras
+con resolución 960 x 960 px a 54 fps y una IMU a 1000 Hz. Las secuencias
+MIO* incluyen diferentes escenarios como simulaciones de juegos, escaneo/mapeo de una
+habitación y algunos objetos o personas en movimiento en el entorno. Las secuencias MIP*
+son casos donde el usuario se encuentra jugando diferentes juegos XR, como por ejemplo Beat Saber
+en SteamVR.
+    \item MO*: Conjunto de secuencias grabadas con el casco Odyssey+ el cual tiene dos cámaras con
+resolución 640 x 480 px a 30 fps y una IMU a 250 Hz.
+    \item MG*: Conjunto de secuencias grabadas con el casco Reverb G2 V2 el cual tiene cuatro
+cámaras con resolución 640 x 480 px a 30 fps y una IMU a 512 Hz.
+\end{itemize}
 
-Límites de ejecución real-time.
 
-Explicar modos de ejecución de basalt:
-- full determinista
-- full no determinista
-- determinista con mapper asíncrono
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=0.24\linewidth]{img/experiments/example_frames/MGO04.1.png}
+    \includegraphics[width=0.24\linewidth]{img/experiments/example_frames/MGO04.2.png}
+    \includegraphics[width=0.24\linewidth]{img/experiments/example_frames/MGO04.3.png}
+    \includegraphics[width=0.24\linewidth]{img/experiments/example_frames/MGO04.4.png}
+    \caption{Example frame from the SLAM dataset trajectory (cameras 0-3, left to right).}
+    \label{fig:slam_frame}
+\end{figure}
 
-\section{Ablation study}
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=0.48\linewidth]{img/experiments/example_frames/MOO08.1.png}
+    \includegraphics[width=0.48\linewidth]{img/experiments/example_frames/MOO08.2.png}
+    \caption{Example frame from the SLAM dataset trajectory (cameras 0-1, left to right).}
+    \label{fig:slam_frame_1}
+\end{figure}
 
-\begin{table}[ht]
-\centering
-\caption{msdmi: ATE [cm]}
-\label{tab:msdmi_ate}
-\begin{tabular}{lrrrr}
-\toprule
-\textbf{Dataset} & \textbf{Basalt} & \textbf{BasaltLC} & \textbf{BasaltSLAM} & \textbf{BasaltSLAM-CQ} \\
-\midrule
-MIO01 & 62.0 & 22.4 (273) & \textbf{18.7} (273) & 3787.2 (118) \\
-MIO02 & 118.3 & 32.0 (91) & \textbf{23.6} (91) & 37.5 (40) \\
-MIO03 & 9.4 & 5.7 (138) & \textbf{2.5} (138) & 3.4 (62) \\
-MIO04 & 20.7 & \textbf{7.0} (182) & 7.4 (182) & 8.0 (109) \\
-MIO05 & 3.4 & 3.8 (94) & 1.9 (94) & \textbf{1.6} (38) \\
-MIO06 & 4.9 & 4.5 (131) & 2.6 (131) & \textbf{2.4} (78) \\
-MIO07 & 2.3 & 4.2 (29) & \textbf{1.2} (29) & 2.3 (13) \\
-MIO08 & 5.7 & \textbf{2.9} (3) & 6.9 (3) & 4.3 (1) \\
-MIO09 & 0.6 & 0.6 (0) & \textbf{0.2} (0) & 0.5 (0) \\
-MIO10 & \textbf{1.5} & 1.6 (0) & 1.8 (0) & 2.7 (0) \\
-MIO11 & 2.4 & 2.5 (0) & \textbf{2.3} (0) & 3.3 (0) \\
-MIO12 & 43.5 & 4.8 (221) & \textbf{4.2} (221) & 4.3 (146) \\
-MIO13 & 108.4 & 28.5 (130) & 28.0 (130) & \textbf{25.5} (72) \\
-MIO14 & 9.7 & 3.7 (171) & \textbf{2.5} (171) & 3.4 (68) \\
-MIO15 & 79.5 & 12.4 (197) & \textbf{10.7} (197) & 13.5 (92) \\
-MIO16 & 53.1 & 13.3 (57) & 18.7 (57) & \textbf{9.1} (41) \\
-MIPB01 & 27.9 & 3.5 (686) & \textbf{1.3} (686) & \textbf{1.3} (283) \\
-MIPB02 & 23.5 & 3.7 (492) & 3.5 (492) & \textbf{1.8} (208) \\
-MIPB03 & 18.9 & 4.3 (609) & \textbf{2.9} (609) & 3.7 (284) \\
-MIPB04 & 10.4 & 4.3 (433) & 2.0 (433) & \textbf{1.8} (151) \\
-MIPB05 & 4.4 & 3.2 (459) & \textbf{1.4} (459) & 2.7 (147) \\
-MIPB06 & 4.8 & 4.0 (310) & 2.9 (310) & \textbf{1.9} (117) \\
-MIPB07 & 6.2 & 3.5 (490) & \textbf{1.6} (490) & 1.8 (139) \\
-MIPB08 & 63.0 & 4.5 (1264) & \textbf{3.9} (1264) & -- \\
-MIPP01 & 43.9 & 4.5 (632) & 2.9 (632) & \textbf{2.8} (329) \\
-MIPP02 & 24.1 & 4.1 (354) & 3.9 (354) & \textbf{3.1} (171) \\
-MIPP03 & 26.9 & 4.4 (507) & 4.8 (507) & \textbf{3.2} (271) \\
-MIPP04 & 28.7 & 4.0 (544) & 2.5 (544) & \textbf{2.4} (300) \\
-MIPP05 & 18.3 & 3.1 (407) & \textbf{2.7} (407) & \textbf{2.7} (223) \\
-MIPP06 & 28.3 & 3.9 (806) & 2.7 (806) & \textbf{2.3} (434) \\
-MIPT01 & 10.6 & 4.3 (723) & \textbf{1.7} (723) & 1.9 (333) \\
-MIPT02 & 19.8 & 3.5 (1189) & \textbf{2.1} (1189) & \textbf{2.1} (616) \\
-MIPT03 & 39.9 & 4.0 (1178) & \textbf{3.5} (1178) & \textbf{3.5} (517) \\
-\midrule
-Median & 19.8 & 4.1 & \textbf{2.7} & 2.8 \\
-Mean & 28.0 & 6.6 & \textbf{5.4} & 123.4 \\
-\bottomrule
-\end{tabular}
-\end{table}
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=0.48\linewidth]{img/experiments/example_frames/MIPT02.1.png}
+    \includegraphics[width=0.48\linewidth]{img/experiments/example_frames/MIPT02.2.png}
+    \caption{Example frame from the SLAM dataset trajectory (cameras 0-1, left to right).}
+    \label{fig:slam_frame_1}
+\end{figure}
 
-\begin{table}[ht]
-\centering
-\caption{msdmi: RTE [cm]}
-\label{tab:msdmi_rte}
-\begin{tabular}{lrrrr}
-\toprule
-\textbf{Dataset} & \textbf{Basalt} & \textbf{BasaltLC} & \textbf{BasaltSLAM} & \textbf{BasaltSLAM-CQ} \\
-\midrule
-MIO01 & \textbf{3.7} & 4.4 (273) & 4.4 (273) & 603.5 (118) \\
-MIO02 & 6.5 & 6.3 (91) & \textbf{4.0} (91) & 6.1 (40) \\
-MIO03 & \textbf{0.6} & 0.7 (138) & 1.0 (138) & 1.2 (62) \\
-MIO04 & \textbf{1.3} & 1.5 (182) & 3.6 (182) & 4.0 (109) \\
-MIO05 & \textbf{0.3} & 0.5 (94) & \textbf{0.3} (94) & 0.4 (38) \\
-MIO06 & \textbf{1.0} & 1.3 (131) & 1.4 (131) & 1.2 (78) \\
-MIO07 & \textbf{0.2} & 0.5 (29) & \textbf{0.2} (29) & 0.5 (13) \\
-MIO08 & \textbf{0.7} & 0.8 (3) & 3.9 (3) & 1.6 (1) \\
-MIO09 & 0.3 & 0.3 (0) & \textbf{0.2} (0) & 0.4 (0) \\
-MIO10 & \textbf{0.5} & \textbf{0.5} (0) & 0.6 (0) & 0.7 (0) \\
-MIO11 & 0.7 & 0.7 (0) & \textbf{0.6} (0) & 1.2 (0) \\
-MIO12 & \textbf{0.6} & \textbf{0.6} (221) & \textbf{0.6} (221) & 0.8 (146) \\
-MIO13 & 2.9 & 2.8 (130) & \textbf{2.7} (130) & 3.1 (72) \\
-MIO14 & \textbf{0.3} & \textbf{0.3} (171) & \textbf{0.3} (171) & 0.4 (68) \\
-MIO15 & \textbf{1.2} & 1.3 (197) & 1.3 (197) & 1.7 (92) \\
-MIO16 & \textbf{1.3} & \textbf{1.3} (57) & 2.5 (57) & 1.7 (41) \\
-MIPB01 & 0.7 & 1.0 (686) & \textbf{0.6} (686) & \textbf{0.6} (283) \\
-MIPB02 & \textbf{0.5} & 0.9 (492) & 2.7 (492) & \textbf{0.5} (208) \\
-MIPB03 & \textbf{0.6} & 0.7 (609) & 0.7 (609) & 1.3 (284) \\
-MIPB04 & \textbf{0.5} & 0.6 (433) & 0.6 (433) & \textbf{0.5} (151) \\
-MIPB05 & \textbf{0.4} & 0.6 (459) & 0.5 (459) & \textbf{0.4} (147) \\
-MIPB06 & \textbf{0.4} & 0.5 (310) & 0.5 (310) & 0.5 (117) \\
-MIPB07 & \textbf{0.5} & 0.6 (490) & \textbf{0.5} (490) & 0.6 (139) \\
-MIPB08 & \textbf{0.4} & \textbf{0.4} (1264) & 0.5 (1264) & -- \\
-MIPP01 & \textbf{1.0} & 1.2 (632) & 1.1 (632) & 1.3 (329) \\
-MIPP02 & \textbf{1.0} & 1.2 (354) & 1.7 (354) & 1.5 (171) \\
-MIPP03 & \textbf{0.9} & 1.0 (507) & 2.3 (507) & 1.4 (271) \\
-MIPP04 & \textbf{0.8} & 0.9 (544) & 1.0 (544) & 1.0 (300) \\
-MIPP05 & \textbf{0.6} & 0.7 (407) & 1.9 (407) & 1.2 (223) \\
-MIPP06 & \textbf{1.0} & 1.1 (806) & 1.2 (806) & \textbf{1.0} (434) \\
-MIPT01 & \textbf{0.4} & 0.6 (723) & 0.5 (723) & 0.6 (333) \\
-MIPT02 & \textbf{0.4} & 0.5 (1189) & 0.5 (1189) & 0.5 (616) \\
-MIPT03 & \textbf{0.6} & 0.7 (1178) & \textbf{0.6} (1178) & 0.7 (517) \\
-\midrule
-Median & \textbf{0.6} & 0.7 & 0.7 & 1.0 \\
-Mean & \textbf{1.0} & 1.1 & 1.4 & 20.1 \\
-\bottomrule
-\end{tabular}
-\end{table}
 
-\begin{table}[ht]
-\centering
-\caption{msdgo: ATE [cm]}
-\label{tab:msdgo_ate}
-\begin{tabular}{lrrrr}
-\toprule
-\textbf{Dataset} & \textbf{Basalt} & \textbf{BasaltLC} & \textbf{BasaltSLAM} & \textbf{BasaltSLAM-CQ} \\
-\midrule
-MGO01 & 68.0 & 13.4 (43) & 12.1 (43) & \textbf{3.4} (40) \\
-MGO02 & 55.6 & 8.3 (82) & 7.5 (82) & \textbf{6.2} (76) \\
-MGO03 & 14.5 & 4.2 (122) & \textbf{1.7} (122) & \textbf{1.7} (98) \\
-MGO04 & 26.1 & 6.7 (62) & \textbf{5.4} (62) & 5.7 (51) \\
-MGO05 & 3.0 & 3.0 (81) & \textbf{1.7} (81) & \textbf{1.7} (65) \\
-MGO06 & 11.1 & 5.2 (94) & 4.1 (94) & \textbf{3.1} (78) \\
-MGO07 & 2.1 & 2.1 (23) & \textbf{1.4} (23) & 1.5 (14) \\
-MGO08 & \textbf{2.7} & 2.8 (2) & 5.0 (2) & 3.8 (0) \\
-MGO09 & \textbf{0.8} & \textbf{0.8} (0) & 1.1 (0) & 1.0 (0) \\
-MGO10 & \textbf{0.8} & 0.9 (0) & 1.4 (0) & 1.2 (0) \\
-MGO11 & 1.7 & 1.7 (0) & \textbf{1.0} (0) & \textbf{1.0} (0) \\
-MGO12 & 60.7 & 5.8 (931) & \textbf{5.4} (931) & -- \\
-MGO13 & 68.4 & 8.6 (43) & 8.6 (43) & \textbf{8.2} (34) \\
-MGO14 & 7.0 & 3.9 (82) & \textbf{1.9} (82) & 2.2 (70) \\
-MGO15 & 3.5 & 4.1 (30) & 1.9 (30) & \textbf{1.3} (28) \\
-\midrule
-Median & 7.0 & 4.1 & \textbf{1.9} & 2.0 \\
-Mean & 21.7 & 4.8 & 4.0 & \textbf{3.0} \\
-\bottomrule
-\end{tabular}
-\end{table}
+\section{Métricas} \label{sec:metrics}
 
-\begin{table}[ht]
-\centering
-\caption{msdgo: RTE [cm]}
-\label{tab:msdgo_rte}
-\begin{tabular}{lrrrr}
-\toprule
-\textbf{Dataset} & \textbf{Basalt} & \textbf{BasaltLC} & \textbf{BasaltSLAM} & \textbf{BasaltSLAM-CQ} \\
-\midrule
-MGO01 & \textbf{2.3} & 2.5 (43) & 2.4 (43) & 2.7 (40) \\
-MGO02 & \textbf{2.8} & 3.0 (82) & 3.1 (82) & 5.6 (76) \\
-MGO03 & 1.3 & 1.5 (122) & \textbf{1.1} (122) & 1.2 (98) \\
-MGO04 & \textbf{2.5} & 2.7 (62) & 2.8 (62) & 3.7 (51) \\
-MGO05 & 0.4 & 0.5 (81) & \textbf{0.3} (81) & 0.4 (65) \\
-MGO06 & 1.8 & 2.0 (94) & \textbf{1.6} (94) & 1.9 (78) \\
-MGO07 & 0.6 & 0.6 (23) & \textbf{0.4} (23) & 0.5 (14) \\
-MGO08 & \textbf{1.3} & 1.4 (2) & 3.5 (2) & 2.4 (0) \\
-MGO09 & \textbf{0.6} & 0.7 (0) & 0.7 (0) & 0.7 (0) \\
-MGO10 & 0.4 & 0.4 (0) & \textbf{0.3} (0) & \textbf{0.3} (0) \\
-MGO11 & 0.6 & 0.6 (0) & \textbf{0.4} (0) & 0.5 (0) \\
-MGO12 & \textbf{1.7} & 1.8 (931) & \textbf{1.7} (931) & -- \\
-MGO13 & \textbf{2.6} & 2.7 (43) & 4.1 (43) & 6.1 (34) \\
-MGO14 & 1.2 & 1.4 (82) & \textbf{0.9} (82) & 1.1 (70) \\
-MGO15 & 0.4 & 0.4 (30) & \textbf{0.3} (30) & \textbf{0.3} (28) \\
-\midrule
-Median & 1.3 & 1.4 & \textbf{1.1} & 1.2 \\
-Mean & \textbf{1.4} & 1.5 & 1.6 & 2.0 \\
-\bottomrule
-\end{tabular}
-\end{table}
+Para poder evaluar los resultados de los experimentos es necesario obtener métricas que
+permitan comparar precisión y robustez de las trayectorias estimadas por los distintos sistemas
+VI-SLAM.
 
-\begin{table}[ht]
-\centering
-\caption{msmoo: ATE [cm]}
-\label{tab:msmoo_ate}
-\begin{tabular}{lrrrr}
-\toprule
-\textbf{Dataset} & \textbf{Basalt} & \textbf{BasaltLC} & \textbf{BasaltSLAM} & \textbf{BasaltSLAM-CQ} \\
-\midrule
-MOO01 & 28.1 & 4.4 (113) & \textbf{3.4} (113) & 4.7 (86) \\
-MOO02 & 23.8 & 4.2 (129) & 5.0 (129) & \textbf{3.7} (111) \\
-MOO03 & 17.7 & 4.7 (68) & 3.7 (68) & \textbf{3.2} (51) \\
-MOO04 & 6.5 & \textbf{3.8} (65) & 4.2 (65) & 6.3 (52) \\
-MOO05 & 1.8 & 1.9 (16) & 1.2 (16) & \textbf{1.0} (13) \\
-MOO06 & 5.6 & 4.3 (68) & 2.5 (68) & \textbf{1.4} (62) \\
-MOO07 & 1.3 & 1.3 (3) & 1.3 (3) & \textbf{1.2} (2) \\
-MOO08 & \textbf{2.8} & 2.9 (0) & 3.0 (0) & 6.9 (0) \\
-MOO09 & \textbf{0.4} & \textbf{0.4} (0) & 0.5 (0) & 0.5 (0) \\
-MOO10 & \textbf{1.0} & \textbf{1.0} (0) & 1.4 (0) & 1.5 (0) \\
-MOO11 & 1.9 & 1.9 (0) & 1.9 (0) & \textbf{1.6} (0) \\
-MOO12 & 69.0 & \textbf{8.5} (525) & 10.6 (525) & -- \\
-MOO13 & 50.1 & 7.7 (71) & 7.7 (71) & \textbf{6.6} (59) \\
-MOO14 & 11.3 & 4.9 (77) & \textbf{3.0} (77) & 4.6 (68) \\
-MOO15 & 205.3 & 292.3 (7) & 291.1 (7) & \textbf{6.6} (2) \\
-MOO16 & 1.4 & 1.4 (0) & 1.2 (0) & \textbf{0.4} (0) \\
-\midrule
-Median & 6.1 & 4.0 & \textbf{3.0} & 3.2 \\
-Mean & 26.7 & 21.6 & 21.3 & \textbf{3.4} \\
-\bottomrule
-\end{tabular}
-\end{table}
+En este trabajo se optará por dos métricas típicamente utilizadas en el estado del arte que
+son el Error de Trayectoria Absoluta (ATE, Absolute Trajectory Error) y el Error de Trayectoria
+Relativa (RTE, Relative Trajectory Error). El ATE mide la diferencia global entre la trayectoria
+estimada y la trayectoria real del sensor en el espacio, proporcionando una indicación de la
+precisión absoluta del sistema a lo largo de toda la secuencia. Por otro lado, el RTE evalúa la
+precisión local del sistema midiendo la discrepancia entre segmentos cortos de las trayectorias, es
+decir, compara la posición relativa entre puntos cercanos en las trayectorias estimada y real. Esta
+métrica es útil para analizar la consistencia del sistema en intervalos cortos de tiempo.
 
-\begin{table}[ht]
-\centering
-\caption{msmoo: RTE [cm]}
-\label{tab:msmoo_rte}
-\begin{tabular}{lrrrr}
-\toprule
-\textbf{Dataset} & \textbf{Basalt} & \textbf{BasaltLC} & \textbf{BasaltSLAM} & \textbf{BasaltSLAM-CQ} \\
-\midrule
-MOO01 & \textbf{1.7} & 1.8 (113) & \textbf{1.7} (113) & 1.9 (86) \\
-MOO02 & \textbf{1.5} & 1.6 (129) & 3.1 (129) & 1.9 (111) \\
-MOO03 & 1.4 & 1.5 (68) & \textbf{1.2} (68) & 1.8 (51) \\
-MOO04 & \textbf{1.0} & 1.1 (65) & 1.6 (65) & 2.3 (52) \\
-MOO05 & \textbf{0.3} & \textbf{0.3} (16) & \textbf{0.3} (16) & \textbf{0.3} (13) \\
-MOO06 & \textbf{0.8} & 0.9 (68) & 1.0 (68) & \textbf{0.8} (62) \\
-MOO07 & \textbf{0.3} & 0.4 (3) & \textbf{0.3} (3) & \textbf{0.3} (2) \\
-MOO08 & \textbf{1.1} & 1.4 (0) & 1.2 (0) & 2.6 (0) \\
-MOO09 & \textbf{0.3} & \textbf{0.3} (0) & \textbf{0.3} (0) & \textbf{0.3} (0) \\
-MOO10 & \textbf{0.4} & \textbf{0.4} (0) & \textbf{0.4} (0) & 0.5 (0) \\
-MOO11 & \textbf{0.5} & \textbf{0.5} (0) & \textbf{0.5} (0) & 0.6 (0) \\
-MOO12 & \textbf{0.8} & \textbf{0.8} (525) & 1.0 (525) & -- \\
-MOO13 & \textbf{1.7} & \textbf{1.7} (71) & 2.9 (71) & 3.4 (59) \\
-MOO14 & \textbf{0.8} & 0.9 (77) & 1.7 (77) & 1.7 (68) \\
-MOO15 & 4.3 & 6.3 (7) & 11.0 (7) & \textbf{1.0} (2) \\
-MOO16 & 0.2 & 0.2 (0) & \textbf{0.1} (0) & \textbf{0.1} (0) \\
-\midrule
-Median & \textbf{0.8} & 0.9 & 1.1 & 1.0 \\
-Mean & \textbf{1.1} & 1.3 & 1.8 & 1.3 \\
-\bottomrule
-\end{tabular}
-\end{table}
+Existe una distinción en la forma de evaluar las trayectorias estimadas por los sistemas de SLAM: de manera
+causal o no causal. En la primera, se evalúan las estimaciones que utilizan todas las mediciones hasta el respectivo
+timestamp de cada pose, es decir, tan pronto como se estima la pose, se reporta para ser comparada con el groun truth.
+En la evaluación no causal, se evalúa la trayectoria final completamente optimizada, donde se tienen en cuenta todas las
+mediciones para todas las estimaciones, incluyendo las correcciones de loop closure.
+
+En los sistemas tradicionales, en la evaluación causal el error de drift acumulado puede dominar las
+estadísticas del ATE, ya que la trayectoria contiene los característicos saltos cuando se corrigen los
+loop closures. En cambio, para el sistema implementado en este trabajo, esto no sucederá en las evaluaciones
+causales, porque la pose del keyframe más reciente se mantiene fija en la optimización. Aunque el error causal
+no tendrá ninguna corrección de drift, y esto hará que sea exactamente igual al error de Basalt en su versión VIO.
+Por estos motivos, en la totalidad de los experimentos que evaluen ATE o RTE, se optará por evaluar la trayectoria no causal.
+
+Es importante notar que en el mapa se guardan solo poses de keyframes, ya que tanto la optimización de los cierres de
+ciclos, como el bundle adjustment final mediante rootba, se realizan solo sobre keyframes. Con el fin de poder comparar
+las trayectorias estimadas por este sistema, con los del estado del arte, se recuperan las poses de los frames
+intermedios a través de interpolación entre los keyframes temporalmente más cercanos, tanto para el ATE como para el RTE.
+
+% The keyframes must be a subset of the frames. They may have optimized poses, that differ from the frames' poses. For every non-keyframe frame f between optimized keyframes KF_i and KF_{i+1} its pose is recovered via two-sided interpolation:
+% T_f_left  = T_KFi_opt  * T_KFi_raw.inv()  * T_f_raw
+% T_f_right = T_KFi1_opt * T_KFi1_raw.inv() * T_f_raw
+% T_f       = slerp/lerp(T_f_left, T_f_right, alpha)
+% where alpha = (t_f - t_KFi) / (t_KFi1 - t_KFi).
+%
+%Se nota $f$ o $T\_w\_i$ a la pose del frame $f$ luego de optimizar el mapa (no causal). Y se nota con
+%$t\_raw$ o $T\_w\_i^{raw}$ a la pose del frame $f$ antes de optimizar el mapa (causal). Luego, para todo frame $f$,
+%que se encuentra entre los keyframes temporalmente más cercanos $KF_i$ y $KF_{i+1}$, se recupera su pose a través
+%de interpolación bilateral.
+%
+%$$ T\_f\_left = T_{KF_i}^{opt} \cdot (T_{KF_i}^{raw})^{-1} \cdot T_f^{raw} $$
+%$$ T\_f\_right = T_{KF_{i+1}}^{opt} \cdot (T_{KF_{i+1}}^{raw})^{-1} \cdot T_f^{raw} $$
+%$$ T_f = \text{slerp/lerp}(T\_f\_left, T\_f\_right, \alpha) $$
+%$$ \alpha = \frac{t_f - t_{KF_i}}{t_{KF_{i+1}} - t_{KF_i}} $$
+
+
+Además de las métricas cuantitativas previas, se hará énfasis en analizar la performance de los sistemas,
+para determinar si cumplen con las limitaciones de tiempo real impuestas para su uso en aplicaciones XR.
+Para esto se analizará el tiempo de ejecución de cada sistema, tanto en términos de tiempo total como en
+términos de tiempo por frame. De acuerdo a los tipos de cámaras previamente mencionados, los límites de
+funcionamiento para tiempo real son: 18.5 ms por frame para las secuencias MI*, 33.3 ms para las secuencias
+MO* y MG*, y 50 ms para las secuencias del EuRoC y TUM-VI benchmark. Para ello, es importante mencionar
+los distintos modos de ejecución con los que cuenta el sistema:
+\begin{itemize}
+    \item Síncrono. Las operaciones se ejecutan de manera secuencial. Es decir, para cada frame primero se lo procesa en el frontend,
+    luego se lo optimiza en el vio, y luego se agrega en el mapa, detectando y cerrando ciclos si los hubiere. Una vez que
+    se completa el procesamiento completo del frame, se introduce el siguiente. Este modo de ejecución sirve para que sea
+    más fácil la reproducción de resultados. Aunque no es el modo de ejecución recomendado para aplicaciones XR,
+    ya que no se aprovechan las ventajas de la arquitectura del sistema.
+    \item Asíncrono. Las operaciones se ejecutan de manera concurrente, permitiendo que el sistema procese múltiples
+    frames al mismo tiempo. En este modo, el frontend puede procesar un nuevo frame mientras el vio optimiza la trayectoria.
+    Además, el mapa recibe nuevos keyframes a medida que ingresan en el VIO, pero no bloquea a ningún thread mientras ejecuta
+    sus operaciones como culling y loop closure.
+    \item Síncrono con mapa asíncrono. En este modo, el frontend y el VIO se ejecutan de manera secuencial, pero el mapa
+    de manera concurrente. Permitiendo un mayor control sobre el flujo de ejecución, sin bloquear componentes cuando el mapa
+    realiza las operaciones más costosas.
+\end{itemize}
+
+\section{Estudio de ablación}
+
+Para poder dimensionar el impacto de las mejoras implementadas individualmente, se realizó
+un estudio de ablación en el cual se compara Basalt original con diferentes versiones del sistema
+en las cuales se van incorporando las funcionalidades propuestas. Las versiones a evaluar son:
+
+\begin{itemize}
+    \item Basalt: Versión original de Basalt, no mantiene un mapa persistente.
+    \item BasaltLC: Versión de Basalt que mantiene un mapa persistente, detecta y cierra ciclos, y realiza map culling.
+    \item BasaltSLAM: Versión de Basalt que realiza las mismas operaciones que BasaltLC, pero además optimiza el mapa final con rootba.
+    \item BasaltSLAM+CQ: Versión de Basalt que realiza las mismas operaciones que BasaltSLAM, pero además durante la ejecución,
+    reintroduce hasta 3 keyframes, en base al grafo de covisibilidad del mapa, en la ventana de keyframes del VIO.
+\end{itemize}
+
+Para este experimento, se dividirán los datasets en dos categorías: “Datasets del estado del
+arte” (EuRoC y TUM-VI) y “Datasets de XR” (Monado SLAM Dataset). En cada caso, se
+presentarán las métricas ATE y RTE, comentadas en la sección \ref{sec:metrics}. Se incluirá una tabla por métrica y tipo
+de secuencia según las mencionadas en la sección \ref{sec:datasets}. En caso
+de que un sistema termine abruptamente o el ATE indique que el sistema perdió la localización,
+se utilizará un guion ('-') para indicar la falla. Al final de cada tabla se agregan las filas ``Mean'' y ``Median''
+que muestran el promedio y mediana de las secuencias que corrieron correctamente.
+
+Además, en las columnas que correspondan a versiones del sistema que detectan ciclos, se indicará entre paréntesis
+la cantidad de ciclos detectados.
+
+\subsection{Resultados en datasets del estado del arte}
+
+En las Tablas \ref{tab:corridor_ablation_ate} y \ref{tab:corridor_ablation_rte} se muestran los resultados de ATE y RTE respectivamente, en las secuencias de corridor.
+Se observa una mejora significativa en ambas métricas, a excepción de la secuencia TC4, donde el sistema no detectó ningún ciclo
+y por ende no se produjo ninguna mejora.
+
 \begin{table}[ht]
 \centering
 \caption{corridor: ATE [cm]}
-\label{tab:corridor_ate}
+\label{tab:corridor_ablation_ate}
 \begin{tabular}{lrrrr}
 \toprule
 \textbf{Dataset} & \textbf{Basalt} & \textbf{BasaltLC} & \textbf{BasaltSLAM} & \textbf{BasaltSLAM-CQ} \\
@@ -331,7 +368,7 @@ Mean & 39.2 & 10.9 & \textbf{8.3} & 9.6 \\
 \begin{table}[ht]
 \centering
 \caption{corridor: RTE [cm]}
-\label{tab:corridor_rte}
+\label{tab:corridor_ablation_rte}
 \begin{tabular}{lrrrr}
 \toprule
 \textbf{Dataset} & \textbf{Basalt} & \textbf{BasaltLC} & \textbf{BasaltSLAM} & \textbf{BasaltSLAM-CQ} \\
@@ -348,10 +385,17 @@ Mean & 7.4 & 3.6 & 2.8 & \textbf{1.7} \\
 \end{tabular}
 \end{table}
 
+En las Tablas \ref{tab:magistrale_ablation_ate} y \ref{tab:magistrale_ablation_rte} se muestran los resultados de ATE y RTE respectivamente, en las secuencias de magistrale.
+Si bien en todas las secuencias los sistemas de SLAM son superiores, principalmente en ATE, esta mejora es notable en
+TM1 y TM6, donde BasaltSLAM es capaz de corregir drifts acumulados de más de 3 metros.
+Si bien en todas las secuencias se detectaron ciclos, en la Figura \ref{fig:loops_tm1} se puede observar que uno de los ciclos de TM1 fue detectado
+entre keyframes que se encuentran muy alejados temporalmente, lo cual hace que la corrección de drift sea más efectiva. Lo mismo sucede
+para TM6, a diferencia de las demás secuencias.
+
 \begin{table}[ht]
 \centering
 \caption{magistrale: ATE [cm]}
-\label{tab:magistrale_ate}
+\label{tab:magistrale_ablation_ate}
 \begin{tabular}{lrrrr}
 \toprule
 \textbf{Dataset} & \textbf{Basalt} & \textbf{BasaltLC} & \textbf{BasaltSLAM} & \textbf{BasaltSLAM-CQ} \\
@@ -372,7 +416,7 @@ Mean & 183.7 & 88.5 & \textbf{84.7} & 126.6 \\
 \begin{table}[ht]
 \centering
 \caption{magistrale: RTE [cm]}
-\label{tab:magistrale_rte}
+\label{tab:magistrale_ablation_rte}
 \begin{tabular}{lrrrr}
 \toprule
 \textbf{Dataset} & \textbf{Basalt} & \textbf{BasaltLC} & \textbf{BasaltSLAM} & \textbf{BasaltSLAM-CQ} \\
@@ -390,10 +434,16 @@ Mean & 22.5 & 10.3 & \textbf{9.6} & 14.1 \\
 \end{tabular}
 \end{table}
 
+En las Tablas \ref{tab:outdoors_ablation_ate} y \ref{tab:outdoors_ablation_rte} se muestran los resultados de ATE y RTE respectivamente, en las secuencias de outdoors.
+No se observa una mejora como en las secuencias anteriores. Tan solo se observa una mejora en TO7, donde se detectaron 24 ciclos, y algunos de ellos
+fueron entre keyframes que se encuentran alejados temporalmente, como se observa en la Figura \ref{fig:loops_to7}.
+Sin embargo, en el resto de las secuencias, los ciclos detectados fueron entre keyframes muy cercanos
+temporalmente, como se observa en las Figura \ref{fig:loops_to3}, lo cual hace que el drift acumulado durante la trayectoria en el exterior no se corrija.
+
 \begin{table}[ht]
 \centering
 \caption{outdoors: ATE [cm]}
-\label{tab:outdoors_ate}
+\label{tab:outdoors_ablation_ate}
 \begin{tabular}{lrrrr}
 \toprule
 \textbf{Dataset} & \textbf{Basalt} & \textbf{BasaltLC} & \textbf{BasaltSLAM} & \textbf{BasaltSLAM-CQ} \\
@@ -416,7 +466,7 @@ Mean & 6019.0 & 6227.1 & 6226.1 & \textbf{5987.7} \\
 \begin{table}[ht]
 \centering
 \caption{outdoors: RTE [cm]}
-\label{tab:outdoors_rte}
+\label{tab:outdoors_ablation_rte}
 \begin{tabular}{lrrrr}
 \toprule
 \textbf{Dataset} & \textbf{Basalt} & \textbf{BasaltLC} & \textbf{BasaltSLAM} & \textbf{BasaltSLAM-CQ} \\
@@ -436,10 +486,17 @@ Mean & 624.0 & 644.3 & 643.9 & \textbf{619.9} \\
 \end{tabular}
 \end{table}
 
+En las Tablas \ref{tab:room_ablation_ate} y \ref{tab:room_ablation_rte} se muestran los resultados de ATE y RTE respectivamente, en las secuencias de Room.
+Como estas secuencias fueron grabadas en un entorno controlado, dentro de una misma habitación, la detección de ciclos es más fácil.
+Para el sistema BasaltLC, ya se observa una mejora significativa, principalmente para el ATE, en todas las secuencias.
+Es destacable que, además, la incorporación de rootba en BasaltSLAM, mejora aún más la precisión, logrando una precisión de 1 cm o menos en todas las secuencias.
+
+En términos de RTE, se observa una mejora más modesta, aunque BasaltSLAM sigue siendo el sistema más preciso en todas las secuencias.
+
 \begin{table}[ht]
 \centering
 \caption{room: ATE [cm]}
-\label{tab:room_ate}
+\label{tab:room_ablation_ate}
 \begin{tabular}{lrrrr}
 \toprule
 \textbf{Dataset} & \textbf{Basalt} & \textbf{BasaltLC} & \textbf{BasaltSLAM} & \textbf{BasaltSLAM-CQ} \\
@@ -460,7 +517,7 @@ Mean & 8.7 & 3.7 & \textbf{0.9} & \textbf{0.9} \\
 \begin{table}[ht]
 \centering
 \caption{room: RTE [cm]}
-\label{tab:room_rte}
+\label{tab:room_ablation_rte}
 \begin{tabular}{lrrrr}
 \toprule
 \textbf{Dataset} & \textbf{Basalt} & \textbf{BasaltLC} & \textbf{BasaltSLAM} & \textbf{BasaltSLAM-CQ} \\
@@ -478,10 +535,20 @@ Mean & 0.6 & 0.8 & \textbf{0.4} & 0.5 \\
 \end{tabular}
 \end{table}
 
+En las Tablas \ref{tab:slides_ablation_ate} y \ref{tab:slides_ablation_rte} se muestran los resultados de ATE y RTE respectivamente, en las secuencias de Slides.
+
+En estas secuencias se observa un comportamiento similar a las secuencias de magistrale. En TS1, se observa una mejora significativa, tanto para ATE como para RTE.
+Esto se debe a la detección de ciclos entre keyframes que se encuentran alejados temporalmente. Pero en TS2 y TS3, aunque se detectaron ciclos,
+estos fueron entre keyframes muy cercanos temporalmente, lo cual hace que el drift acumulado durante la trayectoria no se corrija.
+
+Aunque hay que notar que, para estas secuencias, se tiene ground truth solo para los keyframes del comienzo y el final.
+Es por esto que se consiguen métricas tan buenas en TS1, aunque el resto de la trayectoria probablemente no tenga
+tanta precisión, dada la dificultad de las secuencias de Slides.
+
 \begin{table}[ht]
 \centering
 \caption{slides: ATE [cm]}
-\label{tab:slides_ate}
+\label{tab:slides_ablation_ate}
 \begin{tabular}{lrrrr}
 \toprule
 \textbf{Dataset} & \textbf{Basalt} & \textbf{BasaltLC} & \textbf{BasaltSLAM} & \textbf{BasaltSLAM-CQ} \\
@@ -499,7 +566,7 @@ Mean & 102.5 & 92.6 & \textbf{91.8} & 117.4 \\
 \begin{table}[ht]
 \centering
 \caption{slides: RTE [cm]}
-\label{tab:slides_rte}
+\label{tab:slides_ablation_rte}
 \begin{tabular}{lrrrr}
 \toprule
 \textbf{Dataset} & \textbf{Basalt} & \textbf{BasaltLC} & \textbf{BasaltSLAM} & \textbf{BasaltSLAM-CQ} \\
@@ -513,10 +580,54 @@ Mean & 11.8 & 10.9 & \textbf{10.8} & 13.3 \\
 \bottomrule
 \end{tabular}
 \end{table}
+
+
+\begin{figure}[ht]
+    \centering
+    \begin{subfigure}[b]{0.48\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{img/experiments/TC1.loops.pdf}
+        \caption{TC1}
+        \label{fig:loops_tc1}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}[b]{0.48\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{img/experiments/TM1.loops.pdf}
+        \caption{TM1}
+        \label{fig:loops_tm1}
+    \end{subfigure}
+
+    \vspace{0.5em}
+
+    \begin{subfigure}[b]{0.48\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{img/experiments/TO3.loops.pdf}
+        \caption{TO3}
+        \label{fig:loops_to3}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}[b]{0.48\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{img/experiments/TO7.loops.pdf}
+        \caption{TO7}
+        \label{fig:loops_to7}
+    \end{subfigure}
+
+    \caption{Loop detection for TumVi sequences}
+    \label{fig:loops_tumvi}
+\end{figure}
+
+En las tablas \ref{tab:MH_ablation_ate} y \ref{tab:MH_ablation_rte} se muestran los resultados de ATE y RTE respectivamente, en las secuencias de MH.
+En este caso, el sistema que mayor precisión logra es BasaltLC, aunque la mejora respecto a Basalt original no es tan significativa.
+Es interesante que la introducción de rootba en BasaltSLAM empeora la precisión en unos centímetros.
+
+En términos de RTE, todos los sistemas mantienen una precisión similar.
+
 \begin{table}[ht]
 \centering
 \caption{MH: ATE [cm]}
-\label{tab:MH_ate}
+\label{tab:MH_ablation_ate}
 \begin{tabular}{lrrrr}
 \toprule
 \textbf{Dataset} & \textbf{Basalt} & \textbf{BasaltLC} & \textbf{BasaltSLAM} & \textbf{BasaltSLAM-CQ} \\
@@ -536,7 +647,7 @@ Mean & 9.1 & \textbf{6.8} & 8.2 & 8.4 \\
 \begin{table}[ht]
 \centering
 \caption{MH: RTE [cm]}
-\label{tab:MH_rte}
+\label{tab:MH_ablation_rte}
 \begin{tabular}{lrrrr}
 \toprule
 \textbf{Dataset} & \textbf{Basalt} & \textbf{BasaltLC} & \textbf{BasaltSLAM} & \textbf{BasaltSLAM-CQ} \\
@@ -553,10 +664,15 @@ Mean & \textbf{0.9} & \textbf{0.9} & \textbf{0.9} & 1.0 \\
 \end{tabular}
 \end{table}
 
+En las tablas \ref{tab:V1_ablation_ate} y \ref{tab:V1_ablation_rte} se muestran los resultados de ATE y RTE respectivamente, en las secuencias de Vicon Room 1.
+
+En este caso, BasaltSLAM logra una mejora con respecto a Basalt. Sin embargo, para la secuencia EV103, sucede algo similar
+a Machine Hall, ya que la introducción de rootba empeora la precisión.
+
 \begin{table}[ht]
 \centering
 \caption{V1: ATE [cm]}
-\label{tab:V1_ate}
+\label{tab:V1_ablation_ate}
 \begin{tabular}{lrrrr}
 \toprule
 \textbf{Dataset} & \textbf{Basalt} & \textbf{BasaltLC} & \textbf{BasaltSLAM} & \textbf{BasaltSLAM-CQ} \\
@@ -574,7 +690,7 @@ Mean & 5.1 & 5.0 & 6.7 & \textbf{4.6} \\
 \begin{table}[ht]
 \centering
 \caption{V1: RTE [cm]}
-\label{tab:V1_rte}
+\label{tab:V1_ablation_rte}
 \begin{tabular}{lrrrr}
 \toprule
 \textbf{Dataset} & \textbf{Basalt} & \textbf{BasaltLC} & \textbf{BasaltSLAM} & \textbf{BasaltSLAM-CQ} \\
@@ -589,10 +705,15 @@ Mean & \textbf{1.2} & 1.3 & 2.2 & 1.6 \\
 \end{tabular}
 \end{table}
 
+Finalmente, en las tablas \ref{tab:V2_ablation_ate} y \ref{tab:V2_ablation_rte} se muestran los resultados de ATE y RTE respectivamente, en las secuencias de Vicon Room 2.
+
+En este caso, BasaltLC es el que logra una mayor precisión en ATE. Aunque en RTE Basalt mantiene el mejor resultado.
+Con la introducción de rootba en BasaltSLAM, se observa una vez más que se reduce la precisión notablemente.
+
 \begin{table}[ht]
 \centering
 \caption{V2: ATE [cm]}
-\label{tab:V2_ate}
+\label{tab:V2_ablation_ate}
 \begin{tabular}{lrrrr}
 \toprule
 \textbf{Dataset} & \textbf{Basalt} & \textbf{BasaltLC} & \textbf{BasaltSLAM} & \textbf{BasaltSLAM-CQ} \\
@@ -610,7 +731,7 @@ Mean & 7.8 & \textbf{5.0} & 9.1 & 10.6 \\
 \begin{table}[ht]
 \centering
 \caption{V2: RTE [cm]}
-\label{tab:V2_rte}
+\label{tab:V2_ablation_rte}
 \begin{tabular}{lrrrr}
 \toprule
 \textbf{Dataset} & \textbf{Basalt} & \textbf{BasaltLC} & \textbf{BasaltSLAM} & \textbf{BasaltSLAM-CQ} \\
@@ -663,41 +784,261 @@ Mean & \textbf{1.2} & 1.5 & 3.9 & 4.5 \\
 \end{figure}
 
 
-\begin{figure}[ht]
-    \centering
-    \begin{subfigure}[b]{0.48\textwidth}
-        \centering
-        \includegraphics[width=\textwidth]{img/experiments/TC1.loops.pdf}
-        \caption{TC1}
-        \label{fig:loops_tc1}
-    \end{subfigure}
-    \hfill
-    \begin{subfigure}[b]{0.48\textwidth}
-        \centering
-        \includegraphics[width=\textwidth]{img/experiments/TM1.loops.pdf}
-        \caption{TM1}
-        \label{fig:loops_tm1}
-    \end{subfigure}
+\subsection{Resultados en datasets de XR} \label{sec:results_xr}
 
-    \vspace{0.5em}
+En las Tablas \ref{tab:msdmi_ablation_ate} y \ref{tab:msdmi_ablation_rte} se muestran los resultados de ATE y RTE respectivamente, en las secuencias de MI*.
+Se observa que, en gran parte de las secuencias, se detecta un gran número de ciclos. Esto hace que BasaltLC logre reducir
+la mediana del ATE en más de un 85\%, en comparación con Basalt. Más aún, con la incorporación de RootBA en BasaltSLAM, se consigue
+una mejora adicional, logrando una precisión menor a 3 cm en la mayoría de las secuencias.
+En cuanto a BasaltSLAM+CQ, en algunas secuencias se observan mejoras interesantes, como en MIPB02 o MIO16. Sin embargo,
+en la secuencia MIO01, la incorporación de la query de covisibilidad hace que el sistema pierda la localización. Esto puede
+deberse a la reidentificación incorrecta de un landmark, aunque es un problema que debería ser investigado con mayor profundidad.
+Además, el sistema no es capaz de completar la secuencia MIPB08, que es la de mayor duración con más de 35 minutos. Esto se debe a
+que, de acuerdo al diseño actual del sistema, para poder reidentificar landmarks, se guardan los parches de todos los keypoints
+detectados desde el comienzo de la secuencia. Esto hace que, a medida que avanza la secuencia, el número de parches almacenados crezca,
+hasta que el proceso se queda sin memoria.
+En términos de RTE, Basalt es el sistema que logra la mejor precisión, aunque BasaltLC y BasaltSLAM logran una precisión similar.
 
-    \begin{subfigure}[b]{0.48\textwidth}
-        \centering
-        \includegraphics[width=\textwidth]{img/experiments/TO3.loops.pdf}
-        \caption{TO3}
-        \label{fig:loops_to3}
-    \end{subfigure}
-    \hfill
-    \begin{subfigure}[b]{0.48\textwidth}
-        \centering
-        \includegraphics[width=\textwidth]{img/experiments/TO7.loops.pdf}
-        \caption{TO7}
-        \label{fig:loops_to7}
-    \end{subfigure}
+\begin{table}[ht]
+\centering
+\caption{msdmi: ATE [cm]}
+\label{tab:msdmi_ablation_ate}
+\begin{tabular}{lrrrr}
+\toprule
+\textbf{Dataset} & \textbf{Basalt} & \textbf{BasaltLC} & \textbf{BasaltSLAM} & \textbf{BasaltSLAM-CQ} \\
+\midrule
+MIO01 & 62.0 & 22.4 (273) & \textbf{18.7} (273) & 3787.2 (118) \\
+MIO02 & 118.3 & 32.0 (91) & \textbf{23.6} (91) & 37.5 (40) \\
+MIO03 & 9.4 & 5.7 (138) & \textbf{2.5} (138) & 3.4 (62) \\
+MIO04 & 20.7 & \textbf{7.0} (182) & 7.4 (182) & 8.0 (109) \\
+MIO05 & 3.4 & 3.8 (94) & 1.9 (94) & \textbf{1.6} (38) \\
+MIO06 & 4.9 & 4.5 (131) & 2.6 (131) & \textbf{2.4} (78) \\
+MIO07 & 2.3 & 4.2 (29) & \textbf{1.2} (29) & 2.3 (13) \\
+MIO08 & 5.7 & \textbf{2.9} (3) & 6.9 (3) & 4.3 (1) \\
+MIO09 & 0.6 & 0.6 (0) & \textbf{0.2} (0) & 0.5 (0) \\
+MIO10 & \textbf{1.5} & 1.6 (0) & 1.8 (0) & 2.7 (0) \\
+MIO11 & 2.4 & 2.5 (0) & \textbf{2.3} (0) & 3.3 (0) \\
+MIO12 & 43.5 & 4.8 (221) & \textbf{4.2} (221) & 4.3 (146) \\
+MIO13 & 108.4 & 28.5 (130) & 28.0 (130) & \textbf{25.5} (72) \\
+MIO14 & 9.7 & 3.7 (171) & \textbf{2.5} (171) & 3.4 (68) \\
+MIO15 & 79.5 & 12.4 (197) & \textbf{10.7} (197) & 13.5 (92) \\
+MIO16 & 53.1 & 13.3 (57) & 18.7 (57) & \textbf{9.1} (41) \\
+MIPB01 & 27.9 & 3.5 (686) & \textbf{1.3} (686) & \textbf{1.3} (283) \\
+MIPB02 & 23.5 & 3.7 (492) & 3.5 (492) & \textbf{1.8} (208) \\
+MIPB03 & 18.9 & 4.3 (609) & \textbf{2.9} (609) & 3.7 (284) \\
+MIPB04 & 10.4 & 4.3 (433) & 2.0 (433) & \textbf{1.8} (151) \\
+MIPB05 & 4.4 & 3.2 (459) & \textbf{1.4} (459) & 2.7 (147) \\
+MIPB06 & 4.8 & 4.0 (310) & 2.9 (310) & \textbf{1.9} (117) \\
+MIPB07 & 6.2 & 3.5 (490) & \textbf{1.6} (490) & 1.8 (139) \\
+MIPB08 & 63.0 & 4.5 (1264) & \textbf{3.9} (1264) & -- \\
+MIPP01 & 43.9 & 4.5 (632) & 2.9 (632) & \textbf{2.8} (329) \\
+MIPP02 & 24.1 & 4.1 (354) & 3.9 (354) & \textbf{3.1} (171) \\
+MIPP03 & 26.9 & 4.4 (507) & 4.8 (507) & \textbf{3.2} (271) \\
+MIPP04 & 28.7 & 4.0 (544) & 2.5 (544) & \textbf{2.4} (300) \\
+MIPP05 & 18.3 & 3.1 (407) & \textbf{2.7} (407) & \textbf{2.7} (223) \\
+MIPP06 & 28.3 & 3.9 (806) & 2.7 (806) & \textbf{2.3} (434) \\
+MIPT01 & 10.6 & 4.3 (723) & \textbf{1.7} (723) & 1.9 (333) \\
+MIPT02 & 19.8 & 3.5 (1189) & \textbf{2.1} (1189) & \textbf{2.1} (616) \\
+MIPT03 & 39.9 & 4.0 (1178) & \textbf{3.5} (1178) & \textbf{3.5} (517) \\
+\midrule
+Median & 19.8 & 4.1 & \textbf{2.7} & 2.8 \\
+Mean & 28.0 & 6.6 & \textbf{5.4} & 123.4 \\
+\bottomrule
+\end{tabular}
+\end{table}
 
-    \caption{Loop detection for TumVi sequences}
-    \label{fig:loops_tumvi}
-\end{figure}
+\begin{table}[ht]
+\centering
+\caption{msdmi: RTE [cm]}
+\label{tab:msdmi_ablation_rte}
+\begin{tabular}{lrrrr}
+\toprule
+\textbf{Dataset} & \textbf{Basalt} & \textbf{BasaltLC} & \textbf{BasaltSLAM} & \textbf{BasaltSLAM-CQ} \\
+\midrule
+MIO01 & \textbf{3.7} & 4.4 (273) & 4.4 (273) & 603.5 (118) \\
+MIO02 & 6.5 & 6.3 (91) & \textbf{4.0} (91) & 6.1 (40) \\
+MIO03 & \textbf{0.6} & 0.7 (138) & 1.0 (138) & 1.2 (62) \\
+MIO04 & \textbf{1.3} & 1.5 (182) & 3.6 (182) & 4.0 (109) \\
+MIO05 & \textbf{0.3} & 0.5 (94) & \textbf{0.3} (94) & 0.4 (38) \\
+MIO06 & \textbf{1.0} & 1.3 (131) & 1.4 (131) & 1.2 (78) \\
+MIO07 & \textbf{0.2} & 0.5 (29) & \textbf{0.2} (29) & 0.5 (13) \\
+MIO08 & \textbf{0.7} & 0.8 (3) & 3.9 (3) & 1.6 (1) \\
+MIO09 & 0.3 & 0.3 (0) & \textbf{0.2} (0) & 0.4 (0) \\
+MIO10 & \textbf{0.5} & \textbf{0.5} (0) & 0.6 (0) & 0.7 (0) \\
+MIO11 & 0.7 & 0.7 (0) & \textbf{0.6} (0) & 1.2 (0) \\
+MIO12 & \textbf{0.6} & \textbf{0.6} (221) & \textbf{0.6} (221) & 0.8 (146) \\
+MIO13 & 2.9 & 2.8 (130) & \textbf{2.7} (130) & 3.1 (72) \\
+MIO14 & \textbf{0.3} & \textbf{0.3} (171) & \textbf{0.3} (171) & 0.4 (68) \\
+MIO15 & \textbf{1.2} & 1.3 (197) & 1.3 (197) & 1.7 (92) \\
+MIO16 & \textbf{1.3} & \textbf{1.3} (57) & 2.5 (57) & 1.7 (41) \\
+MIPB01 & 0.7 & 1.0 (686) & \textbf{0.6} (686) & \textbf{0.6} (283) \\
+MIPB02 & \textbf{0.5} & 0.9 (492) & 2.7 (492) & \textbf{0.5} (208) \\
+MIPB03 & \textbf{0.6} & 0.7 (609) & 0.7 (609) & 1.3 (284) \\
+MIPB04 & \textbf{0.5} & 0.6 (433) & 0.6 (433) & \textbf{0.5} (151) \\
+MIPB05 & \textbf{0.4} & 0.6 (459) & 0.5 (459) & \textbf{0.4} (147) \\
+MIPB06 & \textbf{0.4} & 0.5 (310) & 0.5 (310) & 0.5 (117) \\
+MIPB07 & \textbf{0.5} & 0.6 (490) & \textbf{0.5} (490) & 0.6 (139) \\
+MIPB08 & \textbf{0.4} & \textbf{0.4} (1264) & 0.5 (1264) & -- \\
+MIPP01 & \textbf{1.0} & 1.2 (632) & 1.1 (632) & 1.3 (329) \\
+MIPP02 & \textbf{1.0} & 1.2 (354) & 1.7 (354) & 1.5 (171) \\
+MIPP03 & \textbf{0.9} & 1.0 (507) & 2.3 (507) & 1.4 (271) \\
+MIPP04 & \textbf{0.8} & 0.9 (544) & 1.0 (544) & 1.0 (300) \\
+MIPP05 & \textbf{0.6} & 0.7 (407) & 1.9 (407) & 1.2 (223) \\
+MIPP06 & \textbf{1.0} & 1.1 (806) & 1.2 (806) & \textbf{1.0} (434) \\
+MIPT01 & \textbf{0.4} & 0.6 (723) & 0.5 (723) & 0.6 (333) \\
+MIPT02 & \textbf{0.4} & 0.5 (1189) & 0.5 (1189) & 0.5 (616) \\
+MIPT03 & \textbf{0.6} & 0.7 (1178) & \textbf{0.6} (1178) & 0.7 (517) \\
+\midrule
+Median & \textbf{0.6} & 0.7 & 0.7 & 1.0 \\
+Mean & \textbf{1.0} & 1.1 & 1.4 & 20.1 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+En las Tablas \ref{tab:msdgo_ablation_ate} y \ref{tab:msdgo_ablation_rte} se muestran los resultados de ATE y RTE respectivamente, en las secuencias de MG*.
+Se observan resultados similares a los obtenidos en las secuencias de MI*. BasaltSLAM es el sistema que logra la mejor precisión,
+mejorando la mediana del ATE en más de un 70\% en comparación con Basalt. La incorporación de la query de covisibilidad en BasaltSLAM+CQ
+consigue un resultado interesante en la secuencia MGO01. Aunque el problema de memoria previamente mencionado, hace que no
+pueda completar la secuencia MGO12, de más de 40 minutos de duración.
+En términos de RTE, BasaltSLAM consigue mayor precisión en la mayoría de secuencias, aunque todas mantienen una precisión similar.
+
+\begin{table}[ht]
+\centering
+\caption{msdgo: ATE [cm]}
+\label{tab:msdgo_ablation_ate}
+\begin{tabular}{lrrrr}
+\toprule
+\textbf{Dataset} & \textbf{Basalt} & \textbf{BasaltLC} & \textbf{BasaltSLAM} & \textbf{BasaltSLAM-CQ} \\
+\midrule
+MGO01 & 68.0 & 13.4 (43) & 12.1 (43) & \textbf{3.4} (40) \\
+MGO02 & 55.6 & 8.3 (82) & 7.5 (82) & \textbf{6.2} (76) \\
+MGO03 & 14.5 & 4.2 (122) & \textbf{1.7} (122) & \textbf{1.7} (98) \\
+MGO04 & 26.1 & 6.7 (62) & \textbf{5.4} (62) & 5.7 (51) \\
+MGO05 & 3.0 & 3.0 (81) & \textbf{1.7} (81) & \textbf{1.7} (65) \\
+MGO06 & 11.1 & 5.2 (94) & 4.1 (94) & \textbf{3.1} (78) \\
+MGO07 & 2.1 & 2.1 (23) & \textbf{1.4} (23) & 1.5 (14) \\
+MGO08 & \textbf{2.7} & 2.8 (2) & 5.0 (2) & 3.8 (0) \\
+MGO09 & \textbf{0.8} & \textbf{0.8} (0) & 1.1 (0) & 1.0 (0) \\
+MGO10 & \textbf{0.8} & 0.9 (0) & 1.4 (0) & 1.2 (0) \\
+MGO11 & 1.7 & 1.7 (0) & \textbf{1.0} (0) & \textbf{1.0} (0) \\
+MGO12 & 60.7 & 5.8 (931) & \textbf{5.4} (931) & -- \\
+MGO13 & 68.4 & 8.6 (43) & 8.6 (43) & \textbf{8.2} (34) \\
+MGO14 & 7.0 & 3.9 (82) & \textbf{1.9} (82) & 2.2 (70) \\
+MGO15 & 3.5 & 4.1 (30) & 1.9 (30) & \textbf{1.3} (28) \\
+\midrule
+Median & 7.0 & 4.1 & \textbf{1.9} & 2.0 \\
+Mean & 21.7 & 4.8 & 4.0 & \textbf{3.0} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{table}[ht]
+\centering
+\caption{msdgo: RTE [cm]}
+\label{tab:msdgo_ablation_rte}
+\begin{tabular}{lrrrr}
+\toprule
+\textbf{Dataset} & \textbf{Basalt} & \textbf{BasaltLC} & \textbf{BasaltSLAM} & \textbf{BasaltSLAM-CQ} \\
+\midrule
+MGO01 & \textbf{2.3} & 2.5 (43) & 2.4 (43) & 2.7 (40) \\
+MGO02 & \textbf{2.8} & 3.0 (82) & 3.1 (82) & 5.6 (76) \\
+MGO03 & 1.3 & 1.5 (122) & \textbf{1.1} (122) & 1.2 (98) \\
+MGO04 & \textbf{2.5} & 2.7 (62) & 2.8 (62) & 3.7 (51) \\
+MGO05 & 0.4 & 0.5 (81) & \textbf{0.3} (81) & 0.4 (65) \\
+MGO06 & 1.8 & 2.0 (94) & \textbf{1.6} (94) & 1.9 (78) \\
+MGO07 & 0.6 & 0.6 (23) & \textbf{0.4} (23) & 0.5 (14) \\
+MGO08 & \textbf{1.3} & 1.4 (2) & 3.5 (2) & 2.4 (0) \\
+MGO09 & \textbf{0.6} & 0.7 (0) & 0.7 (0) & 0.7 (0) \\
+MGO10 & 0.4 & 0.4 (0) & \textbf{0.3} (0) & \textbf{0.3} (0) \\
+MGO11 & 0.6 & 0.6 (0) & \textbf{0.4} (0) & 0.5 (0) \\
+MGO12 & \textbf{1.7} & 1.8 (931) & \textbf{1.7} (931) & -- \\
+MGO13 & \textbf{2.6} & 2.7 (43) & 4.1 (43) & 6.1 (34) \\
+MGO14 & 1.2 & 1.4 (82) & \textbf{0.9} (82) & 1.1 (70) \\
+MGO15 & 0.4 & 0.4 (30) & \textbf{0.3} (30) & \textbf{0.3} (28) \\
+\midrule
+Median & 1.3 & 1.4 & \textbf{1.1} & 1.2 \\
+Mean & \textbf{1.4} & 1.5 & 1.6 & 2.0 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+En las Tablas \ref{tab:msdmo_ablation_ate} y \ref{tab:msdmo_ablation_rte} se muestran los resultados de ATE y RTE respectivamente, en las secuencias de MO*.
+Una vez más, BasaltSLAM es que consigue los mejores resultados en ATE, mejorando la mediana en un 50\% en comparación con Basalt.
+La incorporación de la query de covisibilidad en BasaltSLAM+CQ consigue la mayor precisión en algunas secuencias, con un
+resultado especialmente destacado en la secuencia MOO15, en la cual es el único sistema que no pierde la localización. Además,
+se repite el problema de memoria previamente mencionado, que hace que el sistema no pueda completar la secuencia MOO12,
+de más de 40 minutos de duración.
+En términos de RTE, Basalt obtiene la mejor mediana y promedio, aunque todos los sistemas mantienen una precisión similar.
+
+\begin{table}[ht]
+\centering
+\caption{msdmo: ATE [cm]}
+\label{tab:msdmo_ablation_ate}
+\begin{tabular}{lrrrr}
+\toprule
+\textbf{Dataset} & \textbf{Basalt} & \textbf{BasaltLC} & \textbf{BasaltSLAM} & \textbf{BasaltSLAM-CQ} \\
+\midrule
+MOO01 & 28.1 & 4.4 (113) & \textbf{3.4} (113) & 4.7 (86) \\
+MOO02 & 23.8 & 4.2 (129) & 5.0 (129) & \textbf{3.7} (111) \\
+MOO03 & 17.7 & 4.7 (68) & 3.7 (68) & \textbf{3.2} (51) \\
+MOO04 & 6.5 & \textbf{3.8} (65) & 4.2 (65) & 6.3 (52) \\
+MOO05 & 1.8 & 1.9 (16) & 1.2 (16) & \textbf{1.0} (13) \\
+MOO06 & 5.6 & 4.3 (68) & 2.5 (68) & \textbf{1.4} (62) \\
+MOO07 & 1.3 & 1.3 (3) & 1.3 (3) & \textbf{1.2} (2) \\
+MOO08 & \textbf{2.8} & 2.9 (0) & 3.0 (0) & 6.9 (0) \\
+MOO09 & \textbf{0.4} & \textbf{0.4} (0) & 0.5 (0) & 0.5 (0) \\
+MOO10 & \textbf{1.0} & \textbf{1.0} (0) & 1.4 (0) & 1.5 (0) \\
+MOO11 & 1.9 & 1.9 (0) & 1.9 (0) & \textbf{1.6} (0) \\
+MOO12 & 69.0 & \textbf{8.5} (525) & 10.6 (525) & -- \\
+MOO13 & 50.1 & 7.7 (71) & 7.7 (71) & \textbf{6.6} (59) \\
+MOO14 & 11.3 & 4.9 (77) & \textbf{3.0} (77) & 4.6 (68) \\
+MOO15 & 205.3 & 292.3 (7) & 291.1 (7) & \textbf{6.6} (2) \\
+MOO16 & 1.4 & 1.4 (0) & 1.2 (0) & \textbf{0.4} (0) \\
+\midrule
+Median & 6.1 & 4.0 & \textbf{3.0} & 3.2 \\
+Mean & 26.7 & 21.6 & 21.3 & \textbf{3.4} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{table}[ht]
+\centering
+\caption{msdmo: RTE [cm]}
+\label{tab:msdmo_ablation_rte}
+\begin{tabular}{lrrrr}
+\toprule
+\textbf{Dataset} & \textbf{Basalt} & \textbf{BasaltLC} & \textbf{BasaltSLAM} & \textbf{BasaltSLAM-CQ} \\
+\midrule
+MOO01 & \textbf{1.7} & 1.8 (113) & \textbf{1.7} (113) & 1.9 (86) \\
+MOO02 & \textbf{1.5} & 1.6 (129) & 3.1 (129) & 1.9 (111) \\
+MOO03 & 1.4 & 1.5 (68) & \textbf{1.2} (68) & 1.8 (51) \\
+MOO04 & \textbf{1.0} & 1.1 (65) & 1.6 (65) & 2.3 (52) \\
+MOO05 & \textbf{0.3} & \textbf{0.3} (16) & \textbf{0.3} (16) & \textbf{0.3} (13) \\
+MOO06 & \textbf{0.8} & 0.9 (68) & 1.0 (68) & \textbf{0.8} (62) \\
+MOO07 & \textbf{0.3} & 0.4 (3) & \textbf{0.3} (3) & \textbf{0.3} (2) \\
+MOO08 & \textbf{1.1} & 1.4 (0) & 1.2 (0) & 2.6 (0) \\
+MOO09 & \textbf{0.3} & \textbf{0.3} (0) & \textbf{0.3} (0) & \textbf{0.3} (0) \\
+MOO10 & \textbf{0.4} & \textbf{0.4} (0) & \textbf{0.4} (0) & 0.5 (0) \\
+MOO11 & \textbf{0.5} & \textbf{0.5} (0) & \textbf{0.5} (0) & 0.6 (0) \\
+MOO12 & \textbf{0.8} & \textbf{0.8} (525) & 1.0 (525) & -- \\
+MOO13 & \textbf{1.7} & \textbf{1.7} (71) & 2.9 (71) & 3.4 (59) \\
+MOO14 & \textbf{0.8} & 0.9 (77) & 1.7 (77) & 1.7 (68) \\
+MOO15 & 4.3 & 6.3 (7) & 11.0 (7) & \textbf{1.0} (2) \\
+MOO16 & 0.2 & 0.2 (0) & \textbf{0.1} (0) & \textbf{0.1} (0) \\
+\midrule
+Median & \textbf{0.8} & 0.9 & 1.1 & 1.0 \\
+Mean & \textbf{1.1} & 1.3 & 1.8 & 1.3 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+En la Figura \ref{fig:msd_ablation_trajectories} se muestran algunas trayectorias estimadas por los diferentes sistemas en las secuencias de MSD.
+Se puede observar, de manera cualitativa, el impacto de las detecciones y cierres de ciclos en las trayectorias estimadas.
+
+Además, en las Figuras \ref{fig:mipp01_ablation_maps} y \ref{fig:mgo01_ablation_maps} se muestran los mapas obtenidos por los diferentes sistemas en las secuencias
+MIPP01 y MGO01 respectivamente. Se puede observar la reducción de outliers al incorporar cierres de ciclo y culling de keyframes en BasaltLC.
+En BasaltSLAM se puede observar una mejora en la densidad de puntos, con un mapa más detallado, debido a la optimización global
+de RootBA.
 
 \begin{figure}[ht]
     \centering
@@ -732,28 +1073,7 @@ Mean & \textbf{1.2} & 1.5 & 3.9 & 4.5 \\
     \end{subfigure}
 
     \caption{Trajectory comparisons for MSD sequences}
-    \label{fig:trajectories}
-\end{figure}
-
-\begin{figure}[ht]
-    \centering
-    \includegraphics[width=0.8\textwidth]{img/experiments/MOO01.timings.ablation.pdf}
-    \caption{Figure 2}
-    \label{fig:experiments_figure12}
-\end{figure}
-
-\begin{figure}[ht]
-    \centering
-    \includegraphics[width=0.8\textwidth]{img/experiments/MGO04.timings.ablation.pdf}
-    \caption{Figure 2}
-    \label{fig:experiments_figure13}
-\end{figure}
-
-\begin{figure}[ht]
-    \centering
-    \includegraphics[width=0.8\textwidth]{img/experiments/MIO02.timings.ablation.pdf}
-    \caption{Figure 3}
-    \label{fig:experiments_figure14}
+    \label{fig:msd_ablation_trajectories}
 \end{figure}
 
 \begin{figure}[ht]
@@ -779,7 +1099,7 @@ Mean & \textbf{1.2} & 1.5 & 3.9 & 4.5 \\
         \label{fig:experiments_figure17}
     \end{subfigure}
     \caption{Map MIPP01}
-    \label{fig:mipp01_maps}
+    \label{fig:mipp01_ablation_maps}
 \end{figure}
 
 \begin{figure}[ht]
@@ -805,56 +1125,290 @@ Mean & \textbf{1.2} & 1.5 & 3.9 & 4.5 \\
         \label{fig:experiments_figure18}
     \end{subfigure}
     \caption{Map MGO01}
-    \label{fig:mgo01_maps}
+    \label{fig:mgo01_ablation_maps}
 \end{figure}
 
+En la Figura \ref{fig:msd_ablation_timings} se muestran los tiempos de procesamiento por frame para cada sistema
+en las secuencias de MSD. Para este análisis no se tuvo en cuenta la versión BasaltSLAM, ya que no era posible representar
+en gráficas como estas el tiempo de procesamiento de la optimización final de RootBA, dejando el análisis de performance de
+RootBA para las siguientes secciones. Se observa que, para los cascos Odyssey+ y HP Reverb G2 V2, tanto BasaltLC como
+BasaltLC-CQ mantienen un tiempo de procesamiento por frame por debajo del límite de tiempo para la operación en tiempo real,
+aunque muestran un promedio de procesamiento levemente superior a Basalt.
+En el caso del Valve Index, BasaltLC obtiene una diferencia de 0.6 ms de promedio en comparación con Basalt. Aún así, su promedio
+móvil se mantiene por debajo del límite de tiempo para la operación en tiempo real, con un margen ajustado. Por otro lado,
+BasaltLC-CQ muestra un aumento de 5.1 ms de promedio en comparación con Basalt, lo que hace que su promedio móvil supere el
+límite de tiempo para la operación en tiempo real.
 
-? BasaltSLAM vs BasaltSLAM + covi request
-- ATE, RTE
-- non det performance (todas las de msd, tumvi y euroc) (+ gráficos para algún que otro ds) (contar que empeora el vio significativamente)
+\begin{figure}[ht]
+    \centering
+    \begin{subfigure}[b]{0.48\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{img/experiments/MOO01.timings.ablation.pdf}
+        \caption{Secuencia capturada con Odyssey+}
+        \label{fig:experiments_figure16}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}[b]{0.48\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{img/experiments/MGO04.timings.ablation.pdf}
+        \caption{Secuencia capturada con HP Reverb G2 V2}
+        \label{fig:experiments_figure17}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}[b]{0.48\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{img/experiments/MIO02.timings.ablation.pdf}
+        \caption{Secuencia capturada con Valve Index}
+        \label{fig:experiments_figure18}
+    \end{subfigure}
+    \caption{Tiempo de procesamiento por frame para cada sistema en las secuencias de MO*, MG* y MI* respectivamente.
+    Se muestra un promedio móvil con una ventana de 2 segundos (60 frames). En el fondo, los datos sin procesar muestran
+    outliers y jitter para cada sistema. Una línea roja marca el límite de tiempo para la operación en tiempo real para cada headset.
+    Notar que BasaltLC y BasaltLC-CQ se ejecutaron en su versión síncrona, con el mapa asíncrono. Experimento realizado
+    en un procesador Intel Core Ultra 9 285H con 32 GB de RAM.}
+    \label{fig:msd_ablation_timings}
+\end{figure}
+
+En conclusión, como era de esperar, BasaltSLAM es el sistema más robusto, que consigue la mejor precisión en términos de ATE,
+manteniendo una precisión similar a Basalt en RTE. Además, consigue esos resultados sin perder la posibilidad de funcionar
+en tiempo real. En la siguiente sección, se comparará la performance de BasaltSLAM con otros sistemas del estado del arte,
+para evaluar su rendimiento en comparación con otros sistemas de SLAM visual-inercial.
 
 \section{BasaltSLAM vs estado del arte}
 
-\begin{figure}[ht]
-    \centering
-    \includegraphics[width=0.8\textwidth]{img/experiments/MOO01.timings.pdf}
-    \caption{Figure 2}
-    \label{fig:experiments_figure2}
-\end{figure}
+El objetivo de este experimento es evaluar la performance de BasaltSLAM en comparación con
+otros sistemas del estado del arte. Se eligieron ORB-SLAM3 y OKVIS2 como sistemas de referencia.
+Ambos fueron ejecutados en sus versiones SLAM con loop closure y optimización final de bundle adjustment.
+Al igual que en el estudio de ablación, se analiza la estimación no causal de la trayectoria y la performance de cada sistema.
+
+Primero, se presentarán los resultados en los datasets del estado del arte. Luego, se finalizará con los resultados en los
+datasets de MSD, en los cuales además se analizará la performance y robustez.
+
+\subsection{Resultados en datasets del estado del arte}
+
+En la Tabla \ref{tab:corridor_sota_ate} se muestran los resultados de ATE para las secuencias ``corridor''.
+Se observa que BasaltSLAM obtiene resultados levemente mejores que OKVIS2, y ORB-SLAM3 obtiene los mejores resultados.
+
+\begin{table}[ht]
+\centering
+\caption{corridor: ATE [m]}
+\label{tab:corridor_sota_ate}
+\begin{tabular}{lrrr}
+\toprule
+\textbf{Dataset} & \textbf{BasaltSLAM} & \textbf{OKVIS2} & \textbf{ORB-SLAM3} \\
+\midrule
+TC1 & \textbf{0.03} & 0.09 & \textbf{0.03} \\
+TC2 & 0.07 & 0.06 & \textbf{0.02} \\
+TC3 & 0.06 & \textbf{0.02} & \textbf{0.02} \\
+TC4 & 0.22 & \textbf{0.18} & 0.21 \\
+TC5 & 0.03 & 0.09 & \textbf{0.01} \\
+\midrule
+Median & 0.06 & 0.09 & \textbf{0.02} \\
+Mean & 0.08 & 0.09 & \textbf{0.06} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+En la Tabla \ref{tab:magistrale_sota_ate} se muestran los resultados de ATE para las secuencias ``magistrale''.
+En este caso, OKVIS2 consigue detectar ciclos más consistentemente y obtiene resultados significativamente mejores
+que BasaltSLAM y ORB-SLAM3.
+Sin embargo, en TM6 BasaltSLAM es capaz de detectar ciclos que ninguno de los otros sistemas pudo detectar, obteniendo
+un resultado significativamente mejor.
+
+\begin{table}[ht]
+\centering
+\caption{magistrale: ATE [m]}
+\label{tab:magistrale_sota_ate}
+\begin{tabular}{lrrr}
+\toprule
+\textbf{Dataset} & \textbf{BasaltSLAM} & \textbf{OKVIS2} & \textbf{ORB-SLAM3} \\
+\midrule
+TM1 & 0.07 & \textbf{0.03} & 0.24 \\
+TM2 & 0.87 & \textbf{0.03} & 0.52 \\
+TM3 & 1.66 & \textbf{0.93} & 1.86 \\
+TM4 & 1.51 & \textbf{0.04} & 0.16 \\
+TM5 & 0.95 & \textbf{0.01} & 1.13 \\
+TM6 & \textbf{0.02} & 0.63 & 0.97 \\
+\midrule
+Median & 0.91 & \textbf{0.04} & 0.74 \\
+Mean & 0.85 & \textbf{0.28} & 0.81 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+En la Tabla \ref{tab:outdoors_sota_ate} se muestran los resultados de ATE para las secuencias ``outdoors''.
+En este caso, todos los sistemas presentan dificultades para detectar ciclos, aunque OKVIS2 destaca en las secuencias
+TO2, TO7 y TO8 donde consigue detectar ciclos importantes, obteniendo resultados significativamente mejores
+que BasaltSLAM y ORB-SLAM3. Para entender mejor lo que ocurre en estas secuencias, la grabación comienza
+capturando una mitad de una habitación, luego se sale de la habitación, haciendo un recorrido por el exterior
+y finalmente se reingresa en la misma habitación, capturando la otra mitad. Los ciclos más significativos
+que consiguen reducir el ATE se dan al reentrar en la misma habitación, pero como captura la pared contraria,
+existe una intersección pequeña entre la escena vieja y la nueva, lo que hace que sea difícil de detectar para los sistemas.
+
+En la Figura \ref{fig:to2_hard_loop} se muestra un ejemplo de Basalt, para el cual se redujeron los parámetros de detección
+para necesitar solo 10 inliers para validar un ciclo. Esto permitió detectar uno de estos ciclos donde la intersección es pequeña,
+pero también se detectó un gran número de falsos positivos. Esto puede ser un indicio de la superioridad de OKVIS2,
+ya que este sistema requiere solo 10 inliers para detectar ciclos, compensando con un mayor número de verificaciones geométricas
+para evitar falsos positivos.
+
+\begin{table}[ht]
+\centering
+\caption{outdoors: ATE [m]}
+\label{tab:outdoors_sota_ate}
+\begin{tabular}{lrrr}
+\toprule
+\textbf{Dataset} & \textbf{BasaltSLAM} & \textbf{OKVIS2} & \textbf{ORB-SLAM3} \\
+\midrule
+TO1 & 284.24 & \textbf{24.92} & 32.32 \\
+TO2 & 60.45 & \textbf{0.04} & 10.42 \\
+TO3 & 34.92 & \textbf{27.14} & 54.77 \\
+TO4 & 14.07 & \textbf{7.42} & 11.61 \\
+TO5 & 12.62 & \textbf{6.67} & 7.57 \\
+TO6 & 77.55 & 26.37 & \textbf{10.70} \\
+TO7 & 2.07 & \textbf{0.15} & 4.58 \\
+TO8 & 12.15 & \textbf{0.05} & 11.02 \\
+\midrule
+Median & 24.50 & \textbf{7.04} & 10.86 \\
+Mean & 62.26 & \textbf{11.60} & 17.87 \\
+\bottomrule
+\end{tabular}
+\end{table}
 
 \begin{figure}[ht]
     \centering
-    \includegraphics[width=0.8\textwidth]{img/experiments/MGO04.timings.pdf}
-    \caption{Figure 2}
-    \label{fig:experiments_figure3}
-\end{figure}
-
-\begin{figure}[ht]
-    \centering
-    \includegraphics[width=0.8\textwidth]{img/experiments/MIO02.timings.pdf}
-    \caption{Figure 3}
-    \label{fig:experiments_figure4}
+    \includegraphics[width=0.8\textwidth]{img/experiments/TO2.hard_loop.pdf}
+    \caption{Ciclo detectado en la secuencia TO2, con una intersección pequeña entre la escena vieja y la nueva.
+    Para detectar este ciclo, se redujeron los parámetros de detección de Basalt, necesitando solo 10 inliers.
+    Se dibuja la trayectoria ground truth, en vez de la estimada, pues esta tuvo un gran número de falsos positivos que la corrompieron.}
+    \label{fig:to2_hard_loop}
 \end{figure}
 
 
-Qué onda con estos datasets que ni Basalt ni OKVIS2 pueden resolverlos?
-Los ciclos más significativos se dan al reentrar en la misma habitación. el tema es que cuando entra,
-captura la pared contraria de la habitación, con una intersección pequeña. si el sistema no puede aprovechar eso,
-está complicado
+En la Tabla \ref{tab:room_sota_ate} se muestran los resultados de ATE para las secuencias ``room''.
+En este caso, todos los sistemas se encuentran al mismo nivel, con una precisión milimétrica.
 
-Lo que sucede es que okvis2 usa dbow2 y tiene un número de inliers bajo para detectar ciclos (10).
-Con basalt tengo las siguientes contras:
-- hashbow tiene menos precisión que dbow2. esto es agravado en estos datasets outdoors con nubes
-- puedo subir el num frames en la query, pero eso lo hace más lento
-- en comparación a okvis2, yo tengo que poner un número de inliers alto, para evitar falsos positivos.
-esto hace que no consiga detectar ciclos como estos, donde solo una parte de la imagen ve una escena vieja.
-si bajo este numero a 10, igual que okvis2, consigo detectar ese ciclo importante, pero a costa de que me detecta
-muchos falsos positivos en otros momentos, lo que hace que tenga un mapa re corrupto
+\begin{table}[ht]
+\centering
+\caption{room: ATE [m]}
+\label{tab:room_sota_ate}
+\begin{tabular}{lrrr}
+\toprule
+\textbf{Dataset} & \textbf{BasaltSLAM} & \textbf{OKVIS2} & \textbf{ORB-SLAM3} \\
+\midrule
+TR1 & \textbf{0.01} & \textbf{0.01} & \textbf{0.01} \\
+TR2 & \textbf{0.01} & \textbf{0.01} & \textbf{0.01} \\
+TR3 & \textbf{0.01} & \textbf{0.01} & \textbf{0.01} \\
+TR4 & \textbf{0.01} & \textbf{0.01} & \textbf{0.01} \\
+TR5 & \textbf{0.01} & \textbf{0.01} & \textbf{0.01} \\
+TR6 & \textbf{0.01} & \textbf{0.01} & \textbf{0.01} \\
+\midrule
+Median & \textbf{0.01} & \textbf{0.01} & \textbf{0.01} \\
+Mean & \textbf{0.01} & \textbf{0.01} & \textbf{0.01} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+
+En la Tabla \ref{tab:slides_sota_ate} se muestran los resultados de ATE para las secuencias ``slides''.
+En este caso, BasaltSLAM obtiene resultados superiores para la secuencia TS1, pero OKVIS2 y ORB-SLAM3 obtienen mejores resultados
+en las secuencias TS2 y TS3 respectivamente.
+
+\begin{table}[ht]
+\centering
+\caption{slides: ATE [m]}
+\label{tab:slides_sota_ate}
+\begin{tabular}{lrrr}
+\toprule
+\textbf{Dataset} & \textbf{BasaltSLAM} & \textbf{OKVIS2} & \textbf{ORB-SLAM3} \\
+\midrule
+TS1 & \textbf{0.01} & 0.10 & 0.41 \\
+TS2 & 1.23 & \textbf{0.16} & 0.49 \\
+TS3 & 1.51 & 1.35 & \textbf{0.47} \\
+\midrule
+Median & 1.23 & \textbf{0.16} & 0.47 \\
+Mean & 0.92 & 0.54 & \textbf{0.46} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+En la Tabla \ref{tab:MH_sota_ate} se muestran los resultados de ATE para las secuencias de ``Machine Hall''.
+OKVIS2 domina en este dataset, obteniendo resultados significativamente mejores que BasaltSLAM. ORB-SLAM3 se posiciona
+entre ambos sistemas, obteniendo mejores resultados que BasaltSLAM pero peores que OKVIS2.
+
+\begin{table}[ht]
+\centering
+\caption{MH: ATE [m]}
+\label{tab:MH_sota_ate}
+\begin{tabular}{lrrr}
+\toprule
+\textbf{Dataset} & \textbf{BasaltSLAM} & \textbf{OKVIS2} & \textbf{ORB-SLAM3} \\
+\midrule
+EMH01 & 0.08 & \textbf{0.03} & 0.04 \\
+EMH02 & 0.05 & \textbf{0.02} & 0.03 \\
+EMH03 & 0.05 & \textbf{0.03} & 0.04 \\
+EMH04 & 0.13 & 0.07 & \textbf{0.05} \\
+EMH05 & 0.09 & \textbf{0.07} & 0.08 \\
+\midrule
+Median & 0.08 & \textbf{0.03} & 0.04 \\
+Mean & 0.08 & \textbf{0.04} & 0.05 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+En la Tabla \ref{tab:V1_sota_ate} se muestran los resultados de ATE para las secuencias de ``Vicon Room 1''.
+En este caso, BasaltSLAM iguala los resultados de OKVIS2 y ORB-SLAM3 en EV101, pero en las secuencias EV102
+y EV103 OKVIS2 y ORB-SLAM3 consiguen resultados significativamente mejores que BasaltSLAM. Resultados similares
+se obtienen en la Tabla \ref{tab:V2_sota_ate} para las secuencias de ``Vicon Room 2''.
+
+\begin{table}[ht]
+\centering
+\caption{V1: ATE [m]}
+\label{tab:V1_sota_ate}
+\begin{tabular}{lrrr}
+\toprule
+\textbf{Dataset} & \textbf{BasaltSLAM} & \textbf{OKVIS2} & \textbf{ORB-SLAM3} \\
+\midrule
+EV101 & \textbf{0.04} & \textbf{0.04} & \textbf{0.04} \\
+EV102 & 0.03 & \textbf{0.01} & \textbf{0.01} \\
+EV103 & 0.13 & \textbf{0.02} & \textbf{0.02} \\
+\midrule
+Median & 0.04 & \textbf{0.02} & \textbf{0.02} \\
+Mean & 0.07 & \textbf{0.02} & 0.03 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{table}[ht]
+\centering
+\caption{V2: ATE [m]}
+\label{tab:V2_sota_ate}
+\begin{tabular}{lrrr}
+\toprule
+\textbf{Dataset} & \textbf{BasaltSLAM} & \textbf{OKVIS2} & \textbf{ORB-SLAM3} \\
+\midrule
+EV201 & 0.04 & \textbf{0.02} & 0.03 \\
+EV202 & 0.10 & \textbf{0.01} & \textbf{0.01} \\
+EV203 & 0.14 & \textbf{0.02} & \textbf{0.02} \\
+\midrule
+Median & 0.10 & \textbf{0.02} & \textbf{0.02} \\
+Mean & 0.09 & \textbf{0.02} & \textbf{0.02} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+
+\subsection{Resultados en datasets de XR}
+
+En las Tablas \ref{tab:msdmi_sota_ate}, \ref{tab:msdmi_sota_rte} y \ref{tab:msdmi_sota_completion} se muestran
+los resultados de ATE, RTE y porcentaje de secuencia completada respectivamente para las secuencias de MI*.
+OKVIS2 consigue la mejor mediana tanto para ATE, como para RTE. Sin embargo, BasaltSLAM se posiciona 0.3 y 0.2 cm por debajo
+respectivamente. Además, BasaltSLAM obtiene una robustez mayor, lo cual se refleja en que consigue la mejor media de ATE y RTE.
+ORB-SLAM3 obtiene resultados inferiores en ambas métricas, además de no completar un gran número de secuencias.
 
 \begin{table}[ht]
 \centering
 \caption{msdmi: ATE [cm]}
-\label{tab:msdmi_ate}
+\label{tab:msdmi_sota_ate}
 \begin{tabular}{lrrr}
 \toprule
 \textbf{Dataset} & \textbf{BasaltSLAM} & \textbf{OKVIS2} & \textbf{ORB-SLAM3} \\
@@ -902,7 +1456,7 @@ Mean & \textbf{5.4} & 220.4 & 5583.0 \\
 \begin{table}[ht]
 \centering
 \caption{msdmi: RTE [cm]}
-\label{tab:msdmi_rte}
+\label{tab:msdmi_sota_rte}
 \begin{tabular}{lrrr}
 \toprule
 \textbf{Dataset} & \textbf{BasaltSLAM} & \textbf{OKVIS2} & \textbf{ORB-SLAM3} \\
@@ -950,7 +1504,7 @@ Mean & \textbf{1.4} & 3.1 & 39.3 \\
 \begin{table}[ht]
 \centering
 \caption{msdmi: COMPLETION [\%]}
-\label{tab:msdmi_completion}
+\label{tab:msdmi_sota_completion}
 \begin{tabular}{lrrr}
 \toprule
 \textbf{Dataset} & \textbf{BasaltSLAM} & \textbf{OKVIS2} & \textbf{ORB-SLAM3} \\
@@ -995,10 +1549,16 @@ Mean & \textbf{100} & \textbf{100} & 80 \\
 \end{tabular}
 \end{table}
 
+En las Tablas \ref{tab:msdgo_sota_ate}, \ref{tab:msdgo_sota_rte} y \ref{tab:msdgo_sota_completion} se muestran
+los resultados de ATE, RTE y porcentaje de secuencia completada respectivamente para las secuencias de MG*.
+Se observa un comportamiento similar a MI*, donde OKVIS2 consigue la mejor mediana tanto para ATE, como para RTE,
+pero BasaltSLAM consigue valores competitivos en ambas métricas, y la mayor precisión en promedio. ORB-SLAM3
+se posiciona por detrás y no pudiendo completar un gran número de secuencias.
+
 \begin{table}[ht]
 \centering
 \caption{msdgo: ATE [cm]}
-\label{tab:msdgo_ate}
+\label{tab:msdgo_sota_ate}
 \begin{tabular}{lrrr}
 \toprule
 \textbf{Dataset} & \textbf{BasaltSLAM} & \textbf{OKVIS2} & \textbf{ORB-SLAM3} \\
@@ -1028,7 +1588,7 @@ Mean & \textbf{4.0} & 10.5 & 825.2 \\
 \begin{table}[ht]
 \centering
 \caption{msdgo: RTE [cm]}
-\label{tab:msdgo_rte}
+\label{tab:msdgo_sota_rte}
 \begin{tabular}{lrrr}
 \toprule
 \textbf{Dataset} & \textbf{BasaltSLAM} & \textbf{OKVIS2} & \textbf{ORB-SLAM3} \\
@@ -1058,7 +1618,7 @@ Mean & 1.6 & \textbf{0.9} & 11.4 \\
 \begin{table}[ht]
 \centering
 \caption{msdgo: COMPLETION [\%]}
-\label{tab:msdgo_completion}
+\label{tab:msdgo_sota_completion}
 \begin{tabular}{lrrr}
 \toprule
 \textbf{Dataset} & \textbf{BasaltSLAM} & \textbf{OKVIS2} & \textbf{ORB-SLAM3} \\
@@ -1085,10 +1645,15 @@ Mean & \textbf{100} & \textbf{100} & 96 \\
 \end{tabular}
 \end{table}
 
+En las Tablas \ref{tab:msdmo_sota_ate}, \ref{tab:msdmo_sota_rte} y \ref{tab:msdmo_sota_completion} se muestran
+los resultados de ATE, RTE y porcentaje de secuencia completada respectivamente para las secuencias de MO*.
+En este caso, ORB-SLAM3 resulta más competitivo, aunque nuevamente no consigue completar el 100\% de frames para
+todas las secuencias. BasaltSLAM obtiene el ATE medio más bajo, y OKVIS2 consigue mayor precisión para el RTE.
+
 \begin{table}[ht]
 \centering
 \caption{msmoo: ATE [cm]}
-\label{tab:msmoo_ate}
+\label{tab:msdmo_sota_ate}
 \begin{tabular}{lrrr}
 \toprule
 \textbf{Dataset} & \textbf{BasaltSLAM} & \textbf{OKVIS2} & \textbf{ORB-SLAM3} \\
@@ -1119,7 +1684,7 @@ Mean & \textbf{21.3} & 42.9 & 21.7 \\
 \begin{table}[ht]
 \centering
 \caption{msmoo: RTE [cm]}
-\label{tab:msmoo_rte}
+\label{tab:msdmo_sota_rte}
 \begin{tabular}{lrrr}
 \toprule
 \textbf{Dataset} & \textbf{BasaltSLAM} & \textbf{OKVIS2} & \textbf{ORB-SLAM3} \\
@@ -1150,7 +1715,7 @@ Mean & 1.8 & \textbf{0.8} & 7.9 \\
 \begin{table}[ht]
 \centering
 \caption{msmoo: COMPLETION [\%]}
-\label{tab:msmoo_completion}
+\label{tab:msdmo_sota_completion}
 \begin{tabular}{lrrr}
 \toprule
 \textbf{Dataset} & \textbf{BasaltSLAM} & \textbf{OKVIS2} & \textbf{ORB-SLAM3} \\
@@ -1177,648 +1742,136 @@ Mean & \textbf{100} & \textbf{100} & 92 \\
 \bottomrule
 \end{tabular}
 \end{table}
-\begin{table}[ht]
-\centering
-\caption{corridor: ATE [m]}
-\label{tab:corridor_ate}
-\begin{tabular}{lrrr}
-\toprule
-\textbf{Dataset} & \textbf{BasaltSLAM} & \textbf{OKVIS2} & \textbf{ORB-SLAM3} \\
-\midrule
-TC1 & \textbf{0.03} & 0.09 & \textbf{0.03} \\
-TC2 & 0.07 & 0.06 & \textbf{0.02} \\
-TC3 & 0.06 & \textbf{0.02} & \textbf{0.02} \\
-TC4 & 0.22 & \textbf{0.18} & 0.21 \\
-TC5 & 0.03 & 0.09 & \textbf{0.01} \\
-\midrule
-Median & 0.06 & 0.09 & \textbf{0.02} \\
-Mean & 0.08 & 0.09 & \textbf{0.06} \\
-\bottomrule
-\end{tabular}
-\end{table}
 
-\begin{table}[ht]
-\centering
-\caption{magistrale: ATE [m]}
-\label{tab:magistrale_ate}
-\begin{tabular}{lrrr}
-\toprule
-\textbf{Dataset} & \textbf{BasaltSLAM} & \textbf{OKVIS2} & \textbf{ORB-SLAM3} \\
-\midrule
-TM1 & 0.07 & \textbf{0.03} & 0.24 \\
-TM2 & 0.87 & \textbf{0.03} & 0.52 \\
-TM3 & 1.66 & \textbf{0.93} & 1.86 \\
-TM4 & 1.51 & \textbf{0.04} & 0.16 \\
-TM5 & 0.95 & \textbf{0.01} & 1.13 \\
-TM6 & \textbf{0.02} & 0.63 & 0.97 \\
-\midrule
-Median & 0.91 & \textbf{0.04} & 0.74 \\
-Mean & 0.85 & \textbf{0.28} & 0.81 \\
-\bottomrule
-\end{tabular}
-\end{table}
-
-\begin{table}[ht]
-\centering
-\caption{outdoors: ATE [m]}
-\label{tab:outdoors_ate}
-\begin{tabular}{lrrr}
-\toprule
-\textbf{Dataset} & \textbf{BasaltSLAM} & \textbf{OKVIS2} & \textbf{ORB-SLAM3} \\
-\midrule
-TO1 & 284.24 & \textbf{24.92} & 32.32 \\
-TO2 & 60.45 & \textbf{0.04} & 10.42 \\
-TO3 & 34.92 & \textbf{27.14} & 54.77 \\
-TO4 & 14.07 & \textbf{7.42} & 11.61 \\
-TO5 & 12.62 & \textbf{6.67} & 7.57 \\
-TO6 & 77.55 & 26.37 & \textbf{10.70} \\
-TO7 & 2.07 & \textbf{0.15} & 4.58 \\
-TO8 & 12.15 & \textbf{0.05} & 11.02 \\
-\midrule
-Median & 24.50 & \textbf{7.04} & 10.86 \\
-Mean & 62.26 & \textbf{11.60} & 17.87 \\
-\bottomrule
-\end{tabular}
-\end{table}
+Finalmente, se analiza la performance de cada sistema en términos de tiempo de procesamiento por frame.
+En la Figura \ref{fig:msd_sota_timings} se muestra el tiempo de procesamiento por frame para cada sistema en las secuencias de MO*, MG* y MI* respectivamente.
+Notar que, como no es posible incluir en ese tipo de gráfica el tiempo de optimización final de RootBA, se muestra el tiempo de procesamiento de BasaltLC.
+Se observa que OKVIS2 se encuentra muy por encima del límite de tiempo para la operación en tiempo real, obteniendo un tiempo de procesamiento por frame medio
+entre 6 y 12 veces más lento que BasaltLC. En cuanto a ORB-SLAM3, para los headsets Odyssey+ y HP Reverb G2 V2,
+se encuentra justo por encima del límite de tiempo para la operación en tiempo real, y en el caso de Valve Index,
+se encuentra en el doble del límite de tiempo.
+Como se observó en la sección \ref{sec:results_xr}, BasaltLC consigue tiempos de procesamiento por debajo del límite para la operación en tiempo real para los
+headsets Odyssey+ y HP Reverb G2 V2, y justo por debajo para el caso de Valve Index.
 
 \begin{figure}[ht]
     \centering
-    \includegraphics[width=0.8\textwidth]{img/experiments/TO2.hard_loop.pdf}
-    \caption{Figure 2}
-    \label{fig:experiments_figure12}
+    \begin{subfigure}[b]{0.48\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{img/experiments/MOO01.timings.pdf}
+        \caption{Secuencia capturada con Odyssey+}
+        \label{fig:experiments_figure16}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}[b]{0.48\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{img/experiments/MGO04.timings.pdf}
+        \caption{Secuencia capturada con HP Reverb G2 V2}
+        \label{fig:experiments_figure17}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}[b]{0.48\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{img/experiments/MIO02.timings.pdf}
+        \caption{Secuencia capturada con Valve Index}
+        \label{fig:experiments_figure18}
+    \end{subfigure}
+    \caption{Tiempo de procesamiento por frame para cada sistema en las secuencias de MO*, MG* y MI* respectivamente.
+    Se muestra un promedio móvil con una ventana de 2 segundos (60 frames). En el fondo, los datos sin procesar muestran
+    outliers y jitter para cada sistema. Una línea roja marca el límite de tiempo para la operación en tiempo real para cada headset.
+    BasaltLC se ejecuta en su versión síncrona, con el mapa asíncrono. Experimento realizado
+    en un procesador Intel Core Ultra 9 285H con 32 GB de RAM.}
+    \label{fig:msd_sota_timings}
 \end{figure}
 
-\begin{table}[ht]
-\centering
-\caption{room: ATE [m]}
-\label{tab:room_ate}
-\begin{tabular}{lrrr}
-\toprule
-\textbf{Dataset} & \textbf{BasaltSLAM} & \textbf{OKVIS2} & \textbf{ORB-SLAM3} \\
-\midrule
-TR1 & \textbf{0.01} & \textbf{0.01} & \textbf{0.01} \\
-TR2 & \textbf{0.01} & \textbf{0.01} & \textbf{0.01} \\
-TR3 & \textbf{0.01} & \textbf{0.01} & \textbf{0.01} \\
-TR4 & \textbf{0.01} & \textbf{0.01} & \textbf{0.01} \\
-TR5 & \textbf{0.01} & \textbf{0.01} & \textbf{0.01} \\
-TR6 & \textbf{0.01} & \textbf{0.01} & \textbf{0.01} \\
-\midrule
-Median & \textbf{0.01} & \textbf{0.01} & \textbf{0.01} \\
-Mean & \textbf{0.01} & \textbf{0.01} & \textbf{0.01} \\
-\bottomrule
-\end{tabular}
-\end{table}
+\section{Análisis de performance de BasaltSLAM}
 
-\begin{table}[ht]
-\centering
-\caption{slides: ATE [m]}
-\label{tab:slides_ate}
-\begin{tabular}{lrrr}
-\toprule
-\textbf{Dataset} & \textbf{BasaltSLAM} & \textbf{OKVIS2} & \textbf{ORB-SLAM3} \\
-\midrule
-TS1 & \textbf{0.01} & 0.10 & 0.41 \\
-TS2 & 1.23 & \textbf{0.16} & 0.49 \\
-TS3 & 1.51 & 1.35 & \textbf{0.47} \\
-\midrule
-Median & 1.23 & \textbf{0.16} & 0.47 \\
-Mean & 0.92 & 0.54 & \textbf{0.46} \\
-\bottomrule
-\end{tabular}
-\end{table}
-\begin{table}[ht]
-\centering
-\caption{MH: ATE [m]}
-\label{tab:MH_ate}
-\begin{tabular}{lrrr}
-\toprule
-\textbf{Dataset} & \textbf{BasaltSLAM} & \textbf{OKVIS2} & \textbf{ORB-SLAM3} \\
-\midrule
-EMH01 & 0.08 & \textbf{0.03} & 0.04 \\
-EMH02 & 0.05 & \textbf{0.02} & 0.03 \\
-EMH03 & 0.05 & \textbf{0.03} & 0.04 \\
-EMH04 & 0.13 & 0.07 & \textbf{0.05} \\
-EMH05 & 0.09 & \textbf{0.07} & 0.08 \\
-\midrule
-Median & 0.08 & \textbf{0.03} & 0.04 \\
-Mean & 0.08 & \textbf{0.04} & 0.05 \\
-\bottomrule
-\end{tabular}
-\end{table}
+En esta sección se analiza en detalle la performance de BasaltSLAM, evaluando distintos aspectos clave de su funcionamiento.
+Primero, se estudia el comportamiento del sistema en su versión completamente asíncrona, identificando los límites de
+procesamiento cuando todas las etapas operan en paralelo. Luego, se examina cómo el proceso de culling de keyframes
+contribuye a mantener estable el tiempo de procesamiento por frame, incluso en trayectorias extensas de más de 40 minutos.
+Finalmente, se evalúa el impacto de emplear un sistema de bundle adjustment numéricamente estable, como RootBA, que habilita
+la ejecución en precisión simple.
 
-\begin{table}[ht]
-\centering
-\caption{V1: ATE [m]}
-\label{tab:V1_ate}
-\begin{tabular}{lrrr}
-\toprule
-\textbf{Dataset} & \textbf{BasaltSLAM} & \textbf{OKVIS2} & \textbf{ORB-SLAM3} \\
-\midrule
-EV101 & \textbf{0.04} & \textbf{0.04} & \textbf{0.04} \\
-EV102 & 0.03 & \textbf{0.01} & \textbf{0.01} \\
-EV103 & 0.13 & \textbf{0.02} & \textbf{0.02} \\
-\midrule
-Median & 0.04 & \textbf{0.02} & \textbf{0.02} \\
-Mean & 0.07 & \textbf{0.02} & 0.03 \\
-\bottomrule
-\end{tabular}
-\end{table}
+% (plot de perfomance en MOO12 o similar), algún stacked plot?
 
-\begin{table}[ht]
-\centering
-\caption{V2: ATE [m]}
-\label{tab:V2_ate}
-\begin{tabular}{lrrr}
-\toprule
-\textbf{Dataset} & \textbf{BasaltSLAM} & \textbf{OKVIS2} & \textbf{ORB-SLAM3} \\
-\midrule
-EV201 & 0.04 & \textbf{0.02} & 0.03 \\
-EV202 & 0.10 & \textbf{0.01} & \textbf{0.01} \\
-EV203 & 0.14 & \textbf{0.02} & \textbf{0.02} \\
-\midrule
-Median & 0.10 & \textbf{0.02} & \textbf{0.02} \\
-Mean & 0.09 & \textbf{0.02} & \textbf{0.02} \\
-\bottomrule
-\end{tabular}
-\end{table}
+\subsection{BasaltSLAM en su versión asíncrona}
 
-
-\section{Cosas sueltas interesantes (por ahí puedo mecharlas entre los experimentos de arriba)}
-
-- Culling hace que el tiempo se mantenga estable (plot de perfomance en MOO12 o similar), algún stacked plot?
-
-\subsection{Rootba performance: float vs double}
-
-\begin{table}[ht]
-\centering
-\caption{msdmi: ATE [cm]}
-\label{tab:msdmi_ate}
-\begin{tabular}{lrr}
-\toprule
-\textbf{Dataset} & \textbf{RootBA (float)} & \textbf{RootBA (double)} \\
-\midrule
-MIO01 & \textbf{20.6} & \textbf{20.6} \\
-MIO02 & \textbf{15.8} & \textbf{15.8} \\
-MIO03 & \textbf{2.4} & 2.5 \\
-MIO04 & \textbf{8.2} & \textbf{8.2} \\
-MIO05 & \textbf{1.5} & \textbf{1.5} \\
-MIO06 & \textbf{2.8} & \textbf{2.8} \\
-MIO07 & \textbf{1.4} & \textbf{1.4} \\
-MIO08 & \textbf{6.9} & \textbf{6.9} \\
-MIO09 & \textbf{0.2} & \textbf{0.2} \\
-MIO10 & \textbf{1.7} & \textbf{1.7} \\
-MIO11 & \textbf{2.3} & 2.4 \\
-MIO12 & \textbf{5.4} & 5.9 \\
-MIO13 & \textbf{24.0} & 24.1 \\
-MIO14 & \textbf{3.4} & 4.1 \\
-MIO15 & 12.4 & \textbf{12.3} \\
-MIO16 & 19.4 & \textbf{17.5} \\
-MIPB01 & 1.4 & \textbf{1.3} \\
-MIPB02 & \textbf{2.4} & \textbf{2.4} \\
-MIPB03 & \textbf{2.7} & \textbf{2.7} \\
-MIPB04 & \textbf{3.7} & \textbf{3.7} \\
-MIPB05 & \textbf{1.3} & \textbf{1.3} \\
-MIPB06 & \textbf{2.4} & \textbf{2.4} \\
-MIPB07 & \textbf{1.8} & \textbf{1.8} \\
-MIPB08 & \textbf{3.3} & 3.4 \\
-MIPP01 & \textbf{3.3} & 3.4 \\
-MIPP02 & \textbf{3.9} & \textbf{3.9} \\
-MIPP03 & \textbf{4.2} & 4.3 \\
-MIPP04 & \textbf{2.5} & \textbf{2.5} \\
-MIPP05 & \textbf{2.9} & 3.0 \\
-MIPP06 & 3.1 & \textbf{3.0} \\
-MIPT01 & \textbf{1.5} & \textbf{1.5} \\
-MIPT02 & \textbf{2.1} & \textbf{2.1} \\
-MIPT03 & \textbf{2.6} & \textbf{2.6} \\
-\midrule
-Median & \textbf{2.8} & \textbf{2.8} \\
-Mean & 5.3 & \textbf{5.2} \\
-\bottomrule
-\end{tabular}
-\end{table}
-
-\begin{table}[ht]
-\centering
-\caption{msdgo: ATE [cm]}
-\label{tab:msdgo_ate}
-\begin{tabular}{lrr}
-\toprule
-\textbf{Dataset} & \textbf{RootBA (float)} & \textbf{RootBA (double)} \\
-\midrule
-MGO01 & \textbf{11.9} & \textbf{11.9} \\
-MGO02 & \textbf{7.7} & \textbf{7.7} \\
-MGO03 & \textbf{2.0} & 2.1 \\
-MGO04 & \textbf{5.3} & 5.4 \\
-MGO05 & \textbf{1.6} & \textbf{1.6} \\
-MGO06 & \textbf{4.7} & \textbf{4.7} \\
-MGO07 & \textbf{1.3} & \textbf{1.3} \\
-MGO08 & \textbf{5.4} & 5.8 \\
-MGO09 & \textbf{1.1} & \textbf{1.1} \\
-MGO10 & \textbf{1.4} & \textbf{1.4} \\
-MGO11 & \textbf{1.0} & \textbf{1.0} \\
-MGO12 & \textbf{5.9} & \textbf{5.9} \\
-MGO13 & 8.4 & \textbf{8.2} \\
-MGO14 & \textbf{2.1} & \textbf{2.1} \\
-MGO15 & 2.8 & \textbf{2.6} \\
-\midrule
-Median & 2.8 & \textbf{2.6} \\
-Mean & \textbf{4.2} & \textbf{4.2} \\
-\bottomrule
-\end{tabular}
-\end{table}
-
-\begin{table}[ht]
-\centering
-\caption{msmoo: ATE [cm]}
-\label{tab:msmoo_ate}
-\begin{tabular}{lrr}
-\toprule
-\textbf{Dataset} & \textbf{RootBA (float)} & \textbf{RootBA (double)} \\
-\midrule
-MOO01 & \textbf{3.2} & \textbf{3.2} \\
-MOO02 & \textbf{4.9} & \textbf{4.9} \\
-MOO03 & \textbf{3.7} & \textbf{3.7} \\
-MOO04 & 4.1 & \textbf{3.9} \\
-MOO05 & \textbf{1.2} & \textbf{1.2} \\
-MOO06 & \textbf{2.5} & \textbf{2.5} \\
-MOO07 & \textbf{1.3} & \textbf{1.3} \\
-MOO08 & 3.0 & \textbf{2.6} \\
-MOO09 & \textbf{0.5} & \textbf{0.5} \\
-MOO10 & \textbf{1.4} & \textbf{1.4} \\
-MOO11 & \textbf{1.9} & \textbf{1.9} \\
-MOO12 & 9.1 & \textbf{9.0} \\
-MOO13 & \textbf{7.5} & 9.0 \\
-MOO14 & \textbf{2.8} & \textbf{2.8} \\
-MOO15 & 74.7 & \textbf{72.2} \\
-MOO16 & \textbf{2.2} & \textbf{2.2} \\
-\midrule
-Median & 2.9 & \textbf{2.7} \\
-Mean & 7.7 & \textbf{7.6} \\
-\bottomrule
-\end{tabular}
-\end{table}
-\begin{table}[ht]
-\centering
-\caption{corridor: ATE [cm]}
-\label{tab:corridor_ate}
-\begin{tabular}{lrr}
-\toprule
-\textbf{Dataset} & \textbf{RootBA (float)} & \textbf{RootBA (double)} \\
-\midrule
-TC1 & \textbf{1.1} & \textbf{1.1} \\
-TC2 & \textbf{7.0} & \textbf{7.0} \\
-TC3 & \textbf{6.9} & \textbf{6.9} \\
-TC4 & \textbf{21.0} & 21.6 \\
-TC5 & 2.6 & \textbf{2.2} \\
-\midrule
-Median & \textbf{6.9} & \textbf{6.9} \\
-Mean & \textbf{7.7} & 7.8 \\
-\bottomrule
-\end{tabular}
-\end{table}
-
-\begin{table}[ht]
-\centering
-\caption{magistrale: ATE [cm]}
-\label{tab:magistrale_ate}
-\begin{tabular}{lrr}
-\toprule
-\textbf{Dataset} & \textbf{RootBA (float)} & \textbf{RootBA (double)} \\
-\midrule
-TM1 & \textbf{3.0} & 3.1 \\
-TM2 & \textbf{89.2} & 91.5 \\
-TM3 & 187.8 & \textbf{184.9} \\
-TM4 & \textbf{161.3} & 162.2 \\
-TM5 & 93.2 & \textbf{89.5} \\
-TM6 & \textbf{1.7} & 1.8 \\
-\midrule
-Median & 91.2 & \textbf{90.5} \\
-Mean & 89.4 & \textbf{88.8} \\
-\bottomrule
-\end{tabular}
-\end{table}
-
-\begin{table}[ht]
-\centering
-\caption{outdoors: ATE [cm]}
-\label{tab:outdoors_ate}
-\begin{tabular}{lrr}
-\toprule
-\textbf{Dataset} & \textbf{RootBA (float)} & \textbf{RootBA (double)} \\
-\midrule
-TO1 & 28503.7 & \textbf{28502.0} \\
-TO2 & 5681.4 & \textbf{5680.9} \\
-TO3 & 3591.5 & \textbf{3591.3} \\
-TO4 & \textbf{1303.6} & 1305.3 \\
-TO5 & \textbf{4.1} & \textbf{4.1} \\
-TO6 & 7645.4 & \textbf{7645.3} \\
-TO7 & \textbf{218.0} & 224.2 \\
-TO8 & \textbf{1113.1} & 1113.2 \\
-\midrule
-Median & \textbf{2447.5} & 2448.3 \\
-Mean & \textbf{6007.6} & 6008.3 \\
-\bottomrule
-\end{tabular}
-\end{table}
-
-\begin{table}[ht]
-\centering
-\caption{room: ATE [cm]}
-\label{tab:room_ate}
-\begin{tabular}{lrr}
-\toprule
-\textbf{Dataset} & \textbf{RootBA (float)} & \textbf{RootBA (double)} \\
-\midrule
-TR1 & \textbf{0.8} & \textbf{0.8} \\
-TR2 & \textbf{0.7} & \textbf{0.7} \\
-TR3 & \textbf{1.1} & \textbf{1.1} \\
-TR4 & \textbf{1.0} & \textbf{1.0} \\
-TR5 & \textbf{0.9} & \textbf{0.9} \\
-TR6 & \textbf{0.9} & \textbf{0.9} \\
-\midrule
-Median & \textbf{0.9} & \textbf{0.9} \\
-Mean & \textbf{0.9} & \textbf{0.9} \\
-\bottomrule
-\end{tabular}
-\end{table}
-
-\begin{table}[ht]
-\centering
-\caption{slides: ATE [cm]}
-\label{tab:slides_ate}
-\begin{tabular}{lrr}
-\toprule
-\textbf{Dataset} & \textbf{RootBA (float)} & \textbf{RootBA (double)} \\
-\midrule
-TS1 & \textbf{1.8} & \textbf{1.8} \\
-TS2 & 94.6 & \textbf{94.5} \\
-TS3 & \textbf{150.5} & \textbf{150.5} \\
-\midrule
-Median & 94.6 & \textbf{94.5} \\
-Mean & \textbf{82.3} & \textbf{82.3} \\
-\bottomrule
-\end{tabular}
-\end{table}
-\begin{table}[ht]
-\centering
-\caption{MH: ATE [cm]}
-\label{tab:MH_ate}
-\begin{tabular}{lrr}
-\toprule
-\textbf{Dataset} & \textbf{RootBA (float)} & \textbf{RootBA (double)} \\
-\midrule
-EMH01 & \textbf{7.5} & \textbf{7.5} \\
-EMH02 & \textbf{5.3} & \textbf{5.3} \\
-EMH03 & \textbf{5.2} & \textbf{5.2} \\
-EMH04 & \textbf{13.4} & \textbf{13.4} \\
-EMH05 & \textbf{9.4} & \textbf{9.4} \\
-\midrule
-Median & \textbf{7.5} & \textbf{7.5} \\
-Mean & \textbf{8.2} & \textbf{8.2} \\
-\bottomrule
-\end{tabular}
-\end{table}
-
-\begin{table}[ht]
-\centering
-\caption{V1: ATE [cm]}
-\label{tab:V1_ate}
-\begin{tabular}{lrr}
-\toprule
-\textbf{Dataset} & \textbf{RootBA (float)} & \textbf{RootBA (double)} \\
-\midrule
-EV101 & \textbf{4.1} & \textbf{4.1} \\
-EV102 & \textbf{3.0} & \textbf{3.0} \\
-EV103 & 14.1 & \textbf{13.8} \\
-\midrule
-Median & \textbf{4.1} & \textbf{4.1} \\
-Mean & 7.1 & \textbf{7.0} \\
-\bottomrule
-\end{tabular}
-\end{table}
-
-\begin{table}[ht]
-\centering
-\caption{V2: ATE [cm]}
-\label{tab:V2_ate}
-\begin{tabular}{lrr}
-\toprule
-\textbf{Dataset} & \textbf{RootBA (float)} & \textbf{RootBA (double)} \\
-\midrule
-EV201 & \textbf{3.8} & \textbf{3.8} \\
-EV202 & 10.0 & \textbf{9.8} \\
-EV203 & \textbf{13.8} & 14.6 \\
-\midrule
-Median & 10.0 & \textbf{9.8} \\
-Mean & \textbf{9.2} & 9.4 \\
-\bottomrule
-\end{tabular}
-\end{table}
-
-
-\begin{figure}[ht]
-    \centering
-    \includegraphics[width=0.8\textwidth]{img/experiments/msd.rootba.times.pdf}
-    \caption{Figure 24}
-    \label{fig:experiments_figure25}
-\end{figure}
-
-\begin{figure}[ht]
-    \centering
-    \includegraphics[width=0.8\textwidth]{img/experiments/tumvi.rootba.times.pdf}
-    \caption{Figure 25}
-    \label{fig:experiments_figure26}
-\end{figure}
-
-\begin{figure}[ht]
-    \centering
-    \includegraphics[width=0.8\textwidth]{img/experiments/euroc.rootba.times.pdf}
-    \caption{Figure 26}
-    \label{fig:experiments_figure27}
-\end{figure}
-
-
-
-\subsection{Non deterministic performance of BasaltSLAM}
-
-\begin{table}[ht]
-\centering
-\caption{tumvi: Mean Frame Processing Time [ms]}
-\label{tab:tumvi_mean_frame_time}
-\begin{tabular}{lr}
-\toprule
-\textbf{Dataset} & \textbf{Basalt SLAM} [ms] \\
-\midrule
-% --- corridor ---
-TC1 & 6.62 \\
-TC2 & 6.98 \\
-TC3 & 6.93 \\
-TC4 & 6.64 \\
-TC5 & 6.94 \\
-\midrule
-% --- magistrale ---
-TM1 & 7.98 \\
-TM2 & 8.11 \\
-TM3 & 7.66 \\
-TM4 & 7.79 \\
-TM5 & 7.78 \\
-TM6 & 7.65 \\
-\midrule
-% --- outdoors ---
-TO1 & 8.74 \\
-TO2 & 8.46 \\
-TO3 & 8.30 \\
-TO4 & 5.44 \\
-TO5 & 7.67 \\
-TO6 & 8.21 \\
-TO7 & 7.87 \\
-TO8 & 7.70 \\
-\midrule
-% --- room ---
-TR1 & 6.82 \\
-TR2 & 7.06 \\
-TR3 & 6.80 \\
-TR4 & 6.84 \\
-TR5 & 6.87 \\
-TR6 & 6.85 \\
-\midrule
-% --- slides ---
-TS1 & 7.52 \\
-TS2 & 7.47 \\
-TS3 & 7.72 \\
-\midrule
-Median & 7.59 \\
-Mean   & 7.41 \\
-\bottomrule
-\end{tabular}
-\end{table}
-
-\begin{table}[ht]
-\centering
-\caption{euroc: Mean Frame Processing Time [ms]}
-\label{tab:euroc_mean_frame_time}
-\begin{tabular}{lr}
-\toprule
-\textbf{Dataset} & \textbf{Basalt SLAM} [ms] \\
-\midrule
-% --- MH ---
-EMH01 & 6.22 \\
-EMH02 & 6.55 \\
-EMH03 & 5.74 \\
-EMH04 & 4.87 \\
-EMH05 & 4.84 \\
-\midrule
-% --- V1 ---
-EV101 & 4.30 \\
-EV102 & 4.39 \\
-EV103 & 4.02 \\
-\midrule
-% --- V2 ---
-EV201 & 4.47 \\
-EV202 & 4.56 \\
-EV203 & 4.11 \\
-\midrule
-Median & 4.56 \\
-Mean   & 4.92 \\
-\bottomrule
-\end{tabular}
-\end{table}
-
-\begin{longtable}{lr}
-
-\caption{msd: Mean Frame Processing Time [ms]}
-\label{tab:msd_mean_frame_time} \\
-
-\toprule
-\textbf{Dataset} & \textbf{Basalt SLAM} [ms] \\
-\midrule
-\endfirsthead
-
-\toprule
-\textbf{Dataset} & \textbf{Basalt SLAM} [ms] \\
-\midrule
-\endhead
-
-\bottomrule
-\endfoot
-
-% --- msdmi ---
-MIO01 & 12.05 \\
-MIO02 & 11.94 \\
-MIO03 & 12.13 \\
-MIO04 & 11.63 \\
-MIO05 & 12.14 \\
-MIO06 & 11.94 \\
-MIO07 & 11.76 \\
-MIO08 & 11.39 \\
-MIO09 & 11.59 \\
-MIO10 & 11.38 \\
-MIO11 & 11.37 \\
-MIO12 & 12.58 \\
-MIO13 & 12.46 \\
-MIO14 & 12.06 \\
-MIO15 & 12.25 \\
-MIO16 & 12.12 \\
-MIPB01 & 12.72 \\
-MIPB02 & 12.14 \\
-MIPB03 & 12.66 \\
-MIPB04 & 12.19 \\
-MIPB05 & 12.64 \\
-MIPB06 & 12.39 \\
-MIPB07 & 12.65 \\
-MIPB08 & 12.66 \\
-MIPP01 & 11.99 \\
-MIPP02 & 11.97 \\
-MIPP03 & 11.82 \\
-MIPP04 & 11.93 \\
-MIPP05 & 11.86 \\
-MIPP06 & 12.02 \\
-MIPT01 & 12.77 \\
-MIPT02 & 12.93 \\
-MIPT03 & 13.07 \\
-\midrule
-% --- msdgo ---
-MGO01 & 9.56 \\
-MGO02 & 9.48 \\
-MGO03 & 9.54 \\
-MGO04 & 9.37 \\
-MGO05 & 9.61 \\
-MGO06 & 9.57 \\
-MGO07 & 8.95 \\
-MGO08 & 8.86 \\
-MGO09 & 9.41 \\
-MGO10 & 8.97 \\
-MGO11 & 8.99 \\
-MGO12 & 9.93 \\
-MGO13 & 8.75 \\
-MGO14 & 9.67 \\
-MGO15 & 9.78 \\
-\midrule
-% --- msmoo ---
-MOO01 & 4.81 \\
-MOO02 & 4.83 \\
-MOO03 & 4.85 \\
-MOO04 & 4.55 \\
-MOO05 & 4.61 \\
-MOO06 & 4.84 \\
-MOO07 & 4.59 \\
-MOO08 & 4.50 \\
-MOO09 & 4.67 \\
-MOO10 & 4.55 \\
-MOO11 & 4.45 \\
-MOO12 & 5.08 \\
-MOO13 & 4.42 \\
-MOO14 & 4.62 \\
-MOO15 & 5.05 \\
-MOO16 & 6.23 \\
-\midrule
-Median & 11.38 \\
-Mean   & 9.66 \\
-\end{longtable}
+En la Figura \ref{fig:async_timings_basaltslam} se muestra el tiempo medio de procesamiento por frame para todas las secuencias
+de los distintos datasets. Se observa que en todos los casos se consigue mantener un tiempo de procesamiento por frame por
+debajo del límite para la operación en tiempo real. En las secuencias MI* del headset Valve Index el margen es menor, pero aún
+así se consigue mantener un tiempo de procesamiento por frame por debajo del límite. En el apéndice X se muestran en detalle
+cada uno de los tiempos medios de procesamiento por frame para cada secuencia.
 
 \begin{figure}[ht]
     \centering
     \includegraphics[width=0.8\textwidth]{img/experiments/timings.barplot.pdf}
-    \caption{Figure 23}
-    \label{fig:experiments_figure24}
+    \caption{Para cada secuencia, se ejecuta BasaltLC en su versión completamente asíncrona, y se calcula el tiempo medio por frame
+    dividiendo el tiempo total por la cantidad de frames. Luego se toma el promedio de estos valores agrupando por tipo de secuencia.
+    Se incluye también la varianza en cada tipo de secuencia sobre cada barra.}
+    \label{fig:async_timings_basaltslam}
+\end{figure}
+
+
+\subsection{BasaltSLAM en trayectorias largas}
+
+Agregar un gráfico de MGO12 también, donde no haga keyframe culling. Para mostrar bien la diferencia.
+
+\begin{figure}[ht]
+    \centering
+    \includegraphics[width=0.8\textwidth]{img/experiments/kftimings.MGO12.pdf}
+    \caption{Para cada secuencia, se ejecuta BasaltLC en su versión completamente asíncrona, y se calcula el tiempo medio por frame
+    dividiendo el tiempo total por la cantidad de frames. Luego se toma el promedio de estos valores agrupando por tipo de secuencia.
+    Se incluye también la varianza en cada tipo de secuencia sobre cada barra.}
+    \label{fig:async_timings_basaltslam}
+\end{figure}
+
+\begin{figure}[ht]
+    \centering
+    \includegraphics[width=0.8\textwidth]{img/experiments/pgo.timings.MGO12.pdf}
+    \caption{Para cada secuencia, se ejecuta BasaltLC en su versión completamente asíncrona, y se calcula el tiempo medio por frame
+    dividiendo el tiempo total por la cantidad de frames. Luego se toma el promedio de estos valores agrupando por tipo de secuencia.
+    Se incluye también la varianza en cada tipo de secuencia sobre cada barra.}
+    \label{fig:async_timings_basaltslam}
+\end{figure}
+
+
+\subsection{RootBA: float vs double}
+
+Una de las ventajas de usar un método como RootBA para la optimización final es su estabilidad numérica, que permite
+ejecutar la optimización en precisión simple sin degradar la precisión de la estimación. Esto se puede observar en el apéndice X,
+donde se muestra que los resultados de ATE para cada secuencia ejecutando RootBA en precisión simple y doble son equivalentes.
+
+En la Figura \ref{fig:msd_rootba_timings} se muestra el tiempo total de ejecución de RootBA en precisión simple y doble para cada secuencia.
+En MSD, la mediana se reduce en un x\%. En TUMVI, la mediana se reduce en un x\%. En Euroc, la mediana se reduce en un x\%.
+
+En las secuencias de outdoors el tiempo de ejecución es alto. Esto no necesariamente está relacionado con el número de keyframes u
+observaciones, sino que lo que ocurre es que el mapa que recibe RootBA se encuentra mal condicionado. Esto implica que
+el solver no tiene un buen precondicionante y necesita más iteraciones para resolver cada sistema de ecuaciones.
+
+\begin{figure}[ht]
+    \centering
+    \begin{subfigure}[b]{0.8\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{img/experiments/msd.rootba.times.pdf}
+        \caption{Secuencia capturada con Odyssey+}
+        \label{fig:experiments_figure16}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}[b]{0.8\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{img/experiments/tumvi.rootba.times.pdf}
+        \caption{Secuencia capturada con HP Reverb G2 V2}
+        \label{fig:experiments_figure17}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}[b]{0.8\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{img/experiments/euroc.rootba.times.pdf}
+        \caption{Secuencia capturada con Valve Index}
+        \label{fig:experiments_figure18}
+    \end{subfigure}
+    \caption{Boxplots de tiempos totales de ejecución de RootBA en precisión simple y doble para cada secuencia.
+    Ambas versiones fueron ejecutadas sobre el mismo mapa. Experimento realizado en un procesador Intel Core
+    i5-13600 13th Gen con 32 GB de RAM}
+    \label{fig:msd_rootba_timings}
 \end{figure}
