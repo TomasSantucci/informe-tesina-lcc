@@ -23,17 +23,21 @@
 % https://mateosss.pages.freedesktop.org/-/basalt/-/jobs/100094149/artifacts/report.html
 % report job: https://gitlab.freedesktop.org/mateosss/basalt/-/jobs/100094149
 
+% 7- Corridas de basalt con loop closure y rootba, pero sin culling (timing-evalsets, determinista)
+% https://mateosss.pages.freedesktop.org/-/basalt/-/jobs/100268854/artifacts/report.html
+% report job: https://gitlab.freedesktop.org/mateosss/basalt/-/jobs/100268854
+
 En este capítulo se presentan los experimentos realizados para evaluar BasaltSLAM y el análisis
 de los resultados obtenidos. Primero se buscó dimensionar el impacto de las mejoras descritas
-en la sección x para lo cual se realizó un estudio de ablación que compara Basalt original
+en el Capítulo \ref{sec:method} para lo cual se realizó un estudio de ablación que compara Basalt original
 con distintas versiones del sistema que incorporan las funcionalidades del mapa de distintas maneras. Luego se evaluó
 el sistema propuesto contra ORB-SLAM3 y OKVIS2 como referencia del estado del arte. En todos estos experimentos, no solo
-se evaluaron métricas de error de trayectoria, sino también se hizo énfasis en la performance, para determinar si
+se evaluaron métricas de error de trayectoria, sino que también se hizo énfasis en la performance, para determinar si
 el sistema propuesto cumple con las limitaciones impuestas para funcionar en tiempo real. Finalmente, se concluye con
 un análisis de performance detallado, que tiene en cuenta la arquitectura del sistema propuesto y las mejoras implementadas
 para utilizar una optimización de bundle adjustment basada en RootBA.
 
-Algunos experimentos fueron realizados en un servidor, que cuenta con un procesador Intel Core i5-13600 13th Gen con 32 GB de RAM.
+La mayor parte de los experimentos fue realizada en un servidor, que cuenta con un procesador Intel Core i5-13600 13th Gen con 32 GB de RAM.
 Mientras que, aquellos que por diferentes motivos no se pudieron ejecutar allí, fueron realizados en una computadora que cuenta con
 un procesador Intel Core Ultra 9 285H con 32 GB de RAM. Cuando sea el caso de esto último, se aclarará.
 
@@ -51,7 +55,7 @@ de laboratorio de la Escuela Politécnica de Zurich (Vicon Room 1 y 2). En la Fi
 entornos. Cada secuencia incluye datos de ground truth con una precisión milimétrica y están
 disponibles los datos de calibración tanto intrínseca como extrínseca.
 Todas las secuencias fueron capturadas utilizando un helicóptero Asctec Firefly equipado con
-una cámara estéreo de resolución WVGA (752 x 480 px) a 20 fps y una IMU modelo ADIS16448
+una cámara estéreo de 752 x 480 px de resolución a 20 fps y una IMU modelo ADIS16448
 a 200 Hz.
 
 Contiene secuencias de los siguientes tipos:
@@ -106,7 +110,7 @@ utilizó una cámara estéreo de 512 x 512 px de resolución a 20 fps y una IMU 
 a 200 Hz, asegurando una correlación precisa entre los datos visuales e inerciales. Además, el
 benchmark incluye trayectorias de referencia obtenidas mediante métodos de captura de mo-
 vimiento, garantizando un ground truth de alta calidad para la evaluación de los
-algoritmos
+algoritmos.
 
 Contiene secuencias de los siguientes tipos:
 \begin{itemize}
@@ -160,7 +164,7 @@ Contiene secuencias de los siguientes tipos:
 
 \subsection*{Monado SLAM Dataset}
 
-El Monado SLAM Dataset (MSD) es un dataset visual-inertial de licencia permisiva creado
+El Monado SLAM Dataset (MSD) es un dataset visual-inercial de licencia permisiva creado
 específicamente para el caso de uso de aplicaciones XR. En el mismo se incluyen varios tipos
 de secuencias, desde juegos de VR hasta escenarios de inspección y mapeo de una habitación,
 proporcionando una amplia variedad de datos para evaluar algoritmos de SLAM en contextos
@@ -1812,26 +1816,45 @@ cada uno de los tiempos medios de procesamiento por frame para cada secuencia.
 \end{figure}
 
 
-\subsection{BasaltSLAM en trayectorias largas}
+\subsection{BasaltSLAM en trayectorias extensas}
 
-Agregar un gráfico de MGO12 también, donde no haga keyframe culling. Para mostrar bien la diferencia.
+En esta sección se explica la necesidad de contar con un proceso de culling de keyframes para mantener
+un mapa actualizado y un tiempo de procesamiento por frame estable, incluso en trayectorias largas. Además, se muestra cómo
+este proceso de culling de keyframes consigue solucionar estas limitaciones.
+
+Incluso en una ejecución con el mapa asíncrono, el tiempo de procesamiento por keyframe debe mantenerse estable y por debajo
+de cierto límite. De lo contrario, el sistema no podría procesar los keyframes en tiempo real, se llenarían las colas de
+trabajo del mapa y se acumularía un retraso que haría que el mapa no tenga la información más actualizada.
+Esto es especialmente importante en trayectorias largas. Para entender cuál es ese límite, se puede considerar que,
+aproximadamente, se toma un keyframe cada 7 frames. Por ende, cada keyframe puede ser procesado en background durante 7 frames,
+lo que equivale a un tiempo de procesamiento por keyframe de 7 veces el tiempo de procesamiento por frame. Aunque hay que tener
+en cuenta que este valor es cierto únicamente para operaciones que puedan ejecutarse en background.
+
+En la Figura \ref{fig:stacked_timings_basaltslam} se muestra el tiempo de procesamiento por keyframe para cada etapa del pipeline
+de BasaltSLAM, en su modo síncrono y con culling de keyframes. Se puede observar que el tiempo de procesamiento por keyframe se
+mantiene estable, con picos en los momentos en que se detectan o cierran ciclos. En cuanto al tiempo total de ejecución
+de la optimización del grafo de poses, se muestra con más detalle en la Figura \ref{fig:pgo_timings_culling}.
+Allí, se compara el tiempo total de ejecución de la optimización del grafo de poses para dos versiones de BasaltSLAM: una con
+culling de keyframes y otra sin culling de keyframes. En la segunda, el tiempo de ejecución de la optimización del grafo de poses
+crece de manera ilimitada. Sin embargo, en la versión que realiza culling de keyframes, el tiempo de optimización del grafo
+crece al comienzo, y luego se mantiene estable cerca del límite establecido.
 
 \begin{figure}[ht]
     \centering
     \includegraphics[width=0.8\textwidth]{img/experiments/kftimings.MGO12.pdf}
-    \caption{Para cada secuencia, se ejecuta BasaltLC en su versión completamente asíncrona, y se calcula el tiempo medio por frame
-    dividiendo el tiempo total por la cantidad de frames. Luego se toma el promedio de estos valores agrupando por tipo de secuencia.
-    Se incluye también la varianza en cada tipo de secuencia sobre cada barra.}
-    \label{fig:async_timings_basaltslam}
+    \caption{Tiempo de procesamiento por keyframe para la secuencia MGO12. Para cada timestamp se encuentra el tiempo que tomó
+    cada etapa del pipeline de BasaltSLAM. Se ejecutó el sistema en su versión síncrona, y es por eso que se observan tiempos
+    más altos, con picos en los momentos en que suceden las operaciones más costosas de loop closure.}
+    \label{fig:stacked_timings_basaltslam}
 \end{figure}
 
 \begin{figure}[ht]
     \centering
     \includegraphics[width=0.8\textwidth]{img/experiments/pgo.timings.MGO12.pdf}
-    \caption{Para cada secuencia, se ejecuta BasaltLC en su versión completamente asíncrona, y se calcula el tiempo medio por frame
-    dividiendo el tiempo total por la cantidad de frames. Luego se toma el promedio de estos valores agrupando por tipo de secuencia.
-    Se incluye también la varianza en cada tipo de secuencia sobre cada barra.}
-    \label{fig:async_timings_basaltslam}
+    \caption{Tiempo total de ejecución de la optimización del grafo de poses, para cada cierre de ciclo. Se comparan 
+    dos versiones de BasaltSLAM: una con culling de keyframes y otra sin culling de keyframes. La línea punteada roja
+    marca el límite aproximado para la operación en tiempo real.}
+    \label{fig:pgo_timings_culling}
 \end{figure}
 
 
@@ -1842,7 +1865,9 @@ ejecutar la optimización en precisión simple sin degradar la precisión de la 
 donde se muestra que los resultados de ATE para cada secuencia ejecutando RootBA en precisión simple y doble son equivalentes.
 
 En la Figura \ref{fig:msd_rootba_timings} se muestra el tiempo total de ejecución de RootBA en precisión simple y doble para cada secuencia.
-En MSD, la mediana se reduce en un x\%. En TUMVI, la mediana se reduce en un x\%. En Euroc, la mediana se reduce en un x\%.
+Teniendo en cuenta el tiempo total de todas las secuencias de cada dataset, sin subdividir por tipo de secuencia, se obtienen
+los siguientes resultados:
+en MSD la mediana se reduce en un 50\%; en TUMVI, la mediana se reduce en un 42\%; en Euroc, la mediana se reduce en un 50\%.
 
 En las secuencias de outdoors el tiempo de ejecución es alto. Esto no necesariamente está relacionado con el número de keyframes u
 observaciones, sino que lo que ocurre es que el mapa que recibe RootBA se encuentra mal condicionado. Esto implica que
