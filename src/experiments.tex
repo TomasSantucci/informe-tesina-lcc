@@ -29,48 +29,39 @@
 
 En este capítulo se presentan los experimentos realizados para evaluar BasaltSLAM y el análisis
 de los resultados obtenidos. Primero se buscó dimensionar el impacto de las mejoras descritas
-en el Capítulo \ref{sec:method} para lo cual se realizó un estudio de ablación que compara Basalt original
-con distintas versiones del sistema que incorporan las funcionalidades del mapa de distintas maneras. Luego se evaluó
-el sistema propuesto contra ORB-SLAM3 y OKVIS2 como referencia del estado del arte. En todos estos experimentos, no solo
+en el Capítulo \ref{sec:method}, para lo cual se realizó un estudio de ablación que compara Basalt original
+con distintas versiones del sistema que incorporan las funcionalidades del mapa. Luego se evaluó
+el sistema propuesto contra ORB-SLAM3 y OKVIS2 como referencias del estado del arte. En todos estos experimentos, no solo
 se evaluaron métricas de error de trayectoria, sino que también se hizo énfasis en la performance, para determinar si
 el sistema propuesto cumple con las limitaciones impuestas para funcionar en tiempo real. Finalmente, se concluye con
 un análisis de performance detallado, que tiene en cuenta la arquitectura del sistema propuesto y las mejoras implementadas
 para utilizar una optimización de bundle adjustment basada en RootBA.
 
-La mayor parte de los experimentos fue realizada en un servidor, que cuenta con un procesador Intel Core i5-13600 13th Gen con 32 GB de RAM.
-Mientras que, aquellos que por diferentes motivos no se pudieron ejecutar allí, fueron realizados en una computadora que cuenta con
-un procesador Intel Core Ultra 9 285H con 32 GB de RAM. Cuando sea el caso de esto último, se aclarará.
+La mayor parte de los experimentos fue realizada en un servidor con un procesador Intel Core i5-13600
+13th Gen con 32 GB de RAM; los restantes, en una computadora con un procesador Intel Core Ultra 9 285H
+con 32 GB de RAM, indicándose explícitamente cuando corresponda.
 
 Para llevarlos a cabo se utilizaron todas las secuencias de los siguientes conjuntos de datos creados para la evaluación
-de sistemas SLAM: EuRoC, TUM-VI benchmark, y el Monado SLAM Dataset que es un dataset específico de XR que representa mejor
-el uso esperado del sistema. A continuación se detallan las características de los mismos.
+de sistemas SLAM: EuRoC, TUM-VI benchmark, y el Monado SLAM Dataset, un dataset específico de XR que representa
+de manera más fiel el uso esperado del sistema. A continuación se describen sus características principales.
 
 \section{Datasets utilizados} \label{sec:datasets}
 
 \subsection*{EuRoC}
 El dataset EuRoC (European Robotics Challenge) MAV (Micro Aerial Vehicle) es uno de
 los datasets más populares y utilizados en la comunidad de robótica y visión por computadora.
-Consiste en 11 secuencias grabadas en tres entornos diferentes: una sala de máquinas (Machine Hall) y dos salas
-de laboratorio de la Escuela Politécnica de Zurich (Vicon Room 1 y 2). En la Figura 5.1 se pueden observar estos
-entornos. Cada secuencia incluye datos de ground truth con una precisión milimétrica y están
+Consiste en 11 secuencias grabadas en tres entornos diferentes, visibles en la Figura \ref{fig:euroc_mav_frames}: una sala de máquinas (Machine Hall) y dos salas
+de laboratorio de la Escuela Politécnica de Zurich (Vicon Room 1 y 2). Cada secuencia incluye datos de ground truth con una precisión milimétrica y están
 disponibles los datos de calibración tanto intrínseca como extrínseca.
 Todas las secuencias fueron capturadas utilizando un helicóptero Asctec Firefly equipado con
 una cámara estéreo de 752 x 480 px de resolución a 20 fps y una IMU modelo ADIS16448
-a 200 Hz.
-
-Contiene secuencias de los siguientes tipos:
+a 200 Hz. Los tres entornos presentan características diferenciadas:
 \begin{itemize}
     \item Machine Hall: Secuencias grabadas en una sala de máquinas equipada con maquinaria pesada, proporcionando un entorno con
 desafíos de iluminación y superficies reflectantes.
     \item Vicon Room 1 y 2: Secuencias grabadas en salas de laboratorio controladas, equipadas con un sistema de captura de movimiento Vicon,
-diseñadas para experimentos de robótica con condiciones bien definidas y texturas variadas
+diseñadas para experimentos de robótica con condiciones bien definidas y texturas variadas.
 \end{itemize}
-
-% might be useful too:
-% Eleven datasets are provided in total, ranging from slow flights under good visual conditions to dynamic flights
-% with motion blur and poor illumination, enabling researchers to thoroughly test and evaluate their algorithms.
-% All datasets contain raw sensor measurements, spatio-temporally aligned sensor data and ground truth, extrinsic
-% and intrinsic calibrations and datasets for custom calibrations.
 
 \begin{figure}[ht]
     \centering
@@ -94,28 +85,27 @@ diseñadas para experimentos de robótica con condiciones bien definidas y textu
         \caption{Vicon Room 2}
         \label{fig:experiments_figure18}
     \end{subfigure}
-    \caption{Frames from the EuRoC MAV dataset.}
-    \label{fig:mipp01_maps}
+    \caption{Frames de ejemplo del EuRoC MAV dataset.}
+    \label{fig:euroc_mav_frames}
 \end{figure}
 
 \subsection*{TUM-VI benchmark}
 El TUM-VI Benchmark (Technical University of Munich Visual-Inertial Benchmark) es
-otro dataset de referencia para la comunidad de visión por computadora ya que el mismo incluye
+otro dataset de referencia ampliamente utilizado en la comunidad de visión por computadora, ya que incluye
 secuencias grabadas en diversos entornos, tanto interiores como exteriores, proporcionando un
 amplio espectro de condiciones y desafíos para los sistemas de SLAM visual-inercial.
 
-Cada secuencia fue capturada con un dispositivo sostenido con la mano (handheld) lo cual lo
-hace particularmente interesante para evaluar la localización de sistemas XR. Para grabarlo se
+Cada secuencia fue capturada con un dispositivo sostenido manualmente (\textit{handheld}), lo cual la hace
+particularmente interesante para evaluar la localización de sistemas XR. Para su captura se
 utilizó una cámara estéreo de 512 x 512 px de resolución a 20 fps y una IMU de alta precisión
 a 200 Hz, asegurando una correlación precisa entre los datos visuales e inerciales. Además, el
 benchmark incluye trayectorias de referencia obtenidas mediante métodos de captura de mo-
 vimiento, garantizando un ground truth de alta calidad para la evaluación de los
-algoritmos.
-
-Contiene secuencias de los siguientes tipos:
+algoritmos. El dataset presenta cinco clasificaciones de secuencias, cada una con características
+y desafíos únicos, visibles en la Figura \ref{fig:tum_vi_frames}:
 \begin{itemize}
     \item Corridor: Secuencias en el pasillo y varias oficinas donde las poses de ground truth están disponibles para los segmentos de inicio y fin.
-    \item Magistrale: Secuencias en un gran hall, donde las poses de ground truth están disponibles para los segmentos de inicio y fin.
+    \item Magistrale: Secuencias en una oficina, una gran sala y pasillos, donde las poses de ground truth están disponibles para los segmentos de inicio y fin.
     \item Outdoors: Secuencias al aire libre, donde las poses de ground truth están disponibles para los segmentos de inicio y fin.
     \item Room: Secuencias en una sala con un sistema de captura de movimiento, donde las poses de ground truth están disponibles para toda la trayectoria.
     \item Slides: Secuencias especialmente desafiantes que contienen deslizamientos en un tubo cerrado con muy mala iluminación en el interior.
@@ -158,23 +148,23 @@ Contiene secuencias de los siguientes tipos:
         \caption{Slides}
         \label{fig:experiments_figure19}
     \end{subfigure}
-    \caption{Frames from the TUM-VI benchmark dataset.}
-    \label{fig:mipp01_maps}
+    \caption{Frames de ejemplo del TUM-VI benchmark dataset.}
+    \label{fig:tum_vi_frames}
 \end{figure}
 
 \subsection*{Monado SLAM Dataset}
 
 El Monado SLAM Dataset (MSD) es un dataset visual-inercial de licencia permisiva creado
-específicamente para el caso de uso de aplicaciones XR. En el mismo se incluyen varios tipos
+específicamente para el caso de uso de aplicaciones XR. Incluye varios tipos
 de secuencias, desde juegos de VR hasta escenarios de inspección y mapeo de una habitación,
 proporcionando una amplia variedad de datos para evaluar algoritmos de SLAM en contextos
 de XR. El dataset contiene un ground truth con una precisión de 1 cm,
 capturado mediante un sistema de tres sensores externos lighthouses.
 Cuenta con 64 secuencias, con un total de 5 horas y 15 minutos de grabación en escenarios del mundo real,
-incluyendo secuencias largas e ininterrumpidas de hasta aproximadamente 40 minutos y secuencias de juego de ritmo rápido.
+incluyendo secuencias largas e ininterrumpidas de hasta 40 minutos y secuencias de juego de ritmo rápido.
 
 Todas las secuencias son capturadas por una persona utilizando diferentes cascos XR de uso comercial para aumentar
-la diversidad de los datos, como se puede ver en la figura 1: un Valve Index, un HP Reverb G2 y un Samsung Odyssey+.
+la diversidad de los datos, como se puede ver en la Figura \ref{fig:headsets}: un Valve Index, un HP Reverb G2 y un Samsung Odyssey+.
 
 \begin{figure}[ht]
     \centering
@@ -198,26 +188,23 @@ la diversidad de los datos, como se puede ver en la figura 1: un Valve Index, un
         \caption{Samsung Odyssey+}
         \label{fig:samsung_odyssey_plus_headset}
     \end{subfigure}
-    \caption{Headsets used in the dataset: Valve Index, HP Reverb G2, and Samsung Odyssey+.}
+    \caption{Headsets utilizados en el Monado SLAM Dataset.}
     \label{fig:headsets}
 \end{figure}
 
-
-
-Contiene secuencias de los siguientes tipos, que se distinguen por el tipo de casco utilizado para grabarlas:
+Las secuencias se clasifican de la siguiente manera:
 \begin{itemize}
     \item MI*: Conjunto de secuencias grabadas con el casco Valve Index que cuenta con dos cámaras
 con resolución 960 x 960 px a 54 fps y una IMU a 1000 Hz. Las secuencias
 MIO* incluyen diferentes escenarios como simulaciones de juegos, escaneo/mapeo de una
 habitación y algunos objetos o personas en movimiento en el entorno. Las secuencias MIP*
 son casos donde el usuario se encuentra jugando diferentes juegos XR, como por ejemplo Beat Saber
-en SteamVR.
+en SteamVR (ver Figura \ref{fig:msdmi_frame}).
     \item MO*: Conjunto de secuencias grabadas con el casco Odyssey+ el cual tiene dos cámaras con
-resolución 640 x 480 px a 30 fps y una IMU a 250 Hz.
+resolución 640 x 480 px a 30 fps y una IMU a 250 Hz (ver Figura \ref{fig:msdmo_frame}).
     \item MG*: Conjunto de secuencias grabadas con el casco Reverb G2 V2 el cual tiene cuatro
-cámaras con resolución 640 x 480 px a 30 fps y una IMU a 512 Hz.
+cámaras con resolución 640 x 480 px a 30 fps y una IMU a 512 Hz (ver Figura \ref{fig:msdmg_frame}).
 \end{itemize}
-
 
 \begin{figure}[h]
     \centering
@@ -225,58 +212,58 @@ cámaras con resolución 640 x 480 px a 30 fps y una IMU a 512 Hz.
     \includegraphics[width=0.24\linewidth]{img/experiments/example_frames/MGO04.2.png}
     \includegraphics[width=0.24\linewidth]{img/experiments/example_frames/MGO04.3.png}
     \includegraphics[width=0.24\linewidth]{img/experiments/example_frames/MGO04.4.png}
-    \caption{Example frame from the SLAM dataset trajectory (cameras 0-3, left to right).}
-    \label{fig:slam_frame}
+    \caption{Frame de ejemplo de la secuencia MGO04 (Reverb G2 V2).}
+    \label{fig:msdmg_frame}
 \end{figure}
 
 \begin{figure}[h]
     \centering
     \includegraphics[width=0.48\linewidth]{img/experiments/example_frames/MOO08.1.png}
     \includegraphics[width=0.48\linewidth]{img/experiments/example_frames/MOO08.2.png}
-    \caption{Example frame from the SLAM dataset trajectory (cameras 0-1, left to right).}
-    \label{fig:slam_frame_1}
+    \caption{Frame de ejemplo de la secuencia MOO08 (Odyssey+).}
+    \label{fig:msdmo_frame}
 \end{figure}
 
 \begin{figure}[h]
     \centering
     \includegraphics[width=0.48\linewidth]{img/experiments/example_frames/MIPT02.1.png}
     \includegraphics[width=0.48\linewidth]{img/experiments/example_frames/MIPT02.2.png}
-    \caption{Example frame from the SLAM dataset trajectory (cameras 0-1, left to right).}
-    \label{fig:slam_frame_1}
+    \caption{Frame de ejemplo de la secuencia MIPT02 (Valve Index).}
+    \label{fig:msdmi_frame}
 \end{figure}
 
 
 \section{Métricas} \label{sec:metrics}
 
-Para poder evaluar los resultados de los experimentos es necesario obtener métricas que
-permitan comparar precisión y robustez de las trayectorias estimadas por los distintos sistemas
+Para evaluar los resultados de los experimentos es necesario contar con métricas que
+permitan comparar la precisión y la robustez de las trayectorias estimadas por los distintos sistemas
 VI-SLAM.
 
-En este trabajo se optará por dos métricas típicamente utilizadas en el estado del arte que
-son el Error de Trayectoria Absoluta (ATE, Absolute Trajectory Error) y el Error de Trayectoria
-Relativa (RTE, Relative Trajectory Error). El ATE mide la diferencia global entre la trayectoria
+En este trabajo se emplean dos métricas ampliamente utilizadas en el estado del arte:
+el Error de Trayectoria Absoluto (ATE, \textit{Absolute Trajectory Error}) y el Error de Trayectoria
+Relativo (RTE, \textit{Relative Trajectory Error}). El ATE mide la diferencia global entre la trayectoria
 estimada y la trayectoria real del sensor en el espacio, proporcionando una indicación de la
 precisión absoluta del sistema a lo largo de toda la secuencia. Por otro lado, el RTE evalúa la
 precisión local del sistema midiendo la discrepancia entre segmentos cortos de las trayectorias, es
 decir, compara la posición relativa entre puntos cercanos en las trayectorias estimada y real. Esta
 métrica es útil para analizar la consistencia del sistema en intervalos cortos de tiempo.
 
-Existe una distinción en la forma de evaluar las trayectorias estimadas por los sistemas de SLAM: de manera
+Además, existen dos formas de evaluar las trayectorias estimadas por los sistemas de SLAM: de manera
 causal o no causal. En la primera, se evalúan las estimaciones que utilizan todas las mediciones hasta el respectivo
-timestamp de cada pose, es decir, tan pronto como se estima la pose, se reporta para ser comparada con el groun truth.
+timestamp de cada pose, es decir, tan pronto como se estima la pose, se reporta para ser comparada con el ground truth.
 En la evaluación no causal, se evalúa la trayectoria final completamente optimizada, donde se tienen en cuenta todas las
 mediciones para todas las estimaciones, incluyendo las correcciones de loop closure.
 
 En los sistemas tradicionales, en la evaluación causal el error de drift acumulado puede dominar las
-estadísticas del ATE, ya que la trayectoria contiene los característicos saltos cuando se corrigen los
-loop closures. En cambio, para el sistema implementado en este trabajo, esto no sucederá en las evaluaciones
-causales, porque la pose del keyframe más reciente se mantiene fija en la optimización. Aunque el error causal
+estadísticas del ATE, ya que la trayectoria contiene los característicos ``saltos'' cuando se cierran ciclos.
+En cambio, para el sistema implementado en este trabajo, esto no sucederá en las evaluaciones
+causales, porque la pose del keyframe más reciente se mantiene fija en la optimización. Sin embargo, el error causal
 no tendrá ninguna corrección de drift, y esto hará que sea exactamente igual al error de Basalt en su versión VIO.
-Por estos motivos, en la totalidad de los experimentos que evaluen ATE o RTE, se optará por evaluar la trayectoria no causal.
+Por estos motivos, en la totalidad de los experimentos que evalúen ATE o RTE, se optará por usar la trayectoria no causal.
 
 Es importante notar que en el mapa se guardan solo poses de keyframes, ya que tanto la optimización de los cierres de
-ciclos, como el bundle adjustment final mediante rootba, se realizan solo sobre keyframes. Con el fin de poder comparar
-las trayectorias estimadas por este sistema, con los del estado del arte, se recuperan las poses de los frames
+ciclos, como el bundle adjustment final, se realizan sobre keyframes. Con el fin de poder comparar
+las trayectorias estimadas por este sistema, con las estimadas por los sistemas del estado del arte, se recuperan las poses de los frames
 intermedios a través de interpolación entre los keyframes temporalmente más cercanos, tanto para el ATE como para el RTE.
 
 % The keyframes must be a subset of the frames. They may have optimized poses, that differ from the frames' poses. For every non-keyframe frame f between optimized keyframes KF_i and KF_{i+1} its pose is recovered via two-sided interpolation:
@@ -301,17 +288,17 @@ para determinar si cumplen con las limitaciones de tiempo real impuestas para su
 Para esto se analizará el tiempo de ejecución de cada sistema, tanto en términos de tiempo total como en
 términos de tiempo por frame. De acuerdo a los tipos de cámaras previamente mencionados, los límites de
 funcionamiento para tiempo real son: 18.5 ms por frame para las secuencias MI*, 33.3 ms para las secuencias
-MO* y MG*, y 50 ms para las secuencias del EuRoC y TUM-VI benchmark. Para ello, es importante mencionar
-los distintos modos de ejecución con los que cuenta el sistema:
+MO* y MG*, y 50 ms para las secuencias de EuRoC y TUM-VI. Para ello, es importante mencionar
+los distintos modos de ejecución con los que cuenta el sistema propuesto:
 \begin{itemize}
     \item Síncrono. Las operaciones se ejecutan de manera secuencial. Es decir, para cada frame primero se lo procesa en el frontend,
-    luego se lo optimiza en el vio, y luego se agrega en el mapa, detectando y cerrando ciclos si los hubiere. Una vez que
-    se completa el procesamiento completo del frame, se introduce el siguiente. Este modo de ejecución sirve para que sea
-    más fácil la reproducción de resultados. Aunque no es el modo de ejecución recomendado para aplicaciones XR,
+    luego se lo optimiza en el VIO, y luego se agrega en el mapa, detectando y cerrando ciclos si los hubiere. Una vez que
+    se completa el procesamiento completo del frame, se introduce el siguiente. Este modo de ejecución sirve para facilitar
+    la reproducción de resultados. Sin embargo, no es el modo de ejecución recomendado para aplicaciones XR,
     ya que no se aprovechan las ventajas de la arquitectura del sistema.
     \item Asíncrono. Las operaciones se ejecutan de manera concurrente, permitiendo que el sistema procese múltiples
-    frames al mismo tiempo. En este modo, el frontend puede procesar un nuevo frame mientras el vio optimiza la trayectoria.
-    Además, el mapa recibe nuevos keyframes a medida que ingresan en el VIO, pero no bloquea a ningún thread mientras ejecuta
+    frames al mismo tiempo. En este modo, el frontend puede procesar un nuevo frame mientras el VIO optimiza la trayectoria.
+    Además, el mapa recibe nuevos keyframes a medida que ingresan en el VIO, pero no bloquea a ningún otro componente mientras ejecuta
     sus operaciones como culling y loop closure.
     \item Síncrono con mapa asíncrono. En este modo, el frontend y el VIO se ejecutan de manera secuencial, pero el mapa
     de manera concurrente. Permitiendo un mayor control sobre el flujo de ejecución, sin bloquear componentes cuando el mapa
@@ -320,23 +307,23 @@ los distintos modos de ejecución con los que cuenta el sistema:
 
 \section{Estudio de ablación}
 
-Para poder dimensionar el impacto de las mejoras implementadas individualmente, se realizó
-un estudio de ablación en el cual se compara Basalt original con diferentes versiones del sistema
-en las cuales se van incorporando las funcionalidades propuestas. Las versiones a evaluar son:
+Con el fin de cuantificar el impacto individual de cada mejora implementada, se realizó
+un estudio de ablación que compara Basalt original con distintas versiones del sistema,
+incorporando progresivamente las funcionalidades propuestas. Las versiones evaluadas son:
 
 \begin{itemize}
     \item Basalt: Versión original de Basalt, no mantiene un mapa persistente.
-    \item BasaltLC: Versión de Basalt que mantiene un mapa persistente, detecta y cierra ciclos, y realiza map culling.
-    \item BasaltSLAM: Versión de Basalt que realiza las mismas operaciones que BasaltLC, pero además optimiza el mapa final con rootba.
-    \item BasaltSLAM+CQ: Versión de Basalt que realiza las mismas operaciones que BasaltSLAM, pero además durante la ejecución,
-    reintroduce hasta 3 keyframes, en base al grafo de covisibilidad del mapa, en la ventana de keyframes del VIO.
+    \item BasaltLC: Versión de Basalt que mantiene un mapa persistente, detecta y cierra ciclos, y realiza keyframe culling.
+    \item BasaltSLAM: Versión de Basalt que realiza las mismas operaciones que BasaltLC, pero además optimiza el mapa final con RootBA.
+    \item BasaltSLAM-CQ: Versión de Basalt que realiza las mismas operaciones que BasaltSLAM. Además, durante la ejecución,
+    reintroduce hasta 3 keyframes en la ventana de keyframes del VIO, basándose en el grafo de covisibilidad del mapa.
 \end{itemize}
 
 Para este experimento, se dividirán los datasets en dos categorías: “Datasets del estado del
 arte” (EuRoC y TUM-VI) y “Datasets de XR” (Monado SLAM Dataset). En cada caso, se
-presentarán las métricas ATE y RTE, comentadas en la sección \ref{sec:metrics}. Se incluirá una tabla por métrica y tipo
-de secuencia según las mencionadas en la sección \ref{sec:datasets}. En caso
-de que un sistema termine abruptamente o el ATE indique que el sistema perdió la localización,
+presentarán las métricas ATE y RTE, comentadas en la Sección \ref{sec:metrics}. Se incluirá una tabla por métrica y tipo
+de secuencia según las mencionadas en la Sección \ref{sec:datasets}. En caso
+de que un sistema termine abruptamente o no sea capaz de estimar la trayectoria,
 se utilizará un guion ('-') para indicar la falla. Al final de cada tabla se agregan las filas ``Mean'' y ``Median''
 que muestran el promedio y mediana de las secuencias que corrieron correctamente.
 
@@ -345,13 +332,13 @@ la cantidad de ciclos detectados.
 
 \subsection{Resultados en datasets del estado del arte}
 
-En las Tablas \ref{tab:corridor_ablation_ate} y \ref{tab:corridor_ablation_rte} se muestran los resultados de ATE y RTE respectivamente, en las secuencias de corridor.
+En las Tablas \ref{tab:corridor_ablation_ate} y \ref{tab:corridor_ablation_rte} se muestran los resultados de ATE y RTE respectivamente, en las secuencias de ``Corridor''.
 Se observa una mejora significativa en ambas métricas, a excepción de la secuencia TC4, donde el sistema no detectó ningún ciclo
 y por ende no se produjo ninguna mejora.
 
 \begin{table}[ht]
 \centering
-\caption{corridor: ATE [cm]}
+\caption{Error de trayectoria absoluto (ATE) [cm] en TUM-VI Corridor.}
 \label{tab:corridor_ablation_ate}
 \begin{tabular}{lrrrr}
 \toprule
@@ -371,7 +358,7 @@ Mean & 39.2 & 10.9 & \textbf{8.3} & 9.6 \\
 
 \begin{table}[ht]
 \centering
-\caption{corridor: RTE [cm]}
+\caption{Error de trayectoria relativo (RTE) [cm] en TUM-VI Corridor.}
 \label{tab:corridor_ablation_rte}
 \begin{tabular}{lrrrr}
 \toprule
@@ -389,16 +376,16 @@ Mean & 7.4 & 3.6 & 2.8 & \textbf{1.7} \\
 \end{tabular}
 \end{table}
 
-En las Tablas \ref{tab:magistrale_ablation_ate} y \ref{tab:magistrale_ablation_rte} se muestran los resultados de ATE y RTE respectivamente, en las secuencias de magistrale.
-Si bien en todas las secuencias los sistemas de SLAM son superiores, principalmente en ATE, esta mejora es notable en
+En las Tablas \ref{tab:magistrale_ablation_ate} y \ref{tab:magistrale_ablation_rte} se muestran los resultados de ATE y RTE respectivamente, en las secuencias de ``Magistrale''.
+Si bien en todas las secuencias los sistemas SLAM logran una mejora respecto a Basalt, principalmente en ATE, dicha mejora es especialmente notable en
 TM1 y TM6, donde BasaltSLAM es capaz de corregir drifts acumulados de más de 3 metros.
-Si bien en todas las secuencias se detectaron ciclos, en la Figura \ref{fig:loops_tm1} se puede observar que uno de los ciclos de TM1 fue detectado
-entre keyframes que se encuentran muy alejados temporalmente, lo cual hace que la corrección de drift sea más efectiva. Lo mismo sucede
-para TM6, a diferencia de las demás secuencias.
+En todas las secuencias se detectaron ciclos; sin embargo, como se puede observar en la Figura \ref{fig:loops_tm1}, uno de los ciclos de TM1 fue detectado
+entre keyframes temporalmente distantes, lo cual hace que la corrección de drift sea más efectiva. Lo mismo ocurre
+en TM6, a diferencia de las demás secuencias.
 
 \begin{table}[ht]
 \centering
-\caption{magistrale: ATE [cm]}
+\caption{Error de trayectoria absoluto (ATE) [cm] en TUM-VI Magistrale.}
 \label{tab:magistrale_ablation_ate}
 \begin{tabular}{lrrrr}
 \toprule
@@ -419,7 +406,7 @@ Mean & 183.7 & 88.5 & \textbf{84.7} & 126.6 \\
 
 \begin{table}[ht]
 \centering
-\caption{magistrale: RTE [cm]}
+\caption{Error de trayectoria relativo (RTE) [cm] en TUM-VI Magistrale.}
 \label{tab:magistrale_ablation_rte}
 \begin{tabular}{lrrrr}
 \toprule
@@ -438,7 +425,7 @@ Mean & 22.5 & 10.3 & \textbf{9.6} & 14.1 \\
 \end{tabular}
 \end{table}
 
-En las Tablas \ref{tab:outdoors_ablation_ate} y \ref{tab:outdoors_ablation_rte} se muestran los resultados de ATE y RTE respectivamente, en las secuencias de outdoors.
+En las Tablas \ref{tab:outdoors_ablation_ate} y \ref{tab:outdoors_ablation_rte} se muestran los resultados de ATE y RTE respectivamente, en las secuencias de ``Outdoors''.
 No se observa una mejora como en las secuencias anteriores. Tan solo se observa una mejora en TO7, donde se detectaron 24 ciclos, y algunos de ellos
 fueron entre keyframes que se encuentran alejados temporalmente, como se observa en la Figura \ref{fig:loops_to7}.
 Sin embargo, en el resto de las secuencias, los ciclos detectados fueron entre keyframes muy cercanos
@@ -446,7 +433,7 @@ temporalmente, como se observa en las Figura \ref{fig:loops_to3}, lo cual hace q
 
 \begin{table}[ht]
 \centering
-\caption{outdoors: ATE [cm]}
+\caption{Error de trayectoria absoluto (ATE) [cm] en TUM-VI Outdoors.}
 \label{tab:outdoors_ablation_ate}
 \begin{tabular}{lrrrr}
 \toprule
@@ -469,7 +456,7 @@ Mean & 6019.0 & 6227.1 & 6226.1 & \textbf{5987.7} \\
 
 \begin{table}[ht]
 \centering
-\caption{outdoors: RTE [cm]}
+\caption{Error de trayectoria relativo (RTE) [cm] en TUM-VI Outdoors.}
 \label{tab:outdoors_ablation_rte}
 \begin{tabular}{lrrrr}
 \toprule
@@ -490,16 +477,15 @@ Mean & 624.0 & 644.3 & 643.9 & \textbf{619.9} \\
 \end{tabular}
 \end{table}
 
-En las Tablas \ref{tab:room_ablation_ate} y \ref{tab:room_ablation_rte} se muestran los resultados de ATE y RTE respectivamente, en las secuencias de Room.
+En las Tablas \ref{tab:room_ablation_ate} y \ref{tab:room_ablation_rte} se muestran los resultados de ATE y RTE respectivamente, en las secuencias de ``Room''.
 Como estas secuencias fueron grabadas en un entorno controlado, dentro de una misma habitación, la detección de ciclos es más fácil.
 Para el sistema BasaltLC, ya se observa una mejora significativa, principalmente para el ATE, en todas las secuencias.
-Es destacable que, además, la incorporación de rootba en BasaltSLAM, mejora aún más la precisión, logrando una precisión de 1 cm o menos en todas las secuencias.
-
+Es destacable que, además, la incorporación de RootBA en BasaltSLAM mejora aún más la precisión, logrando una precisión de 1 cm o menos en todas las secuencias.
 En términos de RTE, se observa una mejora más modesta, aunque BasaltSLAM sigue siendo el sistema más preciso en todas las secuencias.
 
 \begin{table}[ht]
 \centering
-\caption{room: ATE [cm]}
+\caption{Error de trayectoria absoluto (ATE) [cm] en TUM-VI Room.}
 \label{tab:room_ablation_ate}
 \begin{tabular}{lrrrr}
 \toprule
@@ -520,7 +506,7 @@ Mean & 8.7 & 3.7 & \textbf{0.9} & \textbf{0.9} \\
 
 \begin{table}[ht]
 \centering
-\caption{room: RTE [cm]}
+\caption{Error de trayectoria relativo (RTE) [cm] en TUM-VI Room.}
 \label{tab:room_ablation_rte}
 \begin{tabular}{lrrrr}
 \toprule
@@ -539,19 +525,17 @@ Mean & 0.6 & 0.8 & \textbf{0.4} & 0.5 \\
 \end{tabular}
 \end{table}
 
-En las Tablas \ref{tab:slides_ablation_ate} y \ref{tab:slides_ablation_rte} se muestran los resultados de ATE y RTE respectivamente, en las secuencias de Slides.
-
-En estas secuencias se observa un comportamiento similar a las secuencias de magistrale. En TS1, se observa una mejora significativa, tanto para ATE como para RTE.
-Esto se debe a la detección de ciclos entre keyframes que se encuentran alejados temporalmente. Pero en TS2 y TS3, aunque se detectaron ciclos,
-estos fueron entre keyframes muy cercanos temporalmente, lo cual hace que el drift acumulado durante la trayectoria no se corrija.
-
-Aunque hay que notar que, para estas secuencias, se tiene ground truth solo para los keyframes del comienzo y el final.
-Es por esto que se consiguen métricas tan buenas en TS1, aunque el resto de la trayectoria probablemente no tenga
-tanta precisión, dada la dificultad de las secuencias de Slides.
+En las Tablas \ref{tab:slides_ablation_ate} y \ref{tab:slides_ablation_rte} se muestran los resultados de ATE y RTE respectivamente, en las secuencias de ``Slides''.
+Allí se observa un comportamiento similar a las secuencias de ``Magistrale''. En TS1, se observa una mejora significativa, tanto para ATE como para RTE.
+Esto se debe a la detección de ciclos entre keyframes temporalmente distantes. En cambio, en TS2 y TS3, aunque se detectaron ciclos,
+estos correspondieron a keyframes muy cercanos temporalmente, por lo que el drift acumulado durante la trayectoria no se corrige.
+Cabe destacar que, para estas secuencias, el ground truth solo está disponible para los segmentos de inicio y fin.
+Esto explica las buenas métricas obtenidas en TS1, aunque el resto de la trayectoria probablemente presente
+menor precisión, dada la dificultad inherente de las secuencias de ``Slides''.
 
 \begin{table}[ht]
 \centering
-\caption{slides: ATE [cm]}
+\caption{Error de trayectoria absoluto (ATE) [cm] en TUM-VI Slides.}
 \label{tab:slides_ablation_ate}
 \begin{tabular}{lrrrr}
 \toprule
@@ -569,7 +553,7 @@ Mean & 102.5 & 92.6 & \textbf{91.8} & 117.4 \\
 
 \begin{table}[ht]
 \centering
-\caption{slides: RTE [cm]}
+\caption{Error de trayectoria relativo (RTE) [cm] en TUM-VI Slides.}
 \label{tab:slides_ablation_rte}
 \begin{tabular}{lrrrr}
 \toprule
@@ -591,14 +575,14 @@ Mean & 11.8 & 10.9 & \textbf{10.8} & 13.3 \\
     \begin{subfigure}[b]{0.48\textwidth}
         \centering
         \includegraphics[width=\textwidth]{img/experiments/TC1.loops.pdf}
-        \caption{TC1}
+        \caption{TUM-VI Corridor 1}
         \label{fig:loops_tc1}
     \end{subfigure}
     \hfill
     \begin{subfigure}[b]{0.48\textwidth}
         \centering
         \includegraphics[width=\textwidth]{img/experiments/TM1.loops.pdf}
-        \caption{TM1}
+        \caption{TUM-VI Magistrale 1}
         \label{fig:loops_tm1}
     \end{subfigure}
 
@@ -607,30 +591,28 @@ Mean & 11.8 & 10.9 & \textbf{10.8} & 13.3 \\
     \begin{subfigure}[b]{0.48\textwidth}
         \centering
         \includegraphics[width=\textwidth]{img/experiments/TO3.loops.pdf}
-        \caption{TO3}
+        \caption{TUM-VI Outdoors 3}
         \label{fig:loops_to3}
     \end{subfigure}
     \hfill
     \begin{subfigure}[b]{0.48\textwidth}
         \centering
         \includegraphics[width=\textwidth]{img/experiments/TO7.loops.pdf}
-        \caption{TO7}
+        \caption{TUM-VI Outdoors 7}
         \label{fig:loops_to7}
     \end{subfigure}
 
-    \caption{Loop detection for TumVi sequences}
+    \caption{Detecciones de ciclo para algunas secuencias del TUM-VI benchmark dataset}
     \label{fig:loops_tumvi}
 \end{figure}
 
-En las tablas \ref{tab:MH_ablation_ate} y \ref{tab:MH_ablation_rte} se muestran los resultados de ATE y RTE respectivamente, en las secuencias de MH.
+En las Tablas \ref{tab:MH_ablation_ate} y \ref{tab:MH_ablation_rte} se muestran los resultados de ATE y RTE respectivamente, en las secuencias de ``Machine Hall''.
 En este caso, el sistema que mayor precisión logra es BasaltLC, aunque la mejora respecto a Basalt original no es tan significativa.
-Es interesante que la introducción de rootba en BasaltSLAM empeora la precisión en unos centímetros.
-
-En términos de RTE, todos los sistemas mantienen una precisión similar.
+Es interesante que la introducción de RootBA en BasaltSLAM empeora la precisión por unos centímetros. En términos de RTE, todos los sistemas mantienen una precisión similar.
 
 \begin{table}[ht]
 \centering
-\caption{MH: ATE [cm]}
+\caption{Error de trayectoria absoluto (ATE) [cm] en EuRoC Machine Hall.}
 \label{tab:MH_ablation_ate}
 \begin{tabular}{lrrrr}
 \toprule
@@ -650,7 +632,7 @@ Mean & 9.1 & \textbf{6.8} & 8.2 & 8.4 \\
 
 \begin{table}[ht]
 \centering
-\caption{MH: RTE [cm]}
+\caption{Error de trayectoria relativo (RTE) [cm] en EuRoC Machine Hall.}
 \label{tab:MH_ablation_rte}
 \begin{tabular}{lrrrr}
 \toprule
@@ -668,14 +650,13 @@ Mean & \textbf{0.9} & \textbf{0.9} & \textbf{0.9} & 1.0 \\
 \end{tabular}
 \end{table}
 
-En las tablas \ref{tab:V1_ablation_ate} y \ref{tab:V1_ablation_rte} se muestran los resultados de ATE y RTE respectivamente, en las secuencias de Vicon Room 1.
-
+En las Tablas \ref{tab:V1_ablation_ate} y \ref{tab:V1_ablation_rte} se muestran los resultados de ATE y RTE respectivamente, en las secuencias de ``Vicon Room 1''.
 En este caso, BasaltSLAM logra una mejora con respecto a Basalt. Sin embargo, para la secuencia EV103, sucede algo similar
-a Machine Hall, ya que la introducción de rootba empeora la precisión.
+a ``Machine Hall'', ya que la introducción de RootBA empeora la precisión.
 
 \begin{table}[ht]
 \centering
-\caption{V1: ATE [cm]}
+\caption{Error de trayectoria absoluto (ATE) [cm] en EuRoC Vicon Room 1.}
 \label{tab:V1_ablation_ate}
 \begin{tabular}{lrrrr}
 \toprule
@@ -693,7 +674,7 @@ Mean & 5.1 & 5.0 & 6.7 & \textbf{4.6} \\
 
 \begin{table}[ht]
 \centering
-\caption{V1: RTE [cm]}
+\caption{Error de trayectoria relativo (RTE) [cm] en EuRoC Vicon Room 1.}
 \label{tab:V1_ablation_rte}
 \begin{tabular}{lrrrr}
 \toprule
@@ -709,14 +690,13 @@ Mean & \textbf{1.2} & 1.3 & 2.2 & 1.6 \\
 \end{tabular}
 \end{table}
 
-Finalmente, en las tablas \ref{tab:V2_ablation_ate} y \ref{tab:V2_ablation_rte} se muestran los resultados de ATE y RTE respectivamente, en las secuencias de Vicon Room 2.
-
+Finalmente, en las Tablas \ref{tab:V2_ablation_ate} y \ref{tab:V2_ablation_rte} se muestran los resultados de ATE y RTE respectivamente, en las secuencias de ``Vicon Room 2''.
 En este caso, BasaltLC es el que logra una mayor precisión en ATE. Aunque en RTE Basalt mantiene el mejor resultado.
-Con la introducción de rootba en BasaltSLAM, se observa una vez más que se reduce la precisión notablemente.
+Con la introducción de RootBA en BasaltSLAM, se observa una vez más que se reduce la precisión notablemente.
 
 \begin{table}[ht]
 \centering
-\caption{V2: ATE [cm]}
+\caption{Error de trayectoria absoluto (ATE) [cm] en EuRoC Vicon Room 2.}
 \label{tab:V2_ablation_ate}
 \begin{tabular}{lrrrr}
 \toprule
@@ -734,7 +714,7 @@ Mean & 7.8 & \textbf{5.0} & 9.1 & 10.6 \\
 
 \begin{table}[ht]
 \centering
-\caption{V2: RTE [cm]}
+\caption{Error de trayectoria relativo (RTE) [cm] en EuRoC Vicon Room 2.}
 \label{tab:V2_ablation_rte}
 \begin{tabular}{lrrrr}
 \toprule
@@ -756,14 +736,14 @@ Mean & \textbf{1.2} & 1.5 & 3.9 & 4.5 \\
     \begin{subfigure}[b]{0.48\textwidth}
         \centering
         \includegraphics[width=\textwidth]{img/experiments/MH_04.traj.pdf}
-        \caption{MH\_04}
+        \caption{Machine Hall - Secuencia 4}
         \label{fig:traj_mh04}
     \end{subfigure}
     \hfill
     \begin{subfigure}[b]{0.48\textwidth}
         \centering
         \includegraphics[width=\textwidth]{img/experiments/V2_02.traj.pdf}
-        \caption{V2\_02}
+        \caption{Vicon Room 2 - Secuencia 2}
         \label{fig:traj_v202}
     \end{subfigure}
 
@@ -772,18 +752,18 @@ Mean & \textbf{1.2} & 1.5 & 3.9 & 4.5 \\
     \begin{subfigure}[b]{0.48\textwidth}
         \centering
         \includegraphics[width=\textwidth]{img/experiments/TM1.traj.pdf}
-        \caption{TM1}
+        \caption{TUM-VI Magistrale 1}
         \label{fig:traj_tm1}
     \end{subfigure}
     \hfill
     \begin{subfigure}[b]{0.48\textwidth}
         \centering
         \includegraphics[width=\textwidth]{img/experiments/TR5.traj.pdf}
-        \caption{TR5}
+        \caption{TUM-VI Room 5}
         \label{fig:traj_tr5}
     \end{subfigure}
 
-    \caption{Trajectory comparisons for MH sequences}
+    \caption{Comparativa de las trayectorias estimadas por Basalt, BasaltLC y BasaltSLAM para algunas secuencias del TUM-VI benchmark dataset y EuRoC MAV dataset.}
     \label{fig:trajectories}
 \end{figure}
 
@@ -794,18 +774,18 @@ En las Tablas \ref{tab:msdmi_ablation_ate} y \ref{tab:msdmi_ablation_rte} se mue
 Se observa que, en gran parte de las secuencias, se detecta un gran número de ciclos. Esto hace que BasaltLC logre reducir
 la mediana del ATE en más de un 85\%, en comparación con Basalt. Más aún, con la incorporación de RootBA en BasaltSLAM, se consigue
 una mejora adicional, logrando una precisión menor a 3 cm en la mayoría de las secuencias.
-En cuanto a BasaltSLAM+CQ, en algunas secuencias se observan mejoras interesantes, como en MIPB02 o MIO16. Sin embargo,
-en la secuencia MIO01, la incorporación de la query de covisibilidad hace que el sistema pierda la localización. Esto puede
-deberse a la reidentificación incorrecta de un landmark, aunque es un problema que debería ser investigado con mayor profundidad.
-Además, el sistema no es capaz de completar la secuencia MIPB08, que es la de mayor duración con más de 35 minutos. Esto se debe a
-que, de acuerdo al diseño actual del sistema, para poder reidentificar landmarks, se guardan los parches de todos los keypoints
-detectados desde el comienzo de la secuencia. Esto hace que, a medida que avanza la secuencia, el número de parches almacenados crezca,
-hasta que el proceso se queda sin memoria.
+En cuanto a BasaltSLAM-CQ, en algunas secuencias se observan mejoras destacables, como en MIPB02 o MIO16. Sin embargo,
+en la secuencia MIO01, la incorporación de la consulta de covisibilidad provoca que el sistema pierda la localización. Esto puede
+atribuirse a la reidentificación incorrecta de un landmark, aunque se trata de un problema que requiere investigación más profunda.
+Además, el sistema no logra completar la secuencia MIPB08, de más de 35 minutos de duración. La causa reside en que,
+según el diseño actual del sistema, para reidentificar landmarks se almacenan los parches de todos los keypoints
+detectados desde el inicio de la secuencia. A medida que esta avanza, el número de parches almacenados crece indefinidamente
+hasta agotar la memoria disponible.
 En términos de RTE, Basalt es el sistema que logra la mejor precisión, aunque BasaltLC y BasaltSLAM logran una precisión similar.
 
 \begin{table}[ht]
 \centering
-\caption{msdmi: ATE [cm]}
+\caption{Error de trayectoria absoluto (ATE) [cm] en MSD Valve Index.}
 \label{tab:msdmi_ablation_ate}
 \begin{tabular}{lrrrr}
 \toprule
@@ -853,7 +833,7 @@ Mean & 28.0 & 6.6 & \textbf{5.4} & 123.4 \\
 
 \begin{table}[ht]
 \centering
-\caption{msdmi: RTE [cm]}
+\caption{Error de trayectoria relativo (RTE) [cm] en MSD Valve Index.}
 \label{tab:msdmi_ablation_rte}
 \begin{tabular}{lrrrr}
 \toprule
@@ -901,14 +881,14 @@ Mean & \textbf{1.0} & 1.1 & 1.4 & 20.1 \\
 
 En las Tablas \ref{tab:msdgo_ablation_ate} y \ref{tab:msdgo_ablation_rte} se muestran los resultados de ATE y RTE respectivamente, en las secuencias de MG*.
 Se observan resultados similares a los obtenidos en las secuencias de MI*. BasaltSLAM es el sistema que logra la mejor precisión,
-mejorando la mediana del ATE en más de un 70\% en comparación con Basalt. La incorporación de la query de covisibilidad en BasaltSLAM+CQ
-consigue un resultado interesante en la secuencia MGO01. Aunque el problema de memoria previamente mencionado, hace que no
-pueda completar la secuencia MGO12, de más de 40 minutos de duración.
-En términos de RTE, BasaltSLAM consigue mayor precisión en la mayoría de secuencias, aunque todas mantienen una precisión similar.
+mejorando la mediana del ATE en más de un 70\% en comparación con Basalt. La incorporación de la consulta de covisibilidad en BasaltSLAM-CQ
+consigue un resultado destacado en la secuencia MGO01. No obstante, el problema de memoria previamente descrito impide que
+el sistema complete la secuencia MGO12, de más de 40 minutos de duración.
+En términos de RTE, BasaltSLAM consigue mayor precisión en la mayoría de secuencias, aunque todos mantienen una precisión similar.
 
 \begin{table}[ht]
 \centering
-\caption{msdgo: ATE [cm]}
+\caption{Error de trayectoria absoluto (ATE) [cm] en MSD HP Reverb G2.}
 \label{tab:msdgo_ablation_ate}
 \begin{tabular}{lrrrr}
 \toprule
@@ -938,7 +918,7 @@ Mean & 21.7 & 4.8 & 4.0 & \textbf{3.0} \\
 
 \begin{table}[ht]
 \centering
-\caption{msdgo: RTE [cm]}
+\caption{Error de trayectoria relativo (RTE) [cm] en MSD HP Reverb G2.}
 \label{tab:msdgo_ablation_rte}
 \begin{tabular}{lrrrr}
 \toprule
@@ -967,16 +947,16 @@ Mean & \textbf{1.4} & 1.5 & 1.6 & 2.0 \\
 \end{table}
 
 En las Tablas \ref{tab:msdmo_ablation_ate} y \ref{tab:msdmo_ablation_rte} se muestran los resultados de ATE y RTE respectivamente, en las secuencias de MO*.
-Una vez más, BasaltSLAM es que consigue los mejores resultados en ATE, mejorando la mediana en un 50\% en comparación con Basalt.
-La incorporación de la query de covisibilidad en BasaltSLAM+CQ consigue la mayor precisión en algunas secuencias, con un
-resultado especialmente destacado en la secuencia MOO15, en la cual es el único sistema que no pierde la localización. Además,
-se repite el problema de memoria previamente mencionado, que hace que el sistema no pueda completar la secuencia MOO12,
+Una vez más, BasaltSLAM es el que consigue los mejores resultados en ATE, mejorando la mediana en un 50\% en comparación con Basalt.
+La incorporación de la consulta de covisibilidad en BasaltSLAM-CQ logra la mayor precisión en algunas secuencias, con un
+resultado especialmente destacado en MOO15, donde es el único sistema que mantiene la localización. Además,
+se repite el problema de memoria previamente descrito, que impide al sistema completar la secuencia MOO12,
 de más de 40 minutos de duración.
 En términos de RTE, Basalt obtiene la mejor mediana y promedio, aunque todos los sistemas mantienen una precisión similar.
 
 \begin{table}[ht]
 \centering
-\caption{msdmo: ATE [cm]}
+\caption{Error de trayectoria absoluto (ATE) [cm] en MSD Samsung Odyssey+.}
 \label{tab:msdmo_ablation_ate}
 \begin{tabular}{lrrrr}
 \toprule
@@ -1007,7 +987,7 @@ Mean & 26.7 & 21.6 & 21.3 & \textbf{3.4} \\
 
 \begin{table}[ht]
 \centering
-\caption{msdmo: RTE [cm]}
+\caption{Error de trayectoria relativo (RTE) [cm] en MSD Samsung Odyssey+.}
 \label{tab:msdmo_ablation_rte}
 \begin{tabular}{lrrrr}
 \toprule
@@ -1076,7 +1056,7 @@ de RootBA.
         \label{fig:traj_mio01}
     \end{subfigure}
 
-    \caption{Trajectory comparisons for MSD sequences}
+    \caption{Comparativa de las trayectorias estimadas por Basalt, BasaltLC y BasaltSLAM para algunas secuencias de MSD.}
     \label{fig:msd_ablation_trajectories}
 \end{figure}
 
@@ -1086,23 +1066,23 @@ de RootBA.
         \centering
         \includegraphics[width=\textwidth]{img/experiments/MIPP01.vio.map.png}
         \caption{Basalt}
-        \label{fig:experiments_figure15}
+        \label{fig:mipp01_basalt_map}
     \end{subfigure}
     \hfill
     \begin{subfigure}[b]{0.32\textwidth}
         \centering
         \includegraphics[width=\textwidth]{img/experiments/MIPP01.lc.map.png}
         \caption{BasaltLC}
-        \label{fig:experiments_figure16}
+        \label{fig:mipp01_basaltlc_map}
     \end{subfigure}
     \hfill
     \begin{subfigure}[b]{0.32\textwidth}
         \centering
         \includegraphics[width=\textwidth]{img/experiments/MIPP01.slam.map.png}
         \caption{BasaltSLAM}
-        \label{fig:experiments_figure17}
+        \label{fig:mipp01_basaltslam_map}
     \end{subfigure}
-    \caption{Map MIPP01}
+    \caption{Mapas obtenidos por Basalt, BasaltLC y BasaltSLAM para la secuencia MIPP01.}
     \label{fig:mipp01_ablation_maps}
 \end{figure}
 
@@ -1112,30 +1092,31 @@ de RootBA.
         \centering
         \includegraphics[width=\textwidth]{img/experiments/MGO01.vio.map.png}
         \caption{Basalt}
-        \label{fig:experiments_figure16}
+        \label{fig:mgo01_basalt_map}
     \end{subfigure}
     \hfill
     \begin{subfigure}[b]{0.32\textwidth}
         \centering
         \includegraphics[width=\textwidth]{img/experiments/MGO01.lc.map.png}
         \caption{BasaltLC}
-        \label{fig:experiments_figure17}
+        \label{fig:mgo01_basaltlc_map}
     \end{subfigure}
     \hfill
     \begin{subfigure}[b]{0.32\textwidth}
         \centering
         \includegraphics[width=\textwidth]{img/experiments/MGO01.slam.map.png}
         \caption{BasaltSLAM}
-        \label{fig:experiments_figure18}
+        \label{fig:mgo01_basaltslam_map}
     \end{subfigure}
-    \caption{Map MGO01}
+    \caption{Mapas obtenidos por Basalt, BasaltLC y BasaltSLAM para la secuencia MGO01.}
     \label{fig:mgo01_ablation_maps}
 \end{figure}
 
 En la Figura \ref{fig:msd_ablation_timings} se muestran los tiempos de procesamiento por frame para cada sistema
-en las secuencias de MSD. Para este análisis no se tuvo en cuenta la versión BasaltSLAM, ya que no era posible representar
-en gráficas como estas el tiempo de procesamiento de la optimización final de RootBA, dejando el análisis de performance de
-RootBA para las siguientes secciones. Se observa que, para los cascos Odyssey+ y HP Reverb G2 V2, tanto BasaltLC como
+en las secuencias de MSD. En este análisis no se incluyó la versión BasaltSLAM, ya que no fue posible representar
+el tiempo de ejecución de la optimización final en tales gráficas. Por lo tanto, la performance de RootBA
+será analizada en las siguientes secciones.
+Se observa que, para los cascos Odyssey+ y HP Reverb G2 V2, tanto BasaltLC como
 BasaltLC-CQ mantienen un tiempo de procesamiento por frame por debajo del límite de tiempo para la operación en tiempo real,
 aunque muestran un promedio de procesamiento levemente superior a Basalt.
 En el caso del Valve Index, BasaltLC obtiene una diferencia de 0.6 ms de promedio en comparación con Basalt. Aún así, su promedio
@@ -1148,54 +1129,54 @@ límite de tiempo para la operación en tiempo real.
     \begin{subfigure}[b]{0.48\textwidth}
         \centering
         \includegraphics[width=\textwidth]{img/experiments/MOO01.timings.ablation.pdf}
-        \caption{Secuencia capturada con Odyssey+}
+        \caption{Secuencia capturada con Odyssey+.}
         \label{fig:experiments_figure16}
     \end{subfigure}
     \hfill
     \begin{subfigure}[b]{0.48\textwidth}
         \centering
         \includegraphics[width=\textwidth]{img/experiments/MGO04.timings.ablation.pdf}
-        \caption{Secuencia capturada con HP Reverb G2 V2}
+        \caption{Secuencia capturada con HP Reverb G2 V2.}
         \label{fig:experiments_figure17}
     \end{subfigure}
     \hfill
     \begin{subfigure}[b]{0.48\textwidth}
         \centering
         \includegraphics[width=\textwidth]{img/experiments/MIO02.timings.ablation.pdf}
-        \caption{Secuencia capturada con Valve Index}
+        \caption{Secuencia capturada con Valve Index.}
         \label{fig:experiments_figure18}
     \end{subfigure}
     \caption{Tiempo de procesamiento por frame para cada sistema en las secuencias de MO*, MG* y MI* respectivamente.
     Se muestra un promedio móvil con una ventana de 2 segundos (60 frames). En el fondo, los datos sin procesar muestran
     outliers y jitter para cada sistema. Una línea roja marca el límite de tiempo para la operación en tiempo real para cada headset.
-    Notar que BasaltLC y BasaltLC-CQ se ejecutaron en su versión síncrona, con el mapa asíncrono. Experimento realizado
+    Nótese que BasaltLC y BasaltLC-CQ se ejecutaron en su versión síncrona, con el mapa asíncrono. Experimento realizado
     en un procesador Intel Core Ultra 9 285H con 32 GB de RAM.}
     \label{fig:msd_ablation_timings}
 \end{figure}
 
-En conclusión, como era de esperar, BasaltSLAM es el sistema más robusto, que consigue la mejor precisión en términos de ATE,
-manteniendo una precisión similar a Basalt en RTE. Además, consigue esos resultados sin perder la posibilidad de funcionar
-en tiempo real. En la siguiente sección, se comparará la performance de BasaltSLAM con otros sistemas del estado del arte,
-para evaluar su rendimiento en comparación con otros sistemas de SLAM visual-inercial.
+En conclusión, BasaltSLAM es el sistema más robusto, logrando la mejor precisión en términos de ATE
+y manteniendo una precisión comparable a la de Basalt en RTE. Asimismo, estos resultados se obtienen
+sin comprometer la capacidad de operar en tiempo real. En la siguiente sección se compara la performance
+y precisión de BasaltSLAM con otros sistemas de VI-SLAM del estado del arte.
 
 \section{BasaltSLAM vs estado del arte}
 
-El objetivo de este experimento es evaluar la performance de BasaltSLAM en comparación con
+El objetivo de este experimento es evaluar la performance y precisión de BasaltSLAM en comparación con
 otros sistemas del estado del arte. Se eligieron ORB-SLAM3 y OKVIS2 como sistemas de referencia.
 Ambos fueron ejecutados en sus versiones SLAM con loop closure y optimización final de bundle adjustment.
 Al igual que en el estudio de ablación, se analiza la estimación no causal de la trayectoria y la performance de cada sistema.
 
-Primero, se presentarán los resultados en los datasets del estado del arte. Luego, se finalizará con los resultados en los
-datasets de MSD, en los cuales además se analizará la performance y robustez.
+Primero, se presentarán los resultados en los datasets del estado del arte. Luego, se finalizará con los resultados en las
+secuencias de MSD, en las que además se analizará la performance y robustez.
 
 \subsection{Resultados en datasets del estado del arte}
 
-En la Tabla \ref{tab:corridor_sota_ate} se muestran los resultados de ATE para las secuencias ``corridor''.
+En la Tabla \ref{tab:corridor_sota_ate} se muestran los resultados de ATE para las secuencias ``Corridor''.
 Se observa que BasaltSLAM obtiene resultados levemente mejores que OKVIS2, y ORB-SLAM3 obtiene los mejores resultados.
 
 \begin{table}[ht]
 \centering
-\caption{corridor: ATE [m]}
+\caption{Error de trayectoria absoluto (ATE) [m] en TUM-VI Corridor.}
 \label{tab:corridor_sota_ate}
 \begin{tabular}{lrrr}
 \toprule
@@ -1213,15 +1194,15 @@ Mean & 0.08 & 0.09 & \textbf{0.06} \\
 \end{tabular}
 \end{table}
 
-En la Tabla \ref{tab:magistrale_sota_ate} se muestran los resultados de ATE para las secuencias ``magistrale''.
+En la Tabla \ref{tab:magistrale_sota_ate} se muestran los resultados de ATE para las secuencias ``Magistrale''.
 En este caso, OKVIS2 consigue detectar ciclos más consistentemente y obtiene resultados significativamente mejores
 que BasaltSLAM y ORB-SLAM3.
 Sin embargo, en TM6 BasaltSLAM es capaz de detectar ciclos que ninguno de los otros sistemas pudo detectar, obteniendo
-un resultado significativamente mejor.
+un resultado considerablemente mejor.
 
 \begin{table}[ht]
 \centering
-\caption{magistrale: ATE [m]}
+\caption{Error de trayectoria absoluto (ATE) [m] en TUM-VI Magistrale.}
 \label{tab:magistrale_sota_ate}
 \begin{tabular}{lrrr}
 \toprule
@@ -1240,24 +1221,24 @@ Mean & 0.85 & \textbf{0.28} & 0.81 \\
 \end{tabular}
 \end{table}
 
-En la Tabla \ref{tab:outdoors_sota_ate} se muestran los resultados de ATE para las secuencias ``outdoors''.
+En la Tabla \ref{tab:outdoors_sota_ate} se muestran los resultados de ATE para las secuencias ``Outdoors''.
 En este caso, todos los sistemas presentan dificultades para detectar ciclos, aunque OKVIS2 destaca en las secuencias
-TO2, TO7 y TO8 donde consigue detectar ciclos importantes, obteniendo resultados significativamente mejores
-que BasaltSLAM y ORB-SLAM3. Para entender mejor lo que ocurre en estas secuencias, la grabación comienza
-capturando una mitad de una habitación, luego se sale de la habitación, haciendo un recorrido por el exterior
-y finalmente se reingresa en la misma habitación, capturando la otra mitad. Los ciclos más significativos
+TO2, TO7 y TO8 donde consigue detectar ciclos importantes, obteniendo resultados notablemente superiores a los
+de BasaltSLAM y ORB-SLAM3. Para entender mejor lo que ocurre en estas secuencias, la grabación comienza
+capturando una mitad de una habitación, luego se sale de esta, haciendo un recorrido por el exterior
+y finalmente se reingresa nuevamente en la misma habitación, capturando la otra mitad. Los ciclos más significativos
 que consiguen reducir el ATE se dan al reentrar en la misma habitación, pero como captura la pared contraria,
-existe una intersección pequeña entre la escena vieja y la nueva, lo que hace que sea difícil de detectar para los sistemas.
+existe una intersección pequeña entre la escena del comienzo y la del final, lo que hace que sea difícil de detectar para los sistemas.
 
-En la Figura \ref{fig:to2_hard_loop} se muestra un ejemplo de Basalt, para el cual se redujeron los parámetros de detección
-para necesitar solo 10 inliers para validar un ciclo. Esto permitió detectar uno de estos ciclos donde la intersección es pequeña,
-pero también se detectó un gran número de falsos positivos. Esto puede ser un indicio de la superioridad de OKVIS2,
-ya que este sistema requiere solo 10 inliers para detectar ciclos, compensando con un mayor número de verificaciones geométricas
-para evitar falsos positivos.
+La Figura \ref{fig:to2_hard_loop} muestra un ejemplo de BasaltSLAM en el que se redujeron los parámetros de detección,
+exigiendo solo 10 inliers para validar un ciclo. Esto permitió detectar uno de estos ciclos con baja intersección,
+pero también generó un gran número de falsos positivos. Este comportamiento puede ser indicativo de la superioridad de OKVIS2,
+el cual requiere solo 10 inliers para la detección pero compensa con un mayor número de verificaciones geométricas
+para descartar falsos positivos.
 
 \begin{table}[ht]
 \centering
-\caption{outdoors: ATE [m]}
+\caption{Error de trayectoria absoluto (ATE) [m] en TUM-VI Outdoors.}
 \label{tab:outdoors_sota_ate}
 \begin{tabular}{lrrr}
 \toprule
@@ -1281,19 +1262,19 @@ Mean & 62.26 & \textbf{11.60} & 17.87 \\
 \begin{figure}[ht]
     \centering
     \includegraphics[width=0.8\textwidth]{img/experiments/TO2.hard_loop.pdf}
-    \caption{Ciclo detectado en la secuencia TO2, con una intersección pequeña entre la escena vieja y la nueva.
-    Para detectar este ciclo, se redujeron los parámetros de detección de Basalt, necesitando solo 10 inliers.
+    \caption{Ciclo detectado en la secuencia TO2, con una intersección pequeña entre la escena del comienzo y la del final.
+    Para detectar este ciclo, se redujeron los parámetros de detección de BasaltSLAM, necesitando solo 10 inliers.
     Se dibuja la trayectoria ground truth, en vez de la estimada, pues esta tuvo un gran número de falsos positivos que la corrompieron.}
     \label{fig:to2_hard_loop}
 \end{figure}
 
 
-En la Tabla \ref{tab:room_sota_ate} se muestran los resultados de ATE para las secuencias ``room''.
+En la Tabla \ref{tab:room_sota_ate} se muestran los resultados de ATE para las secuencias ``Room''.
 En este caso, todos los sistemas se encuentran al mismo nivel, con una precisión milimétrica.
 
 \begin{table}[ht]
 \centering
-\caption{room: ATE [m]}
+\caption{Error de trayectoria absoluto (ATE) [m] en TUM-VI Room.}
 \label{tab:room_sota_ate}
 \begin{tabular}{lrrr}
 \toprule
@@ -1313,13 +1294,13 @@ Mean & \textbf{0.01} & \textbf{0.01} & \textbf{0.01} \\
 \end{table}
 
 
-En la Tabla \ref{tab:slides_sota_ate} se muestran los resultados de ATE para las secuencias ``slides''.
+En la Tabla \ref{tab:slides_sota_ate} se muestran los resultados de ATE para las secuencias ``Slides''.
 En este caso, BasaltSLAM obtiene resultados superiores para la secuencia TS1, pero OKVIS2 y ORB-SLAM3 obtienen mejores resultados
 en las secuencias TS2 y TS3 respectivamente.
 
 \begin{table}[ht]
 \centering
-\caption{slides: ATE [m]}
+\caption{Error de trayectoria absoluto (ATE) [m] en TUM-VI Slides.}
 \label{tab:slides_sota_ate}
 \begin{tabular}{lrrr}
 \toprule
@@ -1336,12 +1317,12 @@ Mean & 0.92 & 0.54 & \textbf{0.46} \\
 \end{table}
 
 En la Tabla \ref{tab:MH_sota_ate} se muestran los resultados de ATE para las secuencias de ``Machine Hall''.
-OKVIS2 domina en este dataset, obteniendo resultados significativamente mejores que BasaltSLAM. ORB-SLAM3 se posiciona
-entre ambos sistemas, obteniendo mejores resultados que BasaltSLAM pero peores que OKVIS2.
+OKVIS2 domina en este caso, obteniendo resultados notablemente mejores que BasaltSLAM. ORB-SLAM3 se posiciona
+entre ambos sistemas.
 
 \begin{table}[ht]
 \centering
-\caption{MH: ATE [m]}
+\caption{Error de trayectoria absoluto (ATE) [m] en EuRoC Machine Hall.}
 \label{tab:MH_sota_ate}
 \begin{tabular}{lrrr}
 \toprule
@@ -1361,12 +1342,12 @@ Mean & 0.08 & \textbf{0.04} & 0.05 \\
 
 En la Tabla \ref{tab:V1_sota_ate} se muestran los resultados de ATE para las secuencias de ``Vicon Room 1''.
 En este caso, BasaltSLAM iguala los resultados de OKVIS2 y ORB-SLAM3 en EV101, pero en las secuencias EV102
-y EV103 OKVIS2 y ORB-SLAM3 consiguen resultados significativamente mejores que BasaltSLAM. Resultados similares
+y EV103, OKVIS2 y ORB-SLAM3 consiguen resultados superiores a BasaltSLAM. Resultados similares
 se obtienen en la Tabla \ref{tab:V2_sota_ate} para las secuencias de ``Vicon Room 2''.
 
 \begin{table}[ht]
 \centering
-\caption{V1: ATE [m]}
+\caption{Error de trayectoria absoluto (ATE) [m] en EuRoC Vicon Room 1.}
 \label{tab:V1_sota_ate}
 \begin{tabular}{lrrr}
 \toprule
@@ -1384,7 +1365,7 @@ Mean & 0.07 & \textbf{0.02} & 0.03 \\
 
 \begin{table}[ht]
 \centering
-\caption{V2: ATE [m]}
+\caption{Error de trayectoria absoluto (ATE) [m] en EuRoC Vicon Room 2.}
 \label{tab:V2_sota_ate}
 \begin{tabular}{lrrr}
 \toprule
@@ -1405,13 +1386,13 @@ Mean & 0.09 & \textbf{0.02} & \textbf{0.02} \\
 
 En las Tablas \ref{tab:msdmi_sota_ate}, \ref{tab:msdmi_sota_rte} y \ref{tab:msdmi_sota_completion} se muestran
 los resultados de ATE, RTE y porcentaje de secuencia completada respectivamente para las secuencias de MI*.
-OKVIS2 consigue la mejor mediana tanto para ATE, como para RTE. Sin embargo, BasaltSLAM se posiciona 0.3 y 0.2 cm por debajo
-respectivamente. Además, BasaltSLAM obtiene una robustez mayor, lo cual se refleja en que consigue la mejor media de ATE y RTE.
-ORB-SLAM3 obtiene resultados inferiores en ambas métricas, además de no completar un gran número de secuencias.
+OKVIS2 obtiene la mejor mediana tanto en ATE como en RTE, aunque BasaltSLAM se sitúa apenas 0.3 y 0.2 cm por encima
+respectivamente. Además, BasaltSLAM demuestra mayor robustez, lo cual se refleja en que obtiene el mejor promedio de ATE y RTE.
+ORB-SLAM3 presenta resultados inferiores en ambas métricas y no logra completar un gran número de secuencias.
 
 \begin{table}[ht]
 \centering
-\caption{msdmi: ATE [cm]}
+\caption{Error de trayectoria absoluto (ATE) [cm] en MSD Valve Index.}
 \label{tab:msdmi_sota_ate}
 \begin{tabular}{lrrr}
 \toprule
@@ -1459,7 +1440,7 @@ Mean & \textbf{5.4} & 220.4 & 5583.0 \\
 
 \begin{table}[ht]
 \centering
-\caption{msdmi: RTE [cm]}
+\caption{Error de trayectoria relativo (RTE) [cm] en MSD Valve Index.}
 \label{tab:msdmi_sota_rte}
 \begin{tabular}{lrrr}
 \toprule
@@ -1507,7 +1488,7 @@ Mean & \textbf{1.4} & 3.1 & 39.3 \\
 
 \begin{table}[ht]
 \centering
-\caption{msdmi: COMPLETION [\%]}
+\caption{Tasa de completitud (\%) en MSD Valve Index.}
 \label{tab:msdmi_sota_completion}
 \begin{tabular}{lrrr}
 \toprule
@@ -1555,13 +1536,13 @@ Mean & \textbf{100} & \textbf{100} & 80 \\
 
 En las Tablas \ref{tab:msdgo_sota_ate}, \ref{tab:msdgo_sota_rte} y \ref{tab:msdgo_sota_completion} se muestran
 los resultados de ATE, RTE y porcentaje de secuencia completada respectivamente para las secuencias de MG*.
-Se observa un comportamiento similar a MI*, donde OKVIS2 consigue la mejor mediana tanto para ATE, como para RTE,
-pero BasaltSLAM consigue valores competitivos en ambas métricas, y la mayor precisión en promedio. ORB-SLAM3
-se posiciona por detrás y no pudiendo completar un gran número de secuencias.
+Se observa un comportamiento similar al de MI*: OKVIS2 obtiene la mejor mediana tanto en ATE como en RTE,
+pero BasaltSLAM logra valores competitivos en ambas métricas y la mayor precisión en términos de promedio. ORB-SLAM3
+queda por detrás en ambas métricas y no consigue completar un número considerable de secuencias.
 
 \begin{table}[ht]
 \centering
-\caption{msdgo: ATE [cm]}
+\caption{Error de trayectoria absoluto (ATE) [cm] en MSD HP Reverb G2.}
 \label{tab:msdgo_sota_ate}
 \begin{tabular}{lrrr}
 \toprule
@@ -1591,7 +1572,7 @@ Mean & \textbf{4.0} & 10.5 & 825.2 \\
 
 \begin{table}[ht]
 \centering
-\caption{msdgo: RTE [cm]}
+\caption{Error de trayectoria relativo (RTE) [cm] en MSD HP Reverb G2.}
 \label{tab:msdgo_sota_rte}
 \begin{tabular}{lrrr}
 \toprule
@@ -1621,7 +1602,7 @@ Mean & 1.6 & \textbf{0.9} & 11.4 \\
 
 \begin{table}[ht]
 \centering
-\caption{msdgo: COMPLETION [\%]}
+\caption{Tasa de completitud (\%) en MSD HP Reverb G2.}
 \label{tab:msdgo_sota_completion}
 \begin{tabular}{lrrr}
 \toprule
@@ -1651,12 +1632,12 @@ Mean & \textbf{100} & \textbf{100} & 96 \\
 
 En las Tablas \ref{tab:msdmo_sota_ate}, \ref{tab:msdmo_sota_rte} y \ref{tab:msdmo_sota_completion} se muestran
 los resultados de ATE, RTE y porcentaje de secuencia completada respectivamente para las secuencias de MO*.
-En este caso, ORB-SLAM3 resulta más competitivo, aunque nuevamente no consigue completar el 100\% de frames para
-todas las secuencias. BasaltSLAM obtiene el ATE medio más bajo, y OKVIS2 consigue mayor precisión para el RTE.
+En este caso, ORB-SLAM3 resulta más competitivo, aunque nuevamente no logra completar la totalidad de frames en
+todas las secuencias. BasaltSLAM obtiene el menor ATE promedio, mientras que OKVIS2 logra mayor precisión en RTE.
 
 \begin{table}[ht]
 \centering
-\caption{msmoo: ATE [cm]}
+\caption{Error de trayectoria absoluto (ATE) [cm] en MSD Samsung Odyssey+.}
 \label{tab:msdmo_sota_ate}
 \begin{tabular}{lrrr}
 \toprule
@@ -1687,7 +1668,7 @@ Mean & \textbf{21.3} & 42.9 & 21.7 \\
 
 \begin{table}[ht]
 \centering
-\caption{msmoo: RTE [cm]}
+\caption{Error de trayectoria relativo (RTE) [cm] en MSD Samsung Odyssey+.}
 \label{tab:msdmo_sota_rte}
 \begin{tabular}{lrrr}
 \toprule
@@ -1718,7 +1699,7 @@ Mean & 1.8 & \textbf{0.8} & 7.9 \\
 
 \begin{table}[ht]
 \centering
-\caption{msmoo: COMPLETION [\%]}
+\caption{Tasa de completitud (\%) en MSD Samsung Odyssey+.}
 \label{tab:msdmo_sota_completion}
 \begin{tabular}{lrrr}
 \toprule
@@ -1748,41 +1729,41 @@ Mean & \textbf{100} & \textbf{100} & 92 \\
 \end{table}
 
 Finalmente, se analiza la performance de cada sistema en términos de tiempo de procesamiento por frame.
-En la Figura \ref{fig:msd_sota_timings} se muestra el tiempo de procesamiento por frame para cada sistema en las secuencias de MO*, MG* y MI* respectivamente.
+En la Figura \ref{fig:msd_sota_timings} se muestra el tiempo de procesamiento por frame para cada sistema en secuencias de MO*, MG* y MI* respectivamente.
 Notar que, como no es posible incluir en ese tipo de gráfica el tiempo de optimización final de RootBA, se muestra el tiempo de procesamiento de BasaltLC.
-Se observa que OKVIS2 se encuentra muy por encima del límite de tiempo para la operación en tiempo real, obteniendo un tiempo de procesamiento por frame medio
-entre 6 y 12 veces más lento que BasaltLC. En cuanto a ORB-SLAM3, para los headsets Odyssey+ y HP Reverb G2 V2,
-se encuentra justo por encima del límite de tiempo para la operación en tiempo real, y en el caso de Valve Index,
-se encuentra en el doble del límite de tiempo.
-Como se observó en la sección \ref{sec:results_xr}, BasaltLC consigue tiempos de procesamiento por debajo del límite para la operación en tiempo real para los
-headsets Odyssey+ y HP Reverb G2 V2, y justo por debajo para el caso de Valve Index.
+Se observa que OKVIS2 supera marcadamente el límite de tiempo para la operación en tiempo real, con tiempos de procesamiento por frame
+entre 6 y 12 veces mayores que BasaltLC. En cuanto a ORB-SLAM3, para los headsets Odyssey+ y HP Reverb G2 V2
+se ubica justo en el límite, mientras que para el Valve Index supera más del doble de este.
+Tal como se observó en la Sección \ref{sec:results_xr}, BasaltLC mantiene tiempos de procesamiento considerablemente
+por debajo del límite de tiempo real para los headsets Odyssey+ y HP Reverb G2 V2, y justo
+por debajo para el Valve Index.
 
 \begin{figure}[ht]
     \centering
     \begin{subfigure}[b]{0.48\textwidth}
         \centering
         \includegraphics[width=\textwidth]{img/experiments/MOO01.timings.pdf}
-        \caption{Secuencia capturada con Odyssey+}
-        \label{fig:experiments_figure16}
+        \caption{Secuencia capturada con Odyssey+.}
+        \label{fig:msdmo_sota_timings}
     \end{subfigure}
     \hfill
     \begin{subfigure}[b]{0.48\textwidth}
         \centering
         \includegraphics[width=\textwidth]{img/experiments/MGO04.timings.pdf}
-        \caption{Secuencia capturada con HP Reverb G2 V2}
-        \label{fig:experiments_figure17}
+        \caption{Secuencia capturada con HP Reverb G2 V2.}
+        \label{fig:msdmg_sota_timings}
     \end{subfigure}
     \hfill
     \begin{subfigure}[b]{0.48\textwidth}
         \centering
         \includegraphics[width=\textwidth]{img/experiments/MIO02.timings.pdf}
-        \caption{Secuencia capturada con Valve Index}
-        \label{fig:experiments_figure18}
+        \caption{Secuencia capturada con Valve Index.}
+        \label{fig:msdmi_sota_timings}
     \end{subfigure}
     \caption{Tiempo de procesamiento por frame para cada sistema en las secuencias de MO*, MG* y MI* respectivamente.
     Se muestra un promedio móvil con una ventana de 2 segundos (60 frames). En el fondo, los datos sin procesar muestran
     outliers y jitter para cada sistema. Una línea roja marca el límite de tiempo para la operación en tiempo real para cada headset.
-    BasaltLC se ejecuta en su versión síncrona, con el mapa asíncrono. Experimento realizado
+    BasaltLC se ejecutó en su versión síncrona, con el mapa asíncrono. Experimento realizado
     en un procesador Intel Core Ultra 9 285H con 32 GB de RAM.}
     \label{fig:msd_sota_timings}
 \end{figure}
@@ -1790,21 +1771,19 @@ headsets Odyssey+ y HP Reverb G2 V2, y justo por debajo para el caso de Valve In
 \section{Análisis de performance de BasaltSLAM}
 
 En esta sección se analiza en detalle la performance de BasaltSLAM, evaluando distintos aspectos clave de su funcionamiento.
-Primero, se estudia el comportamiento del sistema en su versión completamente asíncrona, identificando los límites de
-procesamiento cuando todas las etapas operan en paralelo. Luego, se examina cómo el proceso de culling de keyframes
-contribuye a mantener estable el tiempo de procesamiento por frame, incluso en trayectorias extensas de más de 40 minutos.
-Finalmente, se evalúa el impacto de emplear un sistema de bundle adjustment numéricamente estable, como RootBA, que habilita
-la ejecución en precisión simple.
-
-% (plot de perfomance en MOO12 o similar), algún stacked plot?
+En primer lugar, se estudia el comportamiento del sistema en su versión completamente asíncrona, con el objetivo de aprovechar
+al máximo su capacidad de procesamiento ejecutando todas las etapas en paralelo. A continuación, se examina cómo el proceso
+de culling de keyframes contribuye a mantener estable el tiempo de procesamiento por frame, incluso en trayectorias extensas
+de más de 40 minutos. Finalmente, se evalúa el impacto de emplear un método de bundle adjustment numéricamente estable,
+como RootBA, que permite ejecutar la optimización en precisión simple.
 
 \subsection{BasaltSLAM en su versión asíncrona}
 
-En la Figura \ref{fig:async_timings_basaltslam} se muestra el tiempo medio de procesamiento por frame para todas las secuencias
-de los distintos datasets. Se observa que en todos los casos se consigue mantener un tiempo de procesamiento por frame por
-debajo del límite para la operación en tiempo real. En las secuencias MI* del headset Valve Index el margen es menor, pero aún
-así se consigue mantener un tiempo de procesamiento por frame por debajo del límite. En el apéndice X se muestran en detalle
-cada uno de los tiempos medios de procesamiento por frame para cada secuencia.
+La Figura \ref{fig:async_timings_basaltslam} muestra el tiempo medio de procesamiento por frame para todas las secuencias
+de los distintos datasets. Se observa que en todos los casos el tiempo de procesamiento por frame se mantiene
+por debajo del límite para la operación en tiempo real. En las secuencias MI* del headset Valve Index el margen es más ajustado,
+pero igualmente se cumple el requisito de tiempo real. En el apéndice X se detallan los tiempos medios de procesamiento
+por frame para cada secuencia individual.
 
 \begin{figure}[ht]
     \centering
@@ -1819,16 +1798,17 @@ cada uno de los tiempos medios de procesamiento por frame para cada secuencia.
 \subsection{BasaltSLAM en trayectorias extensas}
 
 En esta sección se explica la necesidad de contar con un proceso de culling de keyframes para mantener
-un mapa actualizado y un tiempo de procesamiento por frame estable, incluso en trayectorias largas. Además, se muestra cómo
-este proceso de culling de keyframes consigue solucionar estas limitaciones.
+un mapa actualizado y un tiempo de procesamiento por frame estable, incluso en trayectorias extensas. Asimismo, se muestra cómo
+dicho proceso logra resolver estas limitaciones.
 
 Incluso en una ejecución con el mapa asíncrono, el tiempo de procesamiento por keyframe debe mantenerse estable y por debajo
-de cierto límite. De lo contrario, el sistema no podría procesar los keyframes en tiempo real, se llenarían las colas de
-trabajo del mapa y se acumularía un retraso que haría que el mapa no tenga la información más actualizada.
-Esto es especialmente importante en trayectorias largas. Para entender cuál es ese límite, se puede considerar que,
-aproximadamente, se toma un keyframe cada 7 frames. Por ende, cada keyframe puede ser procesado en background durante 7 frames,
-lo que equivale a un tiempo de procesamiento por keyframe de 7 veces el tiempo de procesamiento por frame. Aunque hay que tener
-en cuenta que este valor es cierto únicamente para operaciones que puedan ejecutarse en background.
+de cierto límite. De lo contrario, el sistema no podría procesar los keyframes en tiempo real: las colas de
+trabajo del mapa se saturarían y se acumularía un retraso que privaría al mapa de la información más reciente.
+Esto es especialmente crítico en trayectorias extensas. Para estimar dicho límite, puede considerarse que,
+aproximadamente, se selecciona un keyframe cada 7 frames. Por lo tanto, cada keyframe dispone de un intervalo equivalente
+a 7 frames para ser procesado en segundo plano, lo que establece un límite aproximado de procesamiento por keyframe
+de 7 veces el tiempo máximo permitido por frame. Cabe señalar que este análisis aplica únicamente a las operaciones
+ejecutables en segundo plano.
 
 En la Figura \ref{fig:stacked_timings_basaltslam} se muestra el tiempo de procesamiento por keyframe para cada etapa del pipeline
 de BasaltSLAM, en su modo síncrono y con culling de keyframes. Se puede observar que el tiempo de procesamiento por keyframe se
@@ -1860,43 +1840,43 @@ crece al comienzo, y luego se mantiene estable cerca del límite establecido.
 
 \subsection{RootBA: float vs double}
 
-Una de las ventajas de usar un método como RootBA para la optimización final es su estabilidad numérica, que permite
-ejecutar la optimización en precisión simple sin degradar la precisión de la estimación. Esto se puede observar en el apéndice X,
-donde se muestra que los resultados de ATE para cada secuencia ejecutando RootBA en precisión simple y doble son equivalentes.
+Una de las ventajas de emplear un método como RootBA para la optimización final es su estabilidad numérica, que permite
+ejecutar la optimización en precisión simple sin degradar la calidad de la estimación. Esto puede verificarse en el apéndice X,
+donde se muestra que los resultados de ATE obtenidos ejecutando RootBA en precisión simple y doble son equivalentes.
 
-En la Figura \ref{fig:msd_rootba_timings} se muestra el tiempo total de ejecución de RootBA en precisión simple y doble para cada secuencia.
+En la Figura \ref{fig:rootba_timings} se muestra el tiempo total de ejecución de RootBA en precisión simple y doble para cada secuencia.
 Teniendo en cuenta el tiempo total de todas las secuencias de cada dataset, sin subdividir por tipo de secuencia, se obtienen
 los siguientes resultados:
 en MSD la mediana se reduce en un 50\%; en TUMVI, la mediana se reduce en un 42\%; en Euroc, la mediana se reduce en un 50\%.
 
-En las secuencias de outdoors el tiempo de ejecución es alto. Esto no necesariamente está relacionado con el número de keyframes u
-observaciones, sino que lo que ocurre es que el mapa que recibe RootBA se encuentra mal condicionado. Esto implica que
-el solver no tiene un buen precondicionante y necesita más iteraciones para resolver cada sistema de ecuaciones.
+En las secuencias de ``Outdoors'' el tiempo de ejecución es elevado. Esto no se debe necesariamente al número de keyframes
+u observaciones, sino a que el mapa recibido por RootBA se encuentra mal condicionado. En consecuencia,
+el solver carece de un buen precondicionante y requiere más iteraciones para resolver cada sistema de ecuaciones.
 
 \begin{figure}[ht]
     \centering
     \begin{subfigure}[b]{0.8\textwidth}
         \centering
         \includegraphics[width=\textwidth]{img/experiments/msd.rootba.times.pdf}
-        \caption{Secuencia capturada con Odyssey+}
-        \label{fig:experiments_figure16}
+        \caption{Secuencias de MSD.}
+        \label{fig:msd_rootba_timings}
     \end{subfigure}
     \hfill
     \begin{subfigure}[b]{0.8\textwidth}
         \centering
         \includegraphics[width=\textwidth]{img/experiments/tumvi.rootba.times.pdf}
-        \caption{Secuencia capturada con HP Reverb G2 V2}
-        \label{fig:experiments_figure17}
+        \caption{Secuencias de TUM-VI.}
+        \label{fig:tumvi_rootba_timings}
     \end{subfigure}
     \hfill
     \begin{subfigure}[b]{0.8\textwidth}
         \centering
         \includegraphics[width=\textwidth]{img/experiments/euroc.rootba.times.pdf}
-        \caption{Secuencia capturada con Valve Index}
-        \label{fig:experiments_figure18}
+        \caption{Secuencias de EuRoC.}
+        \label{fig:euroc_rootba_timings}
     \end{subfigure}
     \caption{Boxplots de tiempos totales de ejecución de RootBA en precisión simple y doble para cada secuencia.
     Ambas versiones fueron ejecutadas sobre el mismo mapa. Experimento realizado en un procesador Intel Core
-    i5-13600 13th Gen con 32 GB de RAM}
-    \label{fig:msd_rootba_timings}
+    i5-13600 13th Gen con 32 GB de RAM.}
+    \label{fig:rootba_timings}
 \end{figure}
