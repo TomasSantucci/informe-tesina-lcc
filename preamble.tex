@@ -57,6 +57,36 @@
 \usepackage{xcolor}
 \renewcommand{\lstlistingname}{Código}
 
+\definecolor{codegreen}{rgb}{0.1,0.5,0.1}
+\definecolor{codegray}{rgb}{0.5,0.5,0.5}
+\definecolor{codepurple}{rgb}{0.45,0.1,0.6}
+\definecolor{codeblue}{rgb}{0.1,0.2,0.7}
+\definecolor{codeback}{rgb}{0.97,0.97,0.97}
+
+\lstdefinestyle{cppstyle}{
+    backgroundcolor=\color{codeback},
+    commentstyle=\color{codegreen}\itshape,
+    keywordstyle=\color{codeblue}\bfseries,
+    stringstyle=\color{codepurple},
+    numberstyle=\tiny\color{codegray},
+    basicstyle=\ttfamily\footnotesize,
+    breakatwhitespace=false,
+    breaklines=true,
+    captionpos=b,
+    keepspaces=true,
+    numbers=left,
+    numbersep=8pt,
+    showspaces=false,
+    showstringspaces=false,
+    showtabs=false,
+    tabsize=2,
+    frame=single,
+    rulecolor=\color{codegray},
+    xleftmargin=1.5em,
+    framexleftmargin=1.5em,
+}
+\lstset{style=cppstyle}
+
 % ---------------- Macros / Custom commands ----------------
 
 % Title page
