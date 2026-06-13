@@ -427,8 +427,10 @@ Y cada vez que se realiza una consulta, se devuelven los 10 resultados más simi
 se obtenga un gran número de falsos positivos, como se observa en la Figura \ref{fig:hashbow_accuracy}, pero
 se compensa con la implementación de una serie de verificaciones adicionales que se describirán a continuación.
 
-% también aclarar que hashbow-random usa 8 bits y por eso es el más rápido. en cambio, yo uso 16 bits
+% TODO: también aclarar que hashbow-random usa 8 bits y por eso es el más rápido. en cambio, yo uso 16 bits
 % lo cual lo hace un poco más lento, pero igual sigue siendo más rápido que dbow
+% aclarar que uso una versión de hashbow donde los vectores de bow contienen
+% en la implementación de hashbow que uso, The weighting type is a simple term frequency scheme. And the chosen similarity score between two BoW vectors is the L1 score (based on the L1 norm).
 
 \begin{figure}[ht]
     \centering
@@ -502,6 +504,18 @@ keyframe más reciente. Este proceso se muestra en la Figura \ref{fig:projection
 de la misma manera que en el paso 5, pero esta vez utilizando más correspondencias, lo que permite
 obtener una estimación de la transformación entre ambos keyframes más precisa y robusta.
 \end{enumerate}
+
+% TODO: integrar esta subsection
+\subsection{Pose Estimation Pipeline}
+
+In the SLAM system developed in this thesis, the absolute pose of the multi-camera rig is estimated at each localization step using the following pipeline, built on top of OpenGV:
+
+\begin{enumerate}
+    \item \textbf{Minimal solver inside RANSAC:} The gP3P algorithm is used as the hypothesis generator within a RANSAC loop. At each iteration, three 2D--3D correspondences are sampled---potentially from different cameras---and gP3P produces up to eight candidate poses. Each candidate is scored by counting the number of inlier correspondences across all cameras, using a bearing-vector angular reprojection error threshold.
+    \item \textbf{Non-linear refinement:} Once RANSAC identifies the best hypothesis and its inlier set, the pose is refined by minimizing the sum of squared angular reprojection errors over all inliers using non-linear least squares optimization, as provided by OpenGV. This step leverages the full inlier set and produces a more accurate estimate than the closed-form minimal solver alone.
+\end{enumerate}
+
+This combination of a minimal solver for robustness against outliers and a subsequent non-linear refinement for accuracy is a standard and well-established paradigm in geometric vision \cite{fischler1981ransac}, and is particularly well-suited for the multi-camera setting due to the superior noise resilience that the generalized model provides over single-camera alternatives \cite{kneip2013gpnp}.
 
 \begin{figure}[h]
     \centering
@@ -754,6 +768,8 @@ en referencia a la pose del keyframe. De esta manera, aunque la pose del keyfram
 distribución espacial se mantendría estático con respecto a la pose del keyframe, y no sería necesario
 actualizar todos los cubos cada vez que se optimiza el grafo de poses.
 
+% TODO: poner figura?
+
 \subsection{Culling de keyframes}
 
 Como suele ser el caso de gran parte de los sistemas de SLAM basados en keyframes, el mapa persistente
@@ -886,6 +902,11 @@ donde:
     \label{fig:keyframe_scores}
 \end{figure}
 
+% TODO: este diagrama no va aca. aca hacer un diagrama que muestre la idea
+% esa figura va en experimentacion
+
+% primero mostrar figuras, y después poner el texto, asi ya lo leen con la idea en mente
+
 % se tuvo que bajar este valor. sin dudas este proceso de culling de keyframes es un área que se podría
 % mejorar, y al menos tunear estos parámetros y pesos mejor.
 % loop_closing_pgo_min_covisibility_weight = 60
@@ -895,6 +916,8 @@ y cada vez que \texttt{MapDatabase} recibe un nuevo \texttt{MapStamp} del VIO qu
 de keyframes supere ese límite, se eliminan los 30 keyframes con menor puntaje.
 
 \subsection{Interfaz final del mapa persistente}
+
+% por ahí lo puedo mandar al apendice
 
 Toda la comunicación que se dirija al mapa persistente, pasa por una de las dos colas de trabajo
 disponibles: \texttt{read\_queue} y \texttt{write\_queue}. Dada la variedad de mensajes que pueden
@@ -970,7 +993,64 @@ while (running) {
 \end{lstlisting}
 
 \section{RootBA para un sistema de SLAM}
-- eliminacion de intrinsics del estado
-- representacion de keyframes o rigs
-- skip de kfs con pocas obs
-- Doubles vs floats
+
+% TODO: agregar figuras del paper de las JAR
+
+RootBA es un método de Bundle Adjustment a gran escala cuya implementación propuesta se adapta
+al contexto de \textit{Structure From Motion} (SfM). Su implementación se encuentra disponible en \href{https://github.com/nikolausdemmel/rootba}. Para adaptarla al contexto de un sistema de SLAM, se realizaron algunas modificaciones que se describen en esta sección.
+
+\subsection{Eliminación de parámetros intrínsecos del estado}
+
+En primer lugar, al ser un método de SfM, el algoritmo no solo estima poses de cámaras y posiciones de puntos 3d, si no que también estima los parámetros intrínsecos de las cámaras. Utiliza el modelo de cámara utilizado en el Paper "Bundle Adjustment in the Large", con 6 parámetros extrínsecos y 3 intrínsecos: distancia focal $f$ y 2 parámetros de distorsión radial $k_1$ y $k_2$. Esto es útil en métodos de SfM, donde el conjunto de imágenes puede provenir de distintos orígenes, inlcuso cada una puede haber sido tomada por una cámara distinta. En el contexto de SLAM para XR, donde las calibraciones de las cámaras son conocidas y, más aún, todas las imágenes provienen de las mismas cámaras, ya no tiene sentido optimizar los parámetros intrínsecos de las cámaras. Además, considerar que todas las imágenes pueden provenir de cámaras distintas puede causar que, en vez de corregir el error de una pose de una cámara, se compence modificando algún valor de distorsión de su calibración.
+
+Para corregir esto, simplemente se eliminan las variables relacionadas a los parámetros intrínsecos de las cámaras del vector de estado. Luego, no se computan ni almacenen las derivadas relacionadas a estos parámetros en los Landmark Blocks, como se observa en la Figura \ref{fig:rootba-intrinsics}.
+
+\subsection{Optimización de poses de rigs}
+
+Una característica del sistema propuesto es que las imágenes capturadas por
+las múltiples cámaras de un mismo keyframe comparten una transformación
+relativa conocida entre sí, constante a lo largo de todos los keyframes.
+Si se tratara a todas las cámaras como variables independientes en el vector
+de estado, la optimización podría romper esta restricción de rigidez entre
+las cámaras del rig.
+
+Para remediar esto, en lugar de almacenar las poses de cada cámara
+individualmente, se almacena la pose de la IMU como representación del
+rig completo en cada instante de tiempo. Este cambio de variables implica
+modificar el algoritmo de linealización, de modo que los incrementos
+calculados correspondan a perturbaciones sobre la pose del \emph{body}.
+
+Sean $T_b \in SE(3)$ la pose del body y $T_c \in SE(3)$ la pose de una
+cámara del rig en el mismo instante de tiempo. La transformación relativa
+entre ambos es fija y conocida, dada por la calibración extrínseca
+$T_{cb} \in SE(3)$:
+\begin{equation}
+    T_c = T_{cb} \cdot T_b.
+    \label{eq:rig_composition}
+\end{equation}
+
+Con la parametrización propuesta, en lugar de $\frac{\partial r}{\partial \Delta x_c}$
+se requiere $\frac{\partial r}{\partial \Delta x_b}$. Por \eqref{eq:adjoint_twist}, la perturbación sobre la cámara se relaciona con
+la del body mediante $\Delta x_c = \mathrm{Ad}_{T_{cb}}\,\Delta x_b$, de donde:
+\begin{equation}
+    \frac{\partial\,\Delta x_c}{\partial\,\Delta x_b} = \mathrm{Ad}_{T_{cb}}.
+    \label{eq:jacobian_deltax}
+\end{equation}
+Aplicando la regla de la cadena:
+\begin{equation}
+    \frac{\partial r}{\partial \Delta x_b}
+    = \frac{\partial r}{\partial \Delta x_c}
+      \cdot \mathrm{Ad}_{T_{cb}}.
+    \label{eq:chain_rule_result}
+\end{equation}
+
+Además, otra diferencia es que ahora, cada landmark puede afectar la pose de un rig mediante más de una observación, pues hay múltiples cámaras asociadas a un mismo rig, que pueden aportar observaciones del mismo landmark. Estas modificaciones pueden observarse en la Figura \ref{fig:rootba-rigs}.
+
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=0.8\linewidth]{img/method/rootba-rigs.pdf}
+    \caption{Representación de rigs en el estado de rootba.}
+    \label{fig:rootba-rigs}
+\end{figure}
+
+% TODO: skip de kfs con pocas obs??
