@@ -447,116 +447,90 @@ Este proceso se repite hasta que $\|\Delta\mathbf{x}\|$ es suficientemente peque
 
 \section{Bundle Adjustment}
 
-Bundle adjustment jointly estimates camera poses and 3D landmark positions by minimizing
-reprojection errors across all observations.
+Bundle adjustment es una técnica de optimización que estima conjuntamente poses de cámaras y posiciones 3D de landmarks minimizando los errores de reproyección sobre todas las observaciones.
 
-Given a landmark $\mathbf{x}_l$, a camera pose $\mathbf{x}_p$, and an observed image
-point $\mathbf{u}$, the predicted projection is
-\[
-\hat{\mathbf{u}}
-=
-\pi(\mathbf{x}_p, \mathbf{x}_l),
-\]
-where $\pi(\cdot)$ denotes the camera projection model. The reprojection residual is then
-\[
-\mathbf{r}
-=
-\mathbf{u}
--
-\hat{\mathbf{u}}.
-\]
+Las variables de optimización se dividen en una componente de poses $x_p$, que agrupa todos los parámetros extrínsecos (y opcionalmente intrínsecos también) asociados a las cámaras, y una componente de landmarks $x_l$, que agrupa todas las posiciones 3D. Dado que las poses de las cámaras pertenecen al manifold $SE(3)$, se parametrizan localmente mediante perturbaciones en el álgebra de Lie $\mathfrak{se}(3)$, mientras que los landmarks se representan directamente en $\mathbb{R}^3$.
 
-The optimization variables are split into a pose component $\xi$, collecting all camera
-poses, and a landmark component $x_l$, collecting all 3D point positions. Since camera
-poses lie on the $SE(3)$ manifold, they are parameterized locally via perturbations in the
-Lie algebra $\mathfrak{se}(3)$, while landmarks are represented directly in $\mathbb{R}^3$.
-
-The bundle adjustment problem minimizes the sum of squared reprojection residuals over
-all cameras $i$ and their observed landmarks $j \in O(i)$:
+El problema de bundle adjustment minimiza la suma de los cuadrados de los residuales de reproyección sobre todas las cámaras $i$ y sus landmarks observados $j \in O(i)$:
 \[
-E(\xi, x_l)
+E(x_p, x_l)
 =
 \sum_i \sum_{j \in O(i)}
 \left\|
-\mathbf{r}_{ij}(\xi, x_l)
+\mathbf{r}_{ij}(x_p, x_l)
 \right\|^2.
 \]
 
-Linearizing each residual around the current estimate $x_0 = (\xi^0, x_l^0)$ gives
+Linealizando cada residual alrededor de la estimación actual $x_0 = (x_p^0, x_l^0)$ se obtiene
 \[
 \mathbf{r}(x)
 \approx
 \mathbf{r}(x_0)
 +
 \begin{pmatrix}
-\mathbf{J}_{\xi} & \mathbf{J}_{l}
+\mathbf{J}_{p} & \mathbf{J}_{l}
 \end{pmatrix}
 \begin{pmatrix}
-\Delta \xi \\
+\Delta x_p \\
 \Delta x_l
 \end{pmatrix},
 \]
 
-where
+donde
 \[
-\mathbf{J}_{\xi} = \frac{\partial \mathbf{r}}{\partial \xi} \Big|_{x_0}, \quad
-\mathbf{J}_{l} = \frac{\partial \mathbf{r}}{\partial x_l} \Big|_{x_0}, \quad
-\Delta x = x - x_0
+\mathbf{J}_{p} = \frac{\partial \mathbf{r}}{\partial x_p} \Big|_{x_0}, \quad
+\mathbf{J}_{l} = \frac{\partial \mathbf{r}}{\partial x_l} \Big|_{x_0}
 \]
 
-so the problem reduces at each iteration to
+de modo que el problema se reduce en cada iteración a
 \[
-\min_{\Delta \xi,\, \Delta x_l}
+\min_{\Delta x_p,\, \Delta x_l}
 \left\|
 \mathbf{r}(x_0)
 +
 \begin{pmatrix}
-\mathbf{J}_{\xi} & \mathbf{J}_{l}
+\mathbf{J}_p & \mathbf{J}_{l}
 \end{pmatrix}
 \begin{pmatrix}
-\Delta \xi \\
+\Delta x_p \\
 \Delta x_l
 \end{pmatrix}
 \right\|^2.
 \]
 
-
-The optimal increments are found by solving the corresponding normal equations,
+Los incrementos óptimos se obtienen resolviendo las ecuaciones normales correspondientes,
 \[
 \begin{pmatrix}
-\mathbf{H}_{\xi\xi} & \mathbf{H}_{\xi l} \\
-\mathbf{H}_{l\xi} & \mathbf{H}_{ll}
+\mathbf{H}_{pp} & \mathbf{H}_{pl} \\
+\mathbf{H}_{lp} & \mathbf{H}_{ll}
 \end{pmatrix}
 \begin{pmatrix}
--\Delta\boldsymbol{\xi} \\
+-\Delta\mathbf{x}_p \\
 -\Delta\mathbf{x}_l
 \end{pmatrix}
 =
 \begin{pmatrix}
-\mathbf{b}_\xi \\
+\mathbf{b}_p \\
 \mathbf{b}_l
 \end{pmatrix},
 \]
-where
+donde
 \begin{align}
-\mathbf{H}_{\xi\xi} &= \mathbf{J}_\xi^\top \mathbf{J}_\xi, &
+\mathbf{H}_{pp} &= \mathbf{J}_p^\top \mathbf{J}_p, &
 \mathbf{H}_{ll} &= \mathbf{J}_l^\top \mathbf{J}_l, \\
-\mathbf{H}_{\xi l} &= \mathbf{J}_\xi^\top \mathbf{J}_l = \mathbf{H}_{l\xi}^\top, \\
-\mathbf{b}_\xi    &= \mathbf{J}_\xi^\top \mathbf{r},    &
+\mathbf{H}_{pl} &= \mathbf{J}_p^\top \mathbf{J}_l = \mathbf{H}_{lp}^\top, \\
+\mathbf{b}_p    &= \mathbf{J}_p^\top \mathbf{r},    &
 \mathbf{b}_l    &= \mathbf{J}_l^\top \mathbf{r}.
 \end{align}
-The system matrix has size $(N_\xi + 3n_l)^2$, where $N_\xi$ is the total number of pose
-parameters and $n_l$ is the number of landmarks. This can become impractically large
-(millions of rows and columns) for typical map sizes. In the next sections, we will show
-more efficient ways to solve this system by exploiting its structure.
+La estructura del sistema se ilustra en la Figura~\ref{fig:normal-equations}: los Jacobianos $\mathbf{J}_p$ y $\mathbf{J}_l$ junto con los residuales $\mathbf{r}$ dan lugar a los distintos bloques de la Hessiana. La matriz del sistema tiene tamaño $(N_p + 3n_l)^2$, donde $N_p = d_p \cdot n_p$ es el número total de parámetros de pose, con $d_p$ la dimensión de cada pose y $n_p$ el número de cámaras, y $n_l$ el número de landmarks. Para tamaños de mapa típicos, esta matriz puede alcanzar millones de filas y columnas, lo que la vuelve intratable de forma directa. Las siguientes secciones presentan métodos más eficientes que explotan la estructura del sistema para resolverlo.
 
-Camera poses are then updated on the manifold via the exponential map,
+Las poses de las cámaras se actualizan sobre el manifold mediante el mapa exponencial,
 \[
 \mathbf{x}_p
 \leftarrow
-\exp(\Delta \boldsymbol{\xi}_i^\wedge)\,\mathbf{x}_p,
-\],
-while landmark positions are updated additively:
+\exp(\Delta \mathbf{x}_p^\wedge)\,\mathbf{x}_p,
+\]
+mientras que las posiciones de los landmarks se actualizan de forma aditiva:
 \[
 \mathbf{x}_l
 \leftarrow
@@ -566,93 +540,80 @@ while landmark positions are updated additively:
 \begin{figure}[h]
     \centering
     \includegraphics[width=0.7\linewidth]{img/prev_concepts/normal-equations.pdf}
-    \caption{Ecuaciones normales y matriz Hessiana.}
+    \caption{Parte del proceso de minimización del problema de minimos cuadrados de Bundle Adjustment. En (a), la estructura de los Jacobianos $J_p$ y $J_l$ y residuales $r$; en (b) la matriz Hessiana utilizada en el sistema de ecuaciones normales.}
     \label{fig:normal-equations}
 \end{figure}
 
 \subsection{Complemento de Schur}
 
-A very common way to solve the normal equations is by applying the Schur complement trick.
-Partitioning the system into pose variables $\Delta\mathbf{\xi}$ and landmark variables
-$\Delta\mathbf{x}_l$, one forms the reduced camera system (RCS):
+Una forma muy habitual de resolver las ecuaciones normales es aplicar el truco del complemento de Schur. Particionando el sistema en variables de pose $\Delta\mathbf{x}_p$ y variables de landmark $\Delta\mathbf{x}_l$, se forma el sistema de cámara reducido (RCS, por sus siglas en inglés):
 \[
-\tilde{\mathbf{H}}_{\xi\xi}\,(-\Delta\mathbf{\xi}) = \tilde{\mathbf{b}}_\xi,
+\tilde{\mathbf{H}}_{pp}\,(-\Delta\mathbf{x}_p) = \tilde{\mathbf{b}}_p,
 \]
-with
+con
 \begin{align}
-\tilde{\mathbf{H}}_{\xi\xi} &= \mathbf{H}_{\xi\xi} - \mathbf{H}_{\xi l}\mathbf{H}_{ll}^{-1}\mathbf{H}_{l\xi}, \\
-\tilde{\mathbf{b}}_\xi    &= \mathbf{b}_\xi   - \mathbf{H}_{\xi l}\mathbf{H}_{ll}^{-1}\mathbf{b}_l.
+\tilde{\mathbf{H}}_{pp} &= \mathbf{H}_{pp} - \mathbf{H}_{pl}\mathbf{H}_{ll}^{-1}\mathbf{H}_{lp}, \\
+\tilde{\mathbf{b}}_p    &= \mathbf{b}_p   - \mathbf{H}_{pl}\mathbf{H}_{pp}^{-1}\mathbf{b}_l.
 \end{align}
-The solution $\Delta\mathbf{\xi}^*$ of this system is identical to the pose component of the
-full solution, but the system matrix now has size $N_\xi^2$, typically in the order of thousands
-$\times$ thousands. Since $\mathbf{H}_{ll}$ is block-diagonal with $3\times3$ blocks, the
-multiplication by $\mathbf{H}_{ll}^{-1}$ is cheap. Given the optimal pose update
-$\Delta\mathbf{\xi}^*$, the optimal landmark update is recovered by back-substitution:
+La solución $\Delta\mathbf{x}_p^*$ de este sistema es idéntica a la componente de poses de la solución completa, pero la matriz del sistema ahora tiene tamaño $N_p^2$, típicamente del orden de miles por miles. Dado que $\mathbf{H}_{ll}$ es diagonal de bloques con bloques de $3\times3$, la multiplicación por $\mathbf{H}_{ll}^{-1}$ es computacionalmente barata. Obtenida la actualización óptima de poses $\Delta\mathbf{x}_p^*$, la actualización óptima de landmarks se recupera por sustitución hacia atrás:
 \[
-\Delta\mathbf{x}_l^* = -\mathbf{H}_{ll}^{-1}\bigl(\mathbf{b}_l - \mathbf{H}_{l\xi}\,(-\Delta\mathbf{\xi}^*)\bigr).
+\Delta\mathbf{x}_l^* = -\mathbf{H}_{ll}^{-1}\bigl(\mathbf{b}_l - \mathbf{H}_{lp}\,(-\Delta\mathbf{x}_p^*)\bigr).
 \]
 
 \subsection{Factorización QR}
 
-An alternative to the Schur complement is to apply a QR decomposition directly to the
-landmark Jacobian. Decomposing $\mathbf{J}_l = \mathbf{Q}\mathbf{R}$, where $\mathbf{Q}$
-is orthogonal and $\mathbf{R}$ is upper-triangular, and partitioning $\mathbf{Q} =
-[\mathbf{Q}_1\ \mathbf{Q}_2]$ conformally with the nonzero rows of $\mathbf{R}$, the
-$\ell_2$-norm is invariant under orthogonal transformations, so the objective becomes
+Una alternativa al complemento de Schur es aplicar una descomposición QR directamente al Jacobiano de los landmarks. Descomponiendo $\mathbf{J}_l = \mathbf{Q}\mathbf{R}$, donde $\mathbf{Q}$ es ortogonal y $\mathbf{R}$ es triangular superior, y particionando $\mathbf{Q} = [\mathbf{Q}_1\ \mathbf{Q}_2]$ de manera conforme con las filas no nulas de $\mathbf{R}$, la norma $\ell_2$ es invariante bajo transformaciones ortogonales, por lo que el objetivo se convierte en
 \begin{align}
 \left\|
 \mathbf{r}
 +
-\begin{pmatrix} \mathbf{J}_{\xi} & \mathbf{J}_l \end{pmatrix}
-\begin{pmatrix} \Delta\boldsymbol{\xi} \\ \Delta\mathbf{x}_l \end{pmatrix}
+\begin{pmatrix} \mathbf{J}_p & \mathbf{J}_l \end{pmatrix}
+\begin{pmatrix} \Delta\mathbf{x}_p \\ \Delta\mathbf{x}_l \end{pmatrix}
 \right\|^2
 &=
 \left\|
 \mathbf{Q}^\top\mathbf{r}
 +
-\begin{pmatrix} \mathbf{Q}^\top\mathbf{J}_{\xi} & \mathbf{Q}^\top\mathbf{J}_l \end{pmatrix}
-\begin{pmatrix} \Delta\boldsymbol{\xi} \\ \Delta\mathbf{x}_l \end{pmatrix}
+\begin{pmatrix} \mathbf{Q}^\top\mathbf{J}_p & \mathbf{Q}^\top\mathbf{J}_l \end{pmatrix}
+\begin{pmatrix} \Delta\mathbf{x}_p \\ \Delta\mathbf{x}_l \end{pmatrix}
 \right\|^2 \nonumber \\
 &=
 \left\|
 \mathbf{Q}_1^\top\mathbf{r}
-+ \mathbf{Q}_1^\top\mathbf{J}_{\xi}\,\Delta\boldsymbol{\xi}
++ \mathbf{Q}_1^\top\mathbf{J}_{p}\,\Delta\mathbf{x}_p
 + \mathbf{R}_1\,\Delta\mathbf{x}_l
 \right\|^2
 +
 \left\|
 \mathbf{Q}_2^\top\mathbf{r}
-+ \mathbf{Q}_2^\top\mathbf{J}_{\xi}\,\Delta\boldsymbol{\xi}
++ \mathbf{Q}_2^\top\mathbf{J}_{p}\,\Delta\mathbf{x}_p
 \right\|^2.
 \end{align}
 
-Since $\mathbf{R}_1$ is invertible, for any given $\Delta\boldsymbol{\xi}^*$ the first term
-can be driven to zero by choosing
+Dado que $\mathbf{R}_1$ es invertible, para cualquier $\Delta\mathbf{x}_p^*$ dado, el primer término puede llevarse a cero eligiendo
 \[
 \Delta\mathbf{x}_l^*
 =
 -\mathbf{R}_1^{-1}
 \bigl(
 \mathbf{Q}_1^\top\mathbf{r}
-+ \mathbf{Q}_1^\top\mathbf{J}_{\xi}\,\Delta\boldsymbol{\xi}^*
++ \mathbf{Q}_1^\top\mathbf{J}_{p}\,\Delta\mathbf{x}_p^*
 \bigr).
 \]
-The full problem therefore reduces to minimizing only the second term,
+El problema completo se reduce entonces a minimizar únicamente el segundo término,
 \[
-\min_{\Delta\boldsymbol{\xi}}
+\min_{\Delta\mathbf{x}_p}
 \left\|
 \mathbf{Q}_2^\top\mathbf{r}
-+ \mathbf{Q}_2^\top\mathbf{J}_{\xi}\,\Delta\boldsymbol{\xi}
++ \mathbf{Q}_2^\top\mathbf{J}_{p}\,\Delta\mathbf{x}_p
 \right\|^2,
 \]
-which is of significantly smaller size than the original system. Unlike the Schur complement,
-this approach never forms the Hessian $\mathbf{H}$ explicitly, which can improve numerical
-stability.
+cuyo tamaño es significativamente menor que el del sistema original. A diferencia del complemento de Schur, este enfoque nunca forma la Hessiana $\mathbf{H}$ explícitamente, lo que puede mejorar la estabilidad numérica. La Figura~\ref{fig:qr-ba} ilustra la estructura del problema antes y después de aplicar la factorización QR.
 
 \begin{figure}[h]
     \centering
     \includegraphics[width=0.9\linewidth]{img/prev_concepts/qr-ba.pdf}
-    \caption{Factorización QR.}
+    \caption{Diagrama de un Landmark Block. (a) Estructura de los Jacobianos y residuales. Los elementos distintos de cero se muestran en azul, los elementos potencialmente distintos de cero después de la factorización QR en gris, y los elementos que siempre serán cero en blanco. (b) Almacenamiento denso que guarda de manera eficiente todos los Jacobianos y residuales para un landmark. Se lo denomina Landmark Block. (c) Mismo landmark block luego de la marginalización \textit{in-place}.}
     \label{fig:qr-ba}
 \end{figure}
 
