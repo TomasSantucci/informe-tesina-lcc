@@ -619,31 +619,38 @@ cuyo tamaño es significativamente menor que el del sistema original. A diferenc
 
 \section{Recuperación de imágenes}
 
+La recuperación de imágenes (\textit{image retrieval}) es el problema de encontrar, dentro de una base de datos, las imágenes más similares a una imagen de consulta dada. En robótica y visión por computadora, esta capacidad es fundamental para el reconocimiento de lugares (\textit{place recognition}): un robot debe identificar si una escena observada ya fue visitada previamente, incluso bajo cambios de iluminación, punto de vista o condiciones ambientales. Los métodos modernos abordan este problema extrayendo representaciones compactas de las imágenes y comparándolas eficientemente mediante estructuras de indexado.
+
 \subsection{Modelo Bag of Words}
 
-El modelo de Bag of Words (BoW) es una técnica desarrollada originalmente para la recuperación de texto (\textit{text retrieval}), donde el objetivo es encontrar documentos relevantes en una gran base de datos dada una consulta. La suposición central es que documentos similares tienden a contener las mismas palabras, o al menos una distribución similar de ellas. Un documento puede representarse como un vector en el que cada elemento corresponde a una palabra específica del vocabulario, con su valor codificando si la palabra aparece (representación binaria) o con qué frecuencia lo hace. La similitud entre documentos se mide comparando estos vectores mediante métricas de distancia estándar.
+El modelo de Bag of Words (BoW) es una técnica desarrollada originalmente para la recuperación de texto (\textit{text retrieval}), donde el objetivo es encontrar documentos relevantes en una gran base de datos dada una consulta. La suposición central es que documentos similares tienden a contener las mismas palabras, o al menos una distribución similar de ellas. Un documento puede representarse como un vector en el que cada elemento corresponde a una palabra específica del vocabulario, con su valor codificando si la palabra aparece (representación binaria) o con qué frecuencia lo hace. La similitud entre documentos se mide comparando estos vectores mediante métricas de distancia estándar (véase la Figura~\ref{fig:bow}).
 
-% figura de bow
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=0.6\linewidth]{img/prev_concepts/bow.pdf}
+    \caption{Representación Bag of Words para recuperación de texto. Cada documento se convierte en un vector de frecuencias sobre el vocabulario, donde cada componente indica cuántas veces aparece la palabra correspondiente en el documento.}
+    \label{fig:bow}
+\end{figure}
 
-Sivic y Zisserman transfirieron esta idea a datos visuales en 2003, dando lugar al modelo de \textit{visual bag of words}. Se extraen features locales de las imágenes y se agrupan en palabras visuales (\textit{visual words}) representativas que conforman un vocabulario. Cada imagen se describe entonces por la distribución de esas palabras entre sus features. El agrupamiento o clustering se realiza típicamente mediante k-means o métodos jerárquicos, y dado que los descriptores son de alta dimensionalidad, se necesitan vocabularios de miles a cientos de miles de términos para obtener representaciones suficientemente discriminativas. El retrieval se hace eficiente almacenando las imágenes en un índice invertido indexado por visual word. Dada una imagen de consulta, se calcula su vector BoW y se compara con los almacenados en la base de datos mediante algún método de scoring, como L1, L2, o la similitud del coseno. Las imágenes resultantes se ordenan por similitud y la coincidencia más cercana se devuelve como candidata.
+Sivic y Zisserman~\cite{sivic2003videogoogle} transfirieron esta idea a datos visuales en 2003, dando lugar al modelo de \textit{visual bag of words}. Se extraen features locales de las imágenes y se agrupan en palabras visuales (\textit{visual words}) representativas que conforman un vocabulario. Cada imagen se describe entonces por la distribución de esas palabras entre sus features. El agrupamiento o clustering se realiza típicamente mediante k-means o métodos jerárquicos, y dado que los descriptores son de alta dimensionalidad, se necesitan vocabularios de miles a cientos de miles de términos para obtener representaciones suficientemente discriminativas. El retrieval se hace eficiente almacenando las imágenes en un índice invertido indexado por visual word. Dada una imagen de consulta, se calcula su vector BoW y se compara con los almacenados en la base de datos mediante algún método de scoring, como $L_1$, $L_2$, o la similitud del coseno. Las imágenes resultantes se ordenan por similitud y la coincidencia más cercana se devuelve como candidata.
 
-En este trabajo, los features locales utilizados son los descriptores ORB. ORB mejora el detector FAST produciendo features a múltiples escalas con una orientación asociada, que se utiliza para calcular una versión invariante a la rotación y escala del descriptor BRIEF. El resultado es un descriptor binario compacto de 256 bits, eficiente de extraer y comparable mediante la distancia de Hamming.
+%En este trabajo, los features locales utilizados son los descriptores ORB. ORB mejora el detector FAST produciendo features a múltiples escalas con una orientación asociada, que se utiliza para calcular una versión invariante a la rotación y escala del descriptor BRIEF. El resultado es un descriptor binario compacto de 256 bits, eficiente de extraer y comparable mediante la distancia de Hamming.
 
-Las principales ventajas de los modelos BoW son su invarianza implícita al punto de vista, ya que descartan la disposición geométrica de los features, y su eficiencia gracias al índice invertido y las estructuras jerárquicas de vocabulario. Su principal limitación es la susceptibilidad al \textit{perceptual aliasing}, que se muestra en la Figura \ref{fig:perceptual-aliasing}: distintos lugares con apariencia visual similar pueden producir representaciones de bag of words parecidas, lo que lleva a reconocimientos de lugar incorrectos. Este es un desafío fundamental en cualquier sistema de place recognition basado en apariencia.
+Las principales ventajas de los modelos BoW son su invarianza implícita al punto de vista, ya que descartan la disposición geométrica de los features, y su eficiencia gracias al índice invertido y las estructuras jerárquicas de vocabulario. Su principal limitación es la susceptibilidad al \textit{perceptual aliasing}, que se muestra en la Figura~\ref{fig:perceptual-aliasing}: distintos lugares con apariencia visual similar pueden producir representaciones de bag of words parecidas, lo que lleva a reconocimientos de lugar incorrectos. Este es un desafío fundamental en cualquier sistema de place recognition basado en apariencia.
 
 \begin{figure}[ht]
     \centering
-    \begin{subfigure}[b]{0.32\textwidth}
+    \begin{subfigure}[b]{0.24\textwidth}
         \centering
         \includegraphics[width=\textwidth]{img/prev_concepts/perceptual-aliasing-1.pdf}
     \end{subfigure}
-    \hfill
-    \begin{subfigure}[b]{0.32\textwidth}
+    \hspace{0.5em}
+    \begin{subfigure}[b]{0.24\textwidth}
         \centering
         \includegraphics[width=\textwidth]{img/prev_concepts/perceptual-aliasing-2.pdf}
     \end{subfigure}
-    \hfill
-    \begin{subfigure}[b]{0.32\textwidth}
+    \hspace{0.5em}
+    \begin{subfigure}[b]{0.24\textwidth}
         \centering
         \includegraphics[width=\textwidth]{img/prev_concepts/perceptual-aliasing-3.pdf}
     \end{subfigure}
@@ -652,46 +659,53 @@ Las principales ventajas de los modelos BoW son su invarianza implícita al punt
     \label{fig:perceptual-aliasing}
 \end{figure}
 
-Entre los métodos más destacados que siguen este paradigma se encuentran DBoW, que construye un árbol de vocabulario jerárquico a partir de descriptores binarios mediante clustering con k-medians, y HBST, que organiza los descriptores en un árbol de búsqueda binario indexado por valores de bits para aproximar la búsqueda del vecino más cercano de forma eficiente.
+Entre los métodos más destacados que siguen este paradigma se encuentran DBoW2~\cite{galvezlopez2012dbow2}, que construye un árbol de vocabulario jerárquico a partir de descriptores binarios mediante clustering con k-medians, y HBST~\cite{schlegel2018hbst}, que organiza los descriptores en un árbol de búsqueda binario indexado por valores de bits para aproximar la búsqueda del vecino más cercano de forma eficiente.
 
 \subsection{HashBoW}
 
-HashBoW es un método de recuperación de imágenes (\textit{image retrieval}) basado en el modelo de bag of words. Discretiza el espacio de descriptores mediante hashing y trata directamente los hashes como palabras visuales, como se puede observar en la Figura \ref{fig:hashbow}.
+HashBoW~\cite{hashbow2024stricker} es un método de recuperación de imágenes basado en el modelo de bag of words. Discretiza el espacio de descriptores mediante hashing y trata directamente los hashes como palabras visuales, como se puede observar en la Figura~\ref{fig:hashbow}.
 
 \begin{figure}[h]
     \centering
     \includegraphics[width=0.8\linewidth]{img/prev_concepts/hashbow.pdf}
-    \caption{En el vector de salida, todas las entradas suman 1.}
+    \caption{Generación de la representación vectorial de una imagen usando HashBoW. Tras extraer los features locales (1), los descriptores (2) se hashean según sus valores de bit en índices predefinidos. Los códigos hash resultantes (3) representan los términos del modelo bag-of-words. Una imagen queda entonces caracterizada por la distribución de estas palabras (4).}
     \label{fig:hashbow}
 \end{figure}
 
 \textit{Locality-sensitive hashing} (LSH) es una estrategia de hashing en la que la función hash está diseñada de modo que elementos similares tengan más probabilidad de ser asignados al mismo bucket que elementos distintos. Esto es especialmente útil para la búsqueda aproximada del vecino más cercano en espacios de alta dimensionalidad. En el contexto de place recognition, LSH proporciona una forma eficiente y teóricamente fundamentada de agrupar descriptores similares.
 
-Aunque puede generalizarse, el método opera exclusivamente sobre descriptores binarios. Una familia LSH simple para descriptores binarios bajo la distancia de Hamming se obtiene mediante \textit{bit sampling}: sea $d$ la dimensión de un descriptor binario $p\in\{0,1\}^d$, cada función hash $h_i(p)=p_i$ simplemente lee el valor en un índice de bit específico $i$. Dicha función cumple con la definición de LSH (el detalle de la definición que demuestra que satisface las propiedades de LSH puede encontrarse en la Definición 2 de la Sección 4.3.3 de -), lo que significa que descriptores cercanos en distancia de Hamming tienen más probabilidad de recibir el mismo valor hash que descriptores lejanos. Para aumentar la expresividad, $n$ de estas funciones se concatenan en un hash combinado $g(p)=(h_1(p),\ldots,h_n(p))$, produciendo un vocabulario de tamaño $N_\text{voc} = 2^n$ donde cada código hash corresponde a una visual word. La longitud del código hash $n$ es, por tanto, el parámetro principal que controla el equilibrio entre expresividad del vocabulario y costo computacional.
+Aunque puede generalizarse, el método opera exclusivamente sobre descriptores binarios. Una familia LSH simple para descriptores binarios bajo la distancia de Hamming se obtiene mediante \textit{bit sampling}: sea $d$ la dimensión de un descriptor binario $p\in\{0,1\}^d$, cada función hash $h_i(p)=p_i$ simplemente lee el valor en un índice de bit específico $i$. Dicha función cumple con la definición de LSH~\cite[Def.~2, Sec.~4.3.3]{hashbow2024stricker}, lo que significa que descriptores cercanos en distancia de Hamming tienen más probabilidad de recibir el mismo valor hash que descriptores lejanos. Para aumentar la expresividad, $n$ de estas funciones se concatenan en un hash combinado $g(p)=(h_1(p),\ldots,h_n(p))$, produciendo un vocabulario de tamaño $N_\text{voc} = 2^n$ donde cada código hash corresponde a una visual word. La longitud del código hash $n$ es, por tanto, el parámetro principal que controla el equilibrio entre expresividad del vocabulario y costo computacional.
 
-Dado que índices de bits elegidos aleatoriamente pueden distribuir los descriptores de forma desigual, HashBoW utiliza un procedimiento de entrenamiento basado en entropía para seleccionarlos. Los índices de bits se eligen de forma greedy y secuencial, seleccionando en cada paso el índice que maximiza la entropía de la distribución hash resultante condicionada a los índices ya seleccionados. Esto garantiza que el vocabulario discretice el espacio de descriptores de la manera más uniforme posible para un conjunto de imágenes de entrenamiento.
+Dado que índices de bits elegidos aleatoriamente pueden distribuir los descriptores de forma desigual, HashBoW utiliza un procedimiento de entrenamiento basado en entropía para seleccionarlos. Los índices de bits se eligen de forma greedy y secuencial, seleccionando en cada paso el índice que maximiza la entropía de la distribución hash resultante, condicionada a los índices ya seleccionados. Esto garantiza que el vocabulario discretice el espacio de descriptores de la manera más uniforme posible para un conjunto de imágenes de entrenamiento.
 
-Comparado con otros métodos, HashBoW tiene la ventaja de utilizar una transformación de features locales a palabras visuales más simple. Esto tiene como consecuencia una mayor eficiencia, pero también una menor precisión en el retrieval (Véase Figura \ref{fig:hashbow-results}). Esto implica que, dentro
-de un sistema SLAM, HashBoW debería ir acompañado de verificaciones de consistencia adicionales, para filtrar falsos candidatos a cierre de ciclo. En conjunto, su simplicidad y eficiencia lo convierten en una opción atractiva para la detección de ciclos en entornos no explorados previamente o con recursos computacionales limitados.
+Comparado con otros métodos, HashBoW emplea una transformación de features locales a palabras visuales más simple, lo que le otorga mayor eficiencia como se observa en la Tabla~\ref{tab:hashbow-performance}, en detrimento de cierta precisión en el retrieval (véase Figura~\ref{fig:hashbow-precision}). Por esta razón, dentro de un sistema SLAM, debería complementarse con verificaciones de consistencia adicionales para filtrar falsos candidatos. Su simplicidad y bajo costo computacional lo convierten, en consecuencia, en una opción atractiva para la detección de ciclos en entornos con recursos limitados.
 
 \begin{figure}[ht]
     \centering
-    \begin{subfigure}[b]{0.48\textwidth}
+    \begin{minipage}[c]{0.54\textwidth}
         \centering
-        \includegraphics[width=\textwidth]{img/method/hashbow\_accuracy.pdf}
-        \caption{Basalt}
-        \label{fig:hashbow_accuracy}
-    \end{subfigure}
+        \includegraphics[width=\textwidth]{img/prev_concepts/hashbow\_accuracy.pdf}
+        % TODO: corregir este caption
+        \captionof{figure}{Imagen extraída de [...]. Comparativa de precisión de métodos de visual place recognition.}
+        \label{fig:hashbow-precision}
+    \end{minipage}
     \hfill
-    \begin{subfigure}[b]{0.48\textwidth}
+    \begin{minipage}[c]{0.42\textwidth}
         \centering
-        \includegraphics[width=\textwidth]{img/method/hashbow\_performance.pdf}
-        \caption{BasaltLC}
-        \label{fig:hashbow_performance}
-    \end{subfigure}
-    % TODO: corregir este caption
-    \caption{Imagen extraída de [...]. Comparativa de HashBoW contra otros métodos de image retrieval.}
-    \label{fig:hashbow-results}
+        \begin{tabular}{lcc}
+            \toprule
+            \textbf{Método} & \textbf{Add} & \textbf{Query} \\
+            \midrule
+            DBoW            & 14.15\,s & 10.27\,s \\
+            HBST            &  5.09\,s &  2.67\,s \\
+            HashBoW-random  &  0.15\,s &  1.23\,s \\
+            HashBoW-trained &  0.32\,s &  3.74\,s \\
+            \bottomrule
+        \end{tabular}
+        % TODO: corregir este caption
+        \captionof{table}{Tabla extraída de [...]. Comparativa de tiempos de procesamiento de métodos de visual place recognition.}
+        \label{tab:hashbow-performance}
+    \end{minipage}
 \end{figure}
 
 \section{Estimación de pose en sistemas multi-cámara}
