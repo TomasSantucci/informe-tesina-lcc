@@ -1,67 +1,32 @@
-En este capítulo se presentan los conceptos matemáticos necesarios para comprender el
-funcionamiento de los sistemas de SLAM.
-Estos conceptos son fundamentales para entender cómo se representan matemáticamente los
-problemas de optimización en SLAM, desde la representación de poses y transformaciones, hasta
-la aplicación de métodos de optimización no lineal en espacios curvos.
-Además, se introducen métodos de image retrieval y de estimación de pose robusta.
+En este capítulo se presentan los conceptos matemáticos necesarios para comprender el funcionamiento de los sistemas de SLAM. Estos conceptos son fundamentales para entender cómo se representan matemáticamente los problemas de optimización en SLAM, desde la representación de poses y transformaciones, hasta la aplicación de métodos de optimización no lineal en espacios curvos. Además, se introducen métodos de image retrieval y de estimación de pose robusta.
 
-\section{Camera Models}
+\section{Modelos de cámara}
 
-A camera maps the 3D world onto a 2D image. Understanding how this
-mapping works is fundamental to any vision-based system. Several models
-exist to describe this projection, ranging from simple to highly complex
-\cite{usenko2018ds}. This chapter introduces the pinhole camera model,
-which is the simplest and most widely used abstraction for perspective
-cameras.
+Una cámara proyecta el mundo 3D sobre una imagen 2D. Comprender cómo funciona este mapeo es fundamental para cualquier sistema basado en visión. A continuación se presenta el modelo pinhole, la abstracción más simple para cámaras de perspectiva, aunque existen modelos más complejos para lentes con mayor distorsión~\cite{usenko2018doublesphere}.
 
-\subsection{The Pinhole Camera Model}
-
-The pinhole camera model describes how a 3D point gets projected onto
-an image plane. Intuitively, it models a camera as a single point in
-space --- the optical center --- through which all light rays pass before
-hitting the image plane. A 3D point $\mathbf{P}^c = [x, y, z]^T$
-expressed in the camera frame is projected to pixel coordinates by
+En el modelo de cámara pinhole, la cámara es un único punto en el espacio, el centro óptico, a través del cual pasan todos los rayos de luz. Un punto 3D $\mathbf{P}^c = [x, y, z]^T$, expresado en el sistema de referencia de la cámara, se proyecta como la intersección del rayo que lo une con el centro óptico y el plano de imagen, ubicado a una distancia focal $f$ (véase la Figura~\ref{fig:pinhole-model}). La función de proyección $\pi(\cdot)$, que mapea un punto 3D a coordenadas de píxel, se define como:
 \begin{equation}
-    \mathbf{u} =
-    \begin{bmatrix} u \\ v \end{bmatrix} =
+    \pi\!\left(\mathbf{P}^c\right) = \mathbf{u} =
     \begin{bmatrix}
-        f_x \dfrac{x}{z} + c_x \\[6pt]
-        f_y \dfrac{y}{z} + c_y
+        f_u \dfrac{x}{z} + c_x \\[6pt]
+        f_v \dfrac{y}{z} + c_y
     \end{bmatrix},
     \label{eq:pinhole}
 \end{equation}
-where $f_x$ and $f_y$ are the focal lengths in pixels and $(c_x, c_y)$
-is the principal point, i.e., the pixel coordinates of the optical axis.
-These four values are known as the \textit{intrinsic parameters} of the
-camera, and are commonly grouped into the intrinsic matrix $\mathbf{K}$:
+donde $f_u$ y $f_v$ son las distancias focales en píxeles y $(c_x, c_y)$ es el punto principal, es decir, las coordenadas del eje óptico en el plano de imagen. Estos cuatro valores se denominan \textit{parámetros intrínsecos} de la cámara, y se agrupan en la matriz intrínseca $\mathbf{K}$:
 \begin{equation}
     \mathbf{K} =
     \begin{bmatrix}
-        f_x & 0   & c_x \\
-        0   & f_y & c_y \\
+        f_u & 0   & c_x \\
+        0   & f_v & c_y \\
         0   & 0   & 1
     \end{bmatrix}.
     \label{eq:intrinsics}
 \end{equation}
-When the point is expressed in a world frame rather than the camera
-frame, it must first be transformed using the camera \textit{extrinsic
-parameters}: a rotation $\mathbf{R}$ and a translation $\mathbf{t}$ that
-describe the pose of the camera in the world. The full projection is then
+Cuando el punto está expresado en un sistema de referencia global en lugar del sistema de la cámara, debe transformarse primero usando los \textit{parámetros extrínsecos}: una rotación $\mathbf{R}$ y una traslación $\mathbf{t}$ que describen la pose de la cámara en el mundo. La proyección completa es entonces
 \begin{equation}
     \mathbf{u} = \pi\!\left(\mathbf{R}\,\mathbf{P}^w + \mathbf{t}\right).
     \label{eq:full_projection}
-\end{equation}
-The reverse process, called \textit{unprojection}, recovers a ray in 3D
-space from a pixel observation. Since depth is lost during projection,
-a single pixel corresponds to an entire ray rather than a unique 3D point.
-This ray is commonly represented as a unit \textit{bearing vector}:
-\begin{equation}
-    \mathbf{f} = \pi^{-1}(\mathbf{u}) =
-    \frac{1}{\sqrt{m_x^2 + m_y^2 + 1}}
-    \begin{bmatrix} m_x \\ m_y \\ 1 \end{bmatrix},
-    \quad
-    m_x = \frac{u - c_x}{f_x}, \quad m_y = \frac{v - c_y}{f_y}.
-    \label{eq:unprojection}
 \end{equation}
 
 \begin{figure}[ht]
@@ -69,26 +34,31 @@ This ray is commonly represented as a unit \textit{bearing vector}:
     \begin{subfigure}[b]{0.48\textwidth}
         \centering
         \includegraphics[width=\textwidth]{img/prev_concepts/pinhole-model-3d.pdf}
-        \caption{}
+        \caption{Vista 3D: el punto $\mathbf{p}$ se proyecta a través del centro óptico sobre el plano de imagen, obteniéndose la observación $\mathbf{u}$.}
         \label{fig:pinhole-model-1}
     \end{subfigure}
     \hfill
     \begin{subfigure}[b]{0.48\textwidth}
         \centering
         \includegraphics[width=\textwidth]{img/prev_concepts/pinhole-model-side-view.pdf}
-        \caption{}
+        \caption{Vista lateral: se aprecia la distancia focal $f$ entre el centro óptico y el plano de imagen.}
         \label{fig:pinhole-model-2}
     \end{subfigure}
-    \caption{Representación del modelo de cámara pinhole.}
+    \caption{Modelo de cámara pinhole.}
     \label{fig:pinhole-model}
 \end{figure}
 
-In practice, real lenses introduce distortion that causes the image to
-deviate from the ideal pinhole model. Radial distortion, the most common
-type, makes straight lines appear curved, and is especially noticeable
-toward the edges of the image. These effects are characterized and
-corrected during \textit{camera calibration}, after which the images can
-be treated as if they were captured by an ideal pinhole camera.
+El proceso inverso, denominado desproyección (\textit{unprojection}), recupera un rayo en el espacio 3D a partir de una observación en píxeles. Dado que la profundidad se pierde durante la proyección, un único píxel corresponde a un rayo completo y no a un punto 3D único. Este rayo se representa como un vector de dirección unitario (\textit{bearing vector}):
+\begin{equation}
+    \mathbf{b} = \pi^{-1}(\mathbf{u}) =
+    \frac{1}{\sqrt{m_x^2 + m_y^2 + 1}}
+    \begin{bmatrix} m_x \\ m_y \\ 1 \end{bmatrix},
+    \quad
+    m_x = \frac{u - c_x}{f_u}, \quad m_y = \frac{v - c_y}{f_v}.
+    \label{eq:unprojection}
+\end{equation}
+
+En la práctica, las lentes reales introducen distorsión que hace que la imagen se desvíe del modelo pinhole ideal. Existen modelos de cámara más complejos que incorporan parámetros adicionales para caracterizar estos efectos, como la distorsión radial, que hace que las líneas rectas aparezcan curvadas. Durante la \textit{calibración de la cámara} se optimizan estos parámetros, tras lo cual los puntos 3D pueden proyectarse, y los puntos 2D desproyectarse de acuerdo a las ecuaciones del modelo con los parámetros establecidos.
 
 \section{Grafo de factores}
 
@@ -141,8 +111,6 @@ un grafo de factores de un sistema SLAM.
     \label{fig:real_factor_graph}
 \end{figure}
 
-
-
 \subsection{Error de reproyección}
 
 El error de reproyección mide la distancia entre la posición observada de un punto en la
@@ -158,16 +126,11 @@ donde:
     \item $\hat{\mathbf{p}}_j \in \mathbb{R}^2$ son las coordenadas proyectadas del punto $j$ en la imagen, calculadas a partir de su posición estimada en 3D y la pose de la cámara.
 \end{itemize}
 
-% hablar también del modelo de cámara, y de la función de proyección $\pi(\cdot)$.
-
 \[
 \hat{\mathbf{u}}
 =
 \pi(\mathbf{T}_{cw}\mathbf{p}_w),
 \]
-
-where $\pi(\cdot)$ denotes the camera projection model.
-
 
 \begin{figure}[h]
     \centering
@@ -201,47 +164,36 @@ El error de pose relativa mide la discrepancia entre la transformación relativa
 dos poses consecutivas y la transformación relativa observada por los sensores. Se utiliza en la
 optimización de grafos de poses para corregir la trayectoria estimada del dispositivo.
 
-Se adopta la notación $\mathbf{T}_{ij} \in SE(3)$ para referirse a la transformación que lleva
-puntos expresados en el frame $j$ al frame $i$, es decir, la pose del frame $j$ vista desde el
-frame $i$. En particular, $\mathbf{T}_{wi}$ denota la pose del frame $i$ en coordenadas del
-mundo. La transformación relativa entre dos frames se obtiene entonces como:
+%Se adopta la notación $\mathbf{T}_{ij} \in SE(3)$ para referirse a la transformación que lleva
+%puntos expresados en el frame $j$ al frame $i$, es decir, la pose del frame $j$ vista desde el
+%frame $i$. En particular, $\mathbf{T}_{wi}$ denota la pose del frame $i$ en coordenadas del
+%mundo. La transformación relativa entre dos frames se obtiene entonces como:
+La transformación relativa entre dos poses consecutivas de cámaras $i$ y $j$ se obtiene como:
 \[
 \mathbf{T}_{ij} = \mathbf{T}_{wi}^{-1}\,\mathbf{T}_{wj}.
 \]
 
-Dadas las poses estimadas $\hat{\mathbf{T}}_{wi}$ y $\hat{\mathbf{T}}_{wj}$, y una medición
-de la transformación relativa $\tilde{\mathbf{T}}_{ij}$ provista por los sensores, el error de
-pose relativa se define como:
+Dadas las poses estimadas $\hat{\mathbf{T}}_{wi}$ y $\hat{\mathbf{T}}_{wj}$, y una medición de la transformación relativa $\tilde{\mathbf{T}}_{ij}$ provista por los sensores, el error de pose relativa se define como:
 \[
 \mathbf{e}_{ij}
 = \log\!\left(\tilde{\mathbf{T}}_{ij}^{-1}\,\hat{\mathbf{T}}_{wi}^{-1}\,\hat{\mathbf{T}}_{wj}\right)^\vee
 \in \mathbb{R}^6.
 \]
 
-El término $\hat{\mathbf{T}}_{wi}^{-1}\hat{\mathbf{T}}_{wj} = \hat{\mathbf{T}}_{ij}$ es la
-transformación relativa estimada. El factor $\tilde{\mathbf{T}}_{ij}^{-1}\hat{\mathbf{T}}_{ij}$
-compara medición y estimación directamente en el grupo: cuando ambas coinciden el resultado es
-la identidad y el error es nulo.
+El término $\hat{\mathbf{T}}_{wi}^{-1}\hat{\mathbf{T}}_{wj} = \hat{\mathbf{T}}_{ij}$ es la transformación relativa estimada. El factor $\tilde{\mathbf{T}}_{ij}^{-1}\hat{\mathbf{T}}_{ij}$ compara medición y estimación. Cuando ambas coinciden el resultado es la identidad y el error es nulo. Dado que el resultado de dicha comparación pertenece a $SE(3)$ y el error debe expresarse en $\mathbb{R}^6$ para poder optimizarse, se aplica el mapa logarítmico de la pose seguido del operador $(\cdot)^\vee$, que extrae el vector de coordenadas. Estos conceptos, junto con la estructura de $SE(3)$, se introducen en la Sección~\ref{sec:lie}.
 
-El objetivo de la optimización es minimizar la suma de los errores para todas las restricciones
-del grafo:
+El objetivo de la optimización es minimizar la suma de los errores para todas las restricciones del grafo:
 \[
-\min_{\{\hat{\mathbf{T}}_{wi}\}} \sum_{(i,j)} \|\mathbf{e}_{ij}\|^2.
+\min \sum_{(i,j)} \left\|\log\!\left(\tilde{\mathbf{T}}_{ij}^{-1}\hat{\mathbf{T}}_{ij}\right)^\vee\right\|^2.
 \]
 
-Este tipo de error se utiliza, por ejemplo, al incorporar restricciones de cierre de bucle
-(\textit{loop closure}) en sistemas SLAM, donde una detección de lugar ya visitado introduce
-una nueva restricción entre poses no consecutivas del grafo.
+Este tipo de error se utiliza, por ejemplo, al incorporar restricciones de ciclos en sistemas SLAM, donde una detección de ciclo introduce una nueva restricción entre poses no consecutivas del grafo.
+
+% TODO: agregar figura de un pose graph con loop constraints?
 
 \section{Minimos cuadrados}
 
-El problema de mínimos cuadrados es una técnica fundamental en estadística y optimización
-matemática que se utiliza para ajustar un modelo a un conjunto de datos observados. Su
-objetivo es encontrar la mejor aproximación posible de los parámetros de un modelo, de manera
-que se minimice la diferencia entre las predicciones del modelo y los datos observados. El
-enfoque de mínimos cuadrados busca minimizar el error total o residual, que es la suma de los
-cuadrados de las diferencias entre los valores observados y los valores estimados por el modelo.
-Matemáticamente, el problema puede expresarse como:
+El problema de mínimos cuadrados es una técnica fundamental en estadística y optimización matemática que se utiliza para ajustar un modelo a un conjunto de datos observados. Su objetivo es encontrar la mejor aproximación posible de los parámetros de un modelo, de manera que se minimice la diferencia entre las predicciones del modelo y los datos observados. El enfoque de mínimos cuadrados busca minimizar el error total o residual, que es la suma de los cuadrados de las diferencias entre los valores observados y los valores estimados por el modelo. Matemáticamente, el problema puede expresarse como:
 \[
 \min_{\mathbf{x}} \sum_{i=1}^{n} \bigl(y_i - f(x_i, \mathbf{x})\bigr)^2,
 \]
@@ -253,11 +205,7 @@ donde:
     \item $f(x_i, \mathbf{x})$ es el modelo que se ajusta a los datos observados.
 \end{itemize}
 
-El problema de mínimos cuadrados no lineales extiende el enfoque de mínimos cuadrados al
-caso en el que el modelo $f(x_i)$ no es una función lineal. A diferencia del caso lineal, donde
-la solución se obtiene directamente resolviendo un sistema de ecuaciones, en el caso no lineal no
-existe una solución analítica directa. La resolución se basa en métodos iterativos que ajustan
-los parámetros del modelo calculando gradientes, Jacobianos y Hessianos en cada iteración.
+El problema de mínimos cuadrados no lineales extiende el enfoque de mínimos cuadrados al caso en el que el modelo $f(x_i)$ no es una función lineal. A diferencia del caso lineal, donde la solución se obtiene directamente resolviendo un sistema de ecuaciones, en el caso no lineal no existe una solución analítica directa. La resolución se basa en métodos iterativos que ajustan los parámetros del modelo calculando gradientes, Jacobianos y Hessianos en cada iteración.
 
 \paragraph{Gradiente}
 
@@ -271,13 +219,11 @@ El gradiente de una función escalar $F(\mathbf{x})$ es un vector de derivadas p
 \dfrac{\partial F}{\partial x_n}
 \end{bmatrix}^\top.
 \]
-Indica la dirección de mayor aumento de $F$ y se utiliza para determinar en qué dirección
-ajustar los parámetros para reducir la función de costo.
+Indica la dirección de mayor aumento de $F$ y se utiliza para determinar en qué dirección ajustar los parámetros para reducir la función de costo.
 
 \paragraph{Jacobiano}
 
-La matriz Jacobiana de una función vectorial $\mathbf{f}(\mathbf{x})$ contiene las derivadas
-parciales de cada componente de $\mathbf{f}$ respecto a cada componente de $\mathbf{x}$:
+La matriz Jacobiana de una función vectorial $\mathbf{f}(\mathbf{x})$ contiene las derivadas parciales de cada componente de $\mathbf{f}$ respecto a cada componente de $\mathbf{x}$:
 \[
 \mathbf{J}(\mathbf{x}) =
 \begin{bmatrix}
@@ -287,13 +233,11 @@ parciales de cada componente de $\mathbf{f}$ respecto a cada componente de $\mat
 \dfrac{\partial f_m}{\partial x_1} & \dfrac{\partial f_m}{\partial x_2} & \cdots & \dfrac{\partial f_m}{\partial x_n}
 \end{bmatrix}.
 \]
-Proporciona una aproximación lineal de $\mathbf{f}$ alrededor de un punto dado y es crucial
-en métodos iterativos de optimización.
+Proporciona una aproximación lineal de $\mathbf{f}$ alrededor de un punto dado y es crucial en métodos iterativos de optimización.
 
 \paragraph{Hessiano}
 
-La matriz Hessiana de una función escalar $F(\mathbf{x})$ contiene las segundas derivadas
-parciales de $F$:
+La matriz Hessiana de una función escalar $F(\mathbf{x})$ contiene las segundas derivadas parciales de $F$:
 \[
 \mathbf{H}(\mathbf{x}) =
 \begin{bmatrix}
@@ -303,48 +247,31 @@ parciales de $F$:
 \dfrac{\partial^2 F}{\partial x_n \partial x_1} & \dfrac{\partial^2 F}{\partial x_n \partial x_2} & \cdots & \dfrac{\partial^2 F}{\partial x_n^2}
 \end{bmatrix}.
 \]
-Es utilizada en métodos de optimización de segundo orden para capturar la curvatura de la
-función de costo y proporcionar información más precisa sobre la topología local de $F(\mathbf{x})$.
+Es utilizada en métodos de optimización de segundo orden para capturar la curvatura de la función de costo y proporcionar información más precisa sobre la topología local de $F(\mathbf{x})$.
 
-El método de Gauss-Newton es un algoritmo iterativo utilizado para resolver problemas de
-mínimos cuadrados no lineales. Se basa en una aproximación lineal de la función objetivo, lo
-que permite transformar el problema no lineal en una secuencia de problemas de mínimos
-cuadrados lineales. Es particularmente eficiente cuando el modelo no se desvía significativamente
-de un comportamiento lineal, evitando el cálculo completo de la matriz Hessiana.
+El método de Gauss-Newton es un algoritmo iterativo utilizado para resolver problemas de mínimos cuadrados no lineales. Se basa en una aproximación lineal de la función objetivo, lo que permite transformar el problema no lineal en una secuencia de problemas de mínimos cuadrados lineales. Es particularmente eficiente cuando el modelo no se desvía significativamente de un comportamiento lineal, evitando el cálculo completo de la matriz Hessiana.
 
 Dado el problema de mínimos cuadrados no lineales:
 \[
 \min_{\mathbf{x}} \sum_{i=1}^{n} \bigl(y_i - f(x_i, \mathbf{x})\bigr)^2,
 \]
-el método aproxima $f(x_i, \mathbf{x})$ mediante una expansión de Taylor de primer orden en
-torno a la estimación actual $\mathbf{x}_k$:
+el método aproxima $f(x_i, \mathbf{x})$ mediante una expansión de Taylor de primer orden entorno a la estimación actual $\mathbf{x}_k$:
 \[
 f(x_i, \mathbf{x}) \approx f(x_i, \mathbf{x}_k) + \mathbf{J}(x_i)(\mathbf{x} - \mathbf{x}_k),
 \]
-donde $\mathbf{J}(x_i)$ es la matriz Jacobiana de $f$ respecto a $\mathbf{x}$, evaluada en
-$\mathbf{x}_k$. Sustituyendo en la función objetivo, el problema no lineal se convierte en uno
-lineal que se resuelve en cada iteración:
-\[
-\min_{\mathbf{x}} \sum_{i=1}^{n} \bigl(y_i - f(x_i, \mathbf{x}_k) - \mathbf{J}(x_i)(\mathbf{x} - \mathbf{x}_k)\bigr)^2.
-\]
-
-En cada iteración se resuelve el sistema de ecuaciones normales:
+donde $\mathbf{J}(x_i)$ es la matriz Jacobiana de $f$ respecto a $\mathbf{x}$, evaluada en $\mathbf{x}_k$. Sustituyendo en la función objetivo se obtiene un problema de mínimos cuadrados lineal. Igualando su gradiente a cero se llega al sistema de ecuaciones normales:
 \[
 \mathbf{J}^\top \mathbf{J}\,\Delta\mathbf{x} = \mathbf{J}^\top \mathbf{r},
 \]
-donde $\mathbf{r} = y_i - f(x_i, \mathbf{x}_k)$ son los residuales y $\Delta\mathbf{x}$ es el
-incremento de los parámetros. Luego los parámetros se actualizan como:
+donde $\mathbf{r} = y_i - f(x_i, \mathbf{x}_k)$ son los residuales y $\Delta\mathbf{x}$ es el incremento de los parámetros. Luego los parámetros se actualizan como:
 \[
 \mathbf{x}_{k+1} = \mathbf{x}_k + \Delta\mathbf{x}.
 \]
 
-Este proceso se repite hasta que $\|\Delta\mathbf{x}\|$ es suficientemente pequeño, indicando
-convergencia. El método es computacionalmente eficiente porque aproxima la Hessiana mediante
-$\mathbf{J}^\top\mathbf{J}$. Sin embargo, puede fallar cuando la aproximación lineal no es
-suficiente. En esos casos se puede utilizar el método de Levenberg-Marquardt, que introduce un
-término de amortiguamiento (\textit{damping factor}) para estabilizar la convergencia.
+Este proceso se repite hasta que $\|\Delta\mathbf{x}\|$ es suficientemente pequeño, indicando convergencia. El método es computacionalmente eficiente porque aproxima la Hessiana mediante $\mathbf{J}^\top\mathbf{J}$. Sin embargo, puede fallar cuando la aproximación lineal no es suficiente. En esos casos se puede utilizar el método de Levenberg-Marquardt, que introduce un término de amortiguamiento (\textit{damping factor}) para estabilizar la convergencia~\cite{nocedal2006numerical}.
 
 \section{Manifolds, Lie Groups, and Optimization on $SE(3)$}
+\label{sec:lie}
 
 % https://ethaneade.com/lie.pdf
 % https://asrl.utias.utoronto.ca/~tdb/bib/barfoot_ser17.pdf
