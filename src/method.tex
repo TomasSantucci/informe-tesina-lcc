@@ -530,63 +530,55 @@ while (running) {
 
 \section{RootBA para un sistema de SLAM}
 
-% TODO: agregar figuras del paper de las JAR
+A partir del mapa resultante del sistema propuesto, así como realizan algunos sistemas VI-SLAM del estado del arte \cite{campos2021orbslam3} \cite{leutenegger2022okvis2}, es posible ejecutar una optimización global de bundle adjustment (BA) de manera offline, una vez finalizada la sesión de SLAM. A diferencia de las optimizaciones locales realizadas por el VIO durante la ejecución, que operan sobre una ventana acotada de keyframes, el bundle adjustment global utiliza todos los keyframes y landmarks del mapa de forma simultánea. El objetivo es refinar de manera conjunta las poses de los keyframes y las posiciones de los landmarks, reduciendo el error de reproyección acumulado a lo largo de toda la trayectoria.
 
-RootBA es un método de Bundle Adjustment a gran escala cuya implementación propuesta se adapta
-al contexto de \textit{Structure From Motion} (SfM). Su implementación se encuentra disponible en \href{https://github.com/nikolausdemmel/rootba}. Para adaptarla al contexto de un sistema de SLAM, se realizaron algunas modificaciones que se describen en esta sección.
+Para llevar a cabo esta etapa, se adoptó el método de Square Root Bundle Adjustment a gran escala (RootBA) propuesto en \cite{demmel2021largescalerootba}. La elección de este método se fundamenta en dos aspectos. En primer lugar, su formulación mediante factorización QR es numéricamente más estable que los enfoques clásicos basados en el complemento de Schur, lo que permite ejecutar la optimización en precisión simple sin pérdida de calidad. Esto se traduce en una ganancia de rendimiento considerable, algo deseable para una etapa de optimización global que de otro modo resultaría costosa. En segundo lugar, esta misma formulación ya fue incorporada al optimizador local del VIO de Basalt en \cite{demmel2022slidingrootba}, por lo que el sistema ya opera sobre esa base; extender RootBA al bundle adjustment global resulta una continuación natural de ese trabajo. Sin embargo, como RootBA fue diseñado originalmente para Structure from Motion (SfM), donde las imágenes no provienen necesariamente de un sistema multicámara con geometría rígida conocida, su formulación no está adaptada directamente a las particularidades del sistema desarrollado en esta tesina, y fue necesario realizarle algunas modificaciones.
 
-\subsection{Eliminación de parámetros intrínsecos del estado}
+\subsection{Formulación del problema de bundle adjustment}
 
-En primer lugar, al ser un método de SfM, el algoritmo no solo estima poses de cámaras y posiciones de puntos 3d, si no que también estima los parámetros intrínsecos de las cámaras. Utiliza el modelo de cámara utilizado en el Paper "Bundle Adjustment in the Large", con 6 parámetros extrínsecos y 3 intrínsecos: distancia focal $f$ y 2 parámetros de distorsión radial $k_1$ y $k_2$. Esto es útil en métodos de SfM, donde el conjunto de imágenes puede provenir de distintos orígenes, inlcuso cada una puede haber sido tomada por una cámara distinta. En el contexto de SLAM para XR, donde las calibraciones de las cámaras son conocidas y, más aún, todas las imágenes provienen de las mismas cámaras, ya no tiene sentido optimizar los parámetros intrínsecos de las cámaras. Además, considerar que todas las imágenes pueden provenir de cámaras distintas puede causar que, en vez de corregir el error de una pose de una cámara, se compence modificando algún valor de distorsión de su calibración.
+El estado en la implementación de RootBA\footnote{\href{https://github.com/nikolausdemmel/rootba}{github.com/nikolausdemmel/rootba}} se divide en dos partes: una parte de poses $x_p$ y una parte de landmarks $x_l$. La parte de poses se subdivide a su vez en parámetros extrínsecos $x_c$ (las poses ${T_i \in SE(3)}$) e intrínsecos $x_i$ (distancia focal $f_i$ y coeficientes de distorsión radial $k_1^i, k_2^i$) para cada una de las $n_p$ cámaras. La parte de landmarks contiene las coordenadas 3D de los $n_l$ puntos del mapa. El vector de estado completo tiene longitud $9n_p + 3n_l$, donde el factor $9$ por cámara corresponde a $6$ parámetros extrínsecos y $3$ intrínsecos.
 
-Para corregir esto, simplemente se eliminan las variables relacionadas a los parámetros intrínsecos de las cámaras del vector de estado. Luego, no se computan ni almacenen las derivadas relacionadas a estos parámetros en los Landmark Blocks, como se observa en la Figura \ref{fig:rootba-intrinsics}.
-
-\subsection{Optimización de poses de rigs}
-
-Una característica del sistema propuesto es que las imágenes capturadas por
-las múltiples cámaras de un mismo keyframe comparten una transformación
-relativa conocida entre sí, constante a lo largo de todos los keyframes.
-Si se tratara a todas las cámaras como variables independientes en el vector
-de estado, la optimización podría romper esta restricción de rigidez entre
-las cámaras del rig.
-
-Para remediar esto, en lugar de almacenar las poses de cada cámara
-individualmente, se almacena la pose de la IMU como representación del
-rig completo en cada instante de tiempo. Este cambio de variables implica
-modificar el algoritmo de linealización, de modo que los incrementos
-calculados correspondan a perturbaciones sobre la pose del \emph{body}.
-
-Sean $T_b \in SE(3)$ la pose del body y $T_c \in SE(3)$ la pose de una
-cámara del rig en el mismo instante de tiempo. La transformación relativa
-entre ambos es fija y conocida, dada por la calibración extrínseca
-$T_{cb} \in SE(3)$:
+El problema de bundle adjustment consiste en minimizar el error de reproyección acumulado sobre todas las observaciones disponibles. Formalmente, se minimiza la siguiente ecuación de energía:
 \begin{equation}
-    T_c = T_{cb} \cdot T_b.
-    \label{eq:rig_composition}
+E(x_c, x_i, x_l) = \sum_{i}\sum_{j \in \mathcal{O}(i)} |r_{ij}(x_c, x_i, x_l)|^2,
+\label{eq:ba_energy}
+\end{equation}
+donde $j \in \mathcal{O}(i)$ indica que el landmark $j$ es observado en el frame $i$, y $r_{ij}$ es el residual de reproyección correspondiente. RootBA resuelve este problema de forma eficiente mediante una factorización QR que aprovecha la estructura dispersa del sistema de ecuaciones normales, característica del problema de BA.
+
+\subsection{Adaptaciones para SLAM}
+
+La formulación original de RootBA fue diseñada para SfM, donde las imágenes pueden provenir de cámaras distintas y la calibración de cada una puede ser desconocida. En un sistema SLAM multicámara como el propuesto, esta formulación debe adaptarse para tener en cuenta dos características del entorno: la calibración de las cámaras es conocida y fija, y el sistema opera con un rig rígido de múltiples cámaras. A continuación se describe cada una de las adaptaciones realizadas.
+
+\subsubsection{Eliminación de parámetros intrínsecos}
+
+En SfM, los parámetros intrínsecos $x_i$ suelen ser desconocidos, ya que las imágenes pueden provenir de distintas cámaras o de la misma cámara con diferentes configuraciones. Por eso, en la formulación original de RootBA, $x_i$ forma parte del estado a optimizar. Sin embargo, en un sistema SLAM la calibración de las cámaras se realiza previamente y permanece constante durante toda la sesión. En este contexto, incluir $x_i$ en la optimización es contraproducente: dado que los parámetros intrínsecos y extrínsecos son altamente correlacionados, el optimizador puede absorber errores de pose ajustando la calibración en lugar de corregir las poses $x_c$, degradando la calidad de la solución.
+
+La solución adoptada es eliminar $x_i$ del estado de optimización, lo que reduce la ecuación de energía a $E(x_c, x_l)$. Esto tiene dos consecuencias directas en la implementación: la dimensión por cámara se reduce de $d_p = 9$ a $d_p = 6$, y se evita el cálculo de los jacobianos con respecto a los parámetros intrínsecos. En la práctica, esto se logra suprimiendo las columnas correspondientes a $x_i$ en los Landmark Blocks, sin alterar la estructura de la factorización QR subyacente.
+
+\subsubsection{Optimización de poses de rig}
+
+En un sistema SLAM multicámara basado en keyframes, cada keyframe corresponde a un instante de tiempo en el que el dispositivo registra imágenes con todas sus cámaras simultáneamente. El conjunto de cámaras forma un rig rígido: la transformación de cada cámara $c_k$ al body, $T_{c_k b} \in SE(3)$, es conocida a partir de la calibración extrínseca y permanece constante a lo largo de toda la secuencia. La pose de cada cámara individual puede entonces obtenerse como $T_{c_k} = T_{c_k b}\cdot T_b$, donde $T_b$ es la pose del body en ese keyframe.
+
+La formulación original de RootBA almacena en $x_c$ una pose independiente por cada cámara. En un sistema multicámara, esto introduce un problema: si las poses de las distintas cámaras de un mismo rig se optimizan de forma independiente, nada garantiza que el resultado respete la restricción de rigidez del rig. El sistema podría en principio converger a una solución en la que las cámaras de un mismo keyframe tengan poses inconsistentes entre sí.
+
+Para resolver esto, se reparametriza el estado utilizando las poses del body $x_b$ en lugar de las poses individuales de cada cámara. De este modo, en vez de almacenar una variable de pose por cámara por keyframe, se tiene una sola variable $T_b$ por keyframe, lo que reduce la dimensión del estado y garantiza automáticamente la coherencia del rig en la solución optimizada.
+
+Esta reparametrización requiere ajustar los jacobianos de los residuales. La perturbación de la pose de una cámara $c_k$ se relaciona con la perturbación del body mediante la relación adjunta (ecuación~\eqref{eq:adjoint_twist}):
+\begin{equation}
+    \Delta x_{c_k} = \mathrm{Ad}_{T_{c_k b}} \Delta x_b.
+\end{equation}
+Aplicando la regla de la cadena, el jacobiano del residual respecto a $x_b$ queda:
+\begin{equation}
+\frac{\partial r}{\partial \Delta x_b} = \frac{\partial r}{\partial \Delta x_{c_k}} \cdot \frac{\partial \Delta x_{c_k}}{\partial \Delta x_b} = \frac{\partial r}{\partial \Delta x_{c_k}}\cdot \mathrm{Ad}_{T_{c_k b}}.
 \end{equation}
 
-Con la parametrización propuesta, en lugar de $\frac{\partial r}{\partial \Delta x_c}$
-se requiere $\frac{\partial r}{\partial \Delta x_b}$. Por \eqref{eq:adjoint_twist}, la perturbación sobre la cámara se relaciona con
-la del body mediante $\Delta x_c = \mathrm{Ad}_{T_{cb}}\,\Delta x_b$, de donde:
-\begin{equation}
-    \frac{\partial\,\Delta x_c}{\partial\,\Delta x_b} = \mathrm{Ad}_{T_{cb}}.
-    \label{eq:jacobian_deltax}
-\end{equation}
-Aplicando la regla de la cadena:
-\begin{equation}
-    \frac{\partial r}{\partial \Delta x_b}
-    = \frac{\partial r}{\partial \Delta x_c}
-      \cdot \mathrm{Ad}_{T_{cb}}.
-    \label{eq:chain_rule_result}
-\end{equation}
+En la práctica, adoptar la parametrización por body equivale simplemente a postmultiplicar el jacobiano calculado por la formulación original por la matriz adjunta $\mathrm{Ad}_{T_{c_k b}}$. Esta es una modificación local que no altera la estructura global del sistema de ecuaciones normales. Adicionalmente, una consecuencia favorable de esta parametrización es que las observaciones de distintas cámaras del rig en un mismo keyframe se acumulan en una única columna del Landmark Block, correspondiente a la variable $x_b$ de ese keyframe.
 
-Además, otra diferencia es que ahora, cada landmark puede afectar la pose de un rig mediante más de una observación, pues hay múltiples cámaras asociadas a un mismo rig, que pueden aportar observaciones del mismo landmark. Estas modificaciones pueden observarse en la Figura \ref{fig:rootba-rigs}.
+La Figura~\ref{fig:landmark_block} ilustra el efecto conjunto de ambas modificaciones sobre la estructura de un Landmark Block.
 
-\begin{figure}[h]
+\begin{figure}[!htbp]
     \centering
-    \includegraphics[width=0.8\linewidth]{img/method/rootba-rigs.pdf}
-    \caption{Representación de rigs en el estado de rootba.}
-    \label{fig:rootba-rigs}
+    \includegraphics[width=0.8\linewidth]{img/method/rootba-mod.pdf}
+    \caption{Estructura de un Landmark Block. (a)~RootBA original: estado por cámara de dimensión $d_p = 9$, incluyendo parámetros intrínsecos $x_i$ en naranja. (b)~Versión adaptada: $d_p = 6$ (intrínsecos eliminados), con observaciones de múltiples cámaras del rig acumuladas en la variable de body $x_b$.}
+    \label{fig:landmark_block}
 \end{figure}
-
-% TODO: skip de kfs con pocas obs??
