@@ -414,27 +414,9 @@ ajustes en la clase MapDatabase, que se detallan en esta sección.
 
 \subsection{Reintroducción de keyframes covisibles}
 
-Con la introducción de un grafo de covisibilidad, se habilita la posibilidad de mejorar la eficiencia
-de la estrategia de ``Covisibilidad por observaciones'' para resolver las consultas de covisibilidad del VIO.
-En primer lugar, se utiliza el grafo de covisibilidad para obtener todos los keyframes covisibles con el
-último keyframe introducido, que compartan un mínimo configurable de observaciones. A partir de esto,
-se toman los 3 keyframes más viejos y se responde al VIO con estos keyframes junto con todos los landmarks
-hosteados por ellos. De esta manera, se obtiene una ventana de covisibilidad más informativa, que
-favorece la reintroducción de keyframes que hayan sido candidatos para algún cierre de ciclo junto con
-algún keyframe reciente.
+El grafo de covisibilidad introducido en la sección anterior permite mejorar la estrategia de covisibilidad por observaciones. Al recibir una consulta del VIO, se obtienen todos los keyframes que comparten al menos un mínimo configurable de observaciones con el último keyframe introducido, y se devuelven los 3 más antiguos junto con todos los landmarks que hostean. Esto produce una ventana de covisibilidad más informativa, que favorece la reintroducción de keyframes que hayan sido candidatos para algún cierre de ciclo.
 
-A su vez, es importante notar que, con respecto a la estrategia de covisibilidad espacial, surge una
-complicación porque la pose de los keyframes en el mapa persistente ya no es estática. Es decir, cada vez
-que se realiza alguna optimización sobre las poses de los keyframes, estas cambian, lo que hace que el
-cubo de distribución espacial de cada keyframe también cambie. Como cada vez que se optimiza el grafo de poses
-todos (a excepción de los keyframes aún activos en la ventana local del VIO) cambian su pose, esto implica
-que cada vez que se optimiza el grafo de poses, se deben actualizar todos los cubos de distribución espacial.
-Esto no fue implementado porque puede resultar costoso, y se decidió utilizar la estrategia de covisibilidad
-por observaciones cuando se habilite el cierre de ciclos. Una posible solución, que queda por fuera del alcance
-de este trabajo, sería modificar la manera en que se almacenan y consultan los cubos para que estén definidos
-en referencia a la pose del keyframe. De esta manera, aunque la pose del keyframe cambie, el cubo de
-distribución espacial se mantendría estático con respecto a la pose del keyframe, y no sería necesario
-actualizar todos los cubos cada vez que se optimiza el grafo de poses.
+La estrategia de covisibilidad espacial, en cambio, presenta una complicación al combinarse con el cierre de ciclos: el proceso de PGO modifica las poses de todos los keyframes del mapa, a excepción de los aún activos en la ventana del VIO, lo que invalida los cubos de distribución espacial asociados a ellos. Recalcularlos tras cada optimización resultaría costoso, por lo que se optó por deshabilitar esta estrategia cuando el cierre de ciclos está activo. Una posible solución futura sería definir los cubos en coordenadas relativas a la pose del keyframe, de modo que permanezcan invariantes ante cambios de pose globales.
 
 % TODO: poner figura?
 
