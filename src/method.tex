@@ -422,148 +422,34 @@ La estrategia de covisibilidad espacial, en cambio, presenta una complicación a
 
 \subsection{Culling de keyframes}
 
-Como suele ser el caso de gran parte de los sistemas de SLAM basados en keyframes, el mapa persistente
-puede crecer de manera indefinida a medida que se exploran nuevas zonas. Esto trae aparejado un aumento
-en el cosumo de recursos del sistema, tanto en memoria como en tiempo de procesamiento. Que el mapa
-crezca de manera indefinida es especialmente problemático con el esquema de optimización de ciclos
-implementado. En primer lugar, si el mapa contiene un número alto de keyframes, la copia del grafo de
-poses que realiza \texttt{MapDatabase} se vuelve cada vez más pesada. Además, como cada vez que se optimiza
-el grafo de poses se actualizan las poses de todos los keyframes, contar con un número alto de keyframes
-hace que el proceso de PGO se vuelva extremadamente lento. Por estos motivos, se implementó una estrategia
-de culling de keyframes, que se encarga de eliminar del mapa persistente aquellos keyframes que resulten
-de menor utilidad para el sistema, manteniendo el mapa acotado en tamaño.
+En los sistemas de SLAM basados en keyframes, el mapa tiende a crecer de forma indefinida a medida que se exploran nuevas zonas, lo que incrementa el consumo de memoria y tiempo de procesamiento. Este crecimiento resulta especialmente problemático con el PGO implementado: un mapa de gran tamaño encarece la copia del grafo de poses y ralentiza la optimización, dado que las poses de todos los keyframes se actualizan en cada ejecución. Por estos motivos, se implementó una estrategia de culling de keyframes que mantiene el mapa acotado eliminando aquellos de menor utilidad.
 
-Cuando se decide eliminar un keyframe, se elimina su pose, todos los landmarks que hosteaba, todas las
-referencias a ese keyframe en el \texttt{CovisibilityGraph} y todas las observaciones, actualizando el
-grafo de covisibilidad para mantenerlo consistente con la información del mapa.
+Al eliminar un keyframe, se descartan su pose, los landmarks que hosteaba y todas sus referencias en el \texttt{CovisibilityGraph}, actualizando las aristas de covisibilidad para mantener la consistencia del mapa.
 
-En primer lugar, y de manera similar al esquema de culling de keyframes que utiliza ORB-SLAM3,
-cada vez que se marginaliza un keyframe en el VIO, \texttt{MapDatabase} calcula el porcentaje de landmarks,
-de todas las que observa el keyframe marginalizado, que son observadas por al menos otros 3 keyframes
-del mapa. Si este porcentaje es menor al 90\% se retiene el keyframe. De lo contrario, se elimina del
-mapa. Eso permite eliminar de manera temprana aquellos keyframes cuya redundancia es tan alta que no
-aportan información relevante para el sistema. Este mecanismo suele eliminar keyframes principalmente
-cuando las cámaras se encuentran estáticas, observando la misma escena. 
+La primera estrategia, análoga al culling de ORB-SLAM3, se aplica cada vez que el VIO marginaliza un keyframe. \texttt{MapDatabase} calcula el porcentaje de landmarks observados por ese keyframe que también son observados por al menos otros 3 keyframes del mapa. Si el porcentaje supera el 90\%, el keyframe se considera redundante y se elimina. Este mecanismo actúa principalmente cuando las cámaras permanecen estáticas frente a la misma escena.
 
-Además, se implementa también una estrategia de culling de keyframes más agresiva, que establece un número
-máximo de keyframes que el mapa puede contener, y cada vez que se supera ese número, se eliminan
-keyframes en batches. Para esto, se definen heurísticas para establecer un puntaje de utilidad de cada
-keyframe, y se eliminan aquellos con menor puntaje. Se añade un atributo denominado \texttt{keyframe\_scores}
-a la clase \texttt{MapDatabase} para almacenarlos, cuyo detalle se muestra en el Código 5.7.
-Este puntaje se calcula a partir de una suma pesada
-de diferentes factores que se muestran a continuación:
+La segunda estrategia, más agresiva, establece un número máximo de keyframes en el mapa. Cuando se supera ese límite, se calculan puntajes de utilidad para cada keyframe y se eliminan los de menor valor en batches. El puntaje es una combinación ponderada de cinco factores:
 
-$$ score(k) = 0.4 * S_g + 0.2 * S_l + 0.1 * S_t + 0.1 * S_c + 0.2 * S_o $$
+$$ score(k) = 0.4 \cdot S_g + 0.2 \cdot S_l + 0.2 \cdot S_o + 0.1 \cdot S_c + 0.1 \cdot S_t $$
 
-donde:
+Los cinco factores se describen a continuación, en orden de mayor a menor peso:
 
 \begin{itemize}
-    \item Cantidad de landmarks observados ($S_o$): Un keyframe que observa pocos landmarks (menos
-    de 10 por ejemplo) es de una calidad baja. Incluso es probable que su pose tenga mucho error.
-    Pero, al mismo tiempo, un keyframe con una gran cantidad de landmarks observados no necesariamente
-    es bueno para mantenerlo, porque probablemente observe lo mismo que otros keyframes y se vuelva redundante.
-    La intención de este score es penalizar los primeros (los keyframes con muy pocos landmarks)
-    sin favorecer los que tengan muchos. De esta manera, se elige la función $\frac{x}{x+10}$. La diferencia
-    entre los números bajos implica un cambio mayor en el score, pero no en los números más altos (tiene
-    derivada decreciente).
-    Este puntaje se calcula solo una vez, cuando el keyframe es marginalizado.
-    \item Cubrimiento de las imágenes del frame ($S_c$):
-    Un keyframe que observa puntos solo en una parte de la imagen podría ser de menor calidad que uno que
-    los observa en más partes. Para esto, se calcula el \textit{bounding box} que contenga a todas las
-    observaciones para cada cámara y se calcula el ratio del área en comparación con el tamaño de la imagen.
-    Finalmente, se calcula el promedio del ratio de todas las cámaras del keyframe.
-    Este puntaje se calcula solo una vez, cuando el keyframe es marginalizado.
-    \item Utilidad temporal ($S_t$):
-    Los keyframes más viejos tienen utilidad porque son los que menos drift contienen (o uno esperaría que
-    esto fuera así). Los más nuevos son de utilidad porque corresponden a la escena que actualmente está
-    siendo mapeada. Entonces, se elige un score que penalice a los keyframes de la mitad. Se elige la
-    función con forma de ``V'' $|2x-1|$. Dado que esto está basado más en una intuición que en un valor
-    real, su peso es bajo.
-    Este puntaje se calcula cada vez que se supera el número máximo de keyframes, para todos los
-    keyframes del mapa.
-    \item Reemplazabilidad en el grafo de covisibilidad ($S_g$):
-    La intuición es que un keyframes es reemplazable si al eliminarlo se mantiene la misma estructura en
-    el grafo de covisibilidad. Por ejemplo, un keyframe que hace una especie de ``puente'' entre dos
-    componentes conexas no se debería eliminar. Para aproximar esta idea, se utiliza la cantidad de
-    aristas de alta covisibilidad incidentes en el nodo (grado de alta covisibilidad).
-    Se utiliza la función $1 - \min(x/10,1)$ donde $x$ es el grado de alta covisibilidad del keyframe.
-    Cada vez que se agrega o elimina una arista de alta covisibilidad que incida en el nodo del keyframe,
-    la clase \texttt{CovisibilityGraph} actualiza el puntaje de reemplazabilidad de los keyframes afectados,
-    y se notifica a \texttt{MapDatabase} para que actualice el puntaje total de cada keyframe afectado
-    mediante un callback.
-    \item Cantidad de detecciones de ciclo ($S_l$):
-    Si un nodo se usó para varios loop closures, entonces es probable que ese nodo sea importante para la
-    consistencia global del mapa. Se debería subir el score considerablemente incluso con 1 loop closure.
-    Se utiliza la función $\frac{x}{x+1}$ donde $x$ es el número de loop closures en los cuales estuvo involucrado
-    el keyframe.
-    Cada vez que se agrega una arista de ciclo que incida en el nodo del keyframe, la clase
-    \texttt{CovisibilityGraph} actualiza el puntaje de cantidad de detecciones de ciclo de los keyframes
-    afectados, y se notifica a \texttt{MapDatabase} para que actualice el puntaje total de cada keyframe afectado
-    mediante un callback.
+    \item Reemplazabilidad en el grafo ($S_g$, peso 0.4): Un keyframe es poco reemplazable si al eliminarlo la conectividad del grafo de covisibilidad se ve comprometida; lo es mucho si sus vecinos ya se observan entre sí. Como aproximación, se usa el grado de alta covisibilidad del nodo: cuantas más aristas de alta covisibilidad incidan en él, más fácilmente sus vecinos pueden suplir su rol. El puntaje es $1 - \min(x/10, 1)$, donde $x$ es ese grado, de modo que un nodo bien conectado obtiene un valor bajo. Se actualiza incrementalmente cada vez que se agrega o elimina una arista de alta covisibilidad incidente en el nodo.
+
+    \item Participación en cierres de ciclo ($S_l$, peso 0.2): Los keyframes involucrados en cierres de ciclo anclan la consistencia global del mapa y no deben descartarse. El puntaje es $\frac{x}{x+1}$, donde $x$ es el número de ciclos en que participó el keyframe; incluso una sola detección eleva el puntaje de forma considerable. Se actualiza automáticamente al registrar nuevos ciclos.
+
+    \item Cantidad de observaciones ($S_o$, peso 0.2): Un keyframe con pocas observaciones (menos de 10) es posible que tenga una pose poco confiable; uno con muchas tiende a ser redundante con sus vecinos. El puntaje es $\frac{x}{x+10}$, que crece rápido para valores bajos y lento para valores altos. Se calcula una sola vez, al momento de la marginalización.
+
+    \item Cobertura de imagen ($S_c$, peso 0.1): Un keyframe cuyas observaciones se distribuyen sobre una mayor porción de la imagen es más informativo que uno que concentra sus puntos en una región pequeña. El puntaje es el promedio, sobre todas las cámaras, del ratio entre el área del \textit{bounding box} de las observaciones y el área total de la imagen. Se calcula una sola vez, al momento de la marginalización.
+
+    \item Posición temporal ($S_t$, peso 0.1): Los keyframes más antiguos son valiosos por su menor drift acumulado; los más recientes, por pertenecer a la zona en exploración activa. Para penalizar a los intermedios se emplea la función en forma de ``V'', $|2x-1|$, donde $x$ es la posición relativa del keyframe en la secuencia temporal. Su peso es bajo dado que se trata de una heurística débil. Se recalcula para todos los keyframes del mapa cada vez que se supera el límite.
 \end{itemize}
 
-\begin{figure}[ht]
-    \centering
-    \begin{subfigure}[b]{0.32\textwidth}
-        \centering
-        \includegraphics[width=\textwidth]{img/method/scores.pdf}
-        \caption{Weighted scores}
-        \label{fig:weighted_scores}
-    \end{subfigure}
-    \hfill
-    \begin{subfigure}[b]{0.32\textwidth}
-        \centering
-        \includegraphics[width=\textwidth]{img/method/score-node-graph.pdf}
-        \caption{Degree of high covisibility edges score}
-        \label{fig:score_node_graph}
-    \end{subfigure}
-    \hfill
-    \begin{subfigure}[b]{0.32\textwidth}
-        \centering
-        \includegraphics[width=\textwidth]{img/method/score-node-loop.pdf}
-        \caption{Degree of loop closure edges score}
-        \label{fig:score_node_loop}
-    \end{subfigure}
+% TODO: poner alguna figura para mostrar la idea de algunos de esos puntajes. de S_g y S_c
 
-    \vspace{0.5em}
-
-    \begin{subfigure}[b]{0.32\textwidth}
-        \centering
-        \includegraphics[width=\textwidth]{img/method/score-obs.pdf}
-        \caption{Number of observed landmarks score}
-        \label{fig:score_obs}
-    \end{subfigure}
-    \hfill
-    \begin{subfigure}[b]{0.32\textwidth}
-        \centering
-        \includegraphics[width=\textwidth]{img/method/score-times.pdf}
-        \caption{Time-based score}
-        \label{fig:score_times}
-    \end{subfigure}
-    \hfill
-    \begin{subfigure}[b]{0.32\textwidth}
-        \centering
-        \includegraphics[width=\textwidth]{img/method/score-bbox.pdf}
-        \caption{Bounding box score}
-        \label{fig:score_bbox}
-    \end{subfigure}
-
-    \caption{Comparativa de los diferentes factores que componen el puntaje de utilidad de cada keyframe.}
-    \label{fig:keyframe_scores}
-\end{figure}
-
-% TODO: este diagrama no va aca. aca hacer un diagrama que muestre la idea
-% esa figura va en experimentacion
-
-% primero mostrar figuras, y después poner el texto, asi ya lo leen con la idea en mente
-
-% se tuvo que bajar este valor. sin dudas este proceso de culling de keyframes es un área que se podría
-% mejorar, y al menos tunear estos parámetros y pesos mejor.
-% loop_closing_pgo_min_covisibility_weight = 60
-
-Mediante esta estrategia, se establece un límite máximo de 1500 keyframes en el mapa persistente,
-y cada vez que \texttt{MapDatabase} recibe un nuevo \texttt{MapStamp} del VIO que hace que el número
-de keyframes supere ese límite, se eliminan los 30 keyframes con menor puntaje.
+Con este esquema, se fija un límite de 1500 keyframes en el mapa persistente. Cada vez que la llegada
+de un nuevo \texttt{MapStamp} supera ese límite, se eliminan los 30 keyframes con menor puntaje.
 
 \subsection{Interfaz final del mapa persistente}
 
