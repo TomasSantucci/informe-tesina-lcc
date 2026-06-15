@@ -124,96 +124,11 @@ Finalmente, se realiza un filtrado de matches empleando la restricción epipolar
 
 \subsection{Back end}
 
-El Back-end de Basalt-XR se ejecuta en hilos paralelos al front end. Consta de dos componentes principales
-que ejecutan en threads separados: el VIO y el mapa persistente (MapDatabase).
-El primero recibe como entradas las
-mediciones de la IMU y los resultados del optical flow, es decir, los keypoints detectados en
-cada frame. Su objetivo principal es realizar una estimación precisa de una ventana local de keyframes, frames
-y landmarks. El segundo componente, el mapa persistente, se encarga de almacenar la información de los
-keyframes y landmarks a largo plazo. Esto permite aumentar significativamente la precisión a través de operaciones
-como: la reintroducción de keyframes covisibles a la ventana local,
-la detección y cierre de ciclos, o la ejecución de optimizaciones globales.
+El back-end de Basalt-XR se ejecuta en hilos paralelos al front end. Consta de dos componentes principales que ejecutan en threads separados: el VIO y el mapa persistente (MapDatabase). El primero recibe como entradas las mediciones de la IMU y los resultados del optical flow, es decir, los keypoints detectados en cada frame. Su objetivo principal es realizar una estimación precisa de una ventana local de keyframes, frames y landmarks. El segundo componente, el mapa persistente, se encarga de almacenar la información de los keyframes y landmarks a largo plazo. Esto lo convierte en un sistema VI-SLAM, que le permite aumentar significativamente la precisión, a través de operaciones como la reintroducción de keyframes covisibles a la ventana local, la detección y cierre de ciclos, o la ejecución de optimizaciones globales.
 
 \subsubsection{VIO}
 
-El VIO mantiene una ventana local de keyframes, frames y landmarks que se optimiza continuamente, que se
-encuentra almacenada en una clase denominada \texttt{LandmarkDatabase}.
-En primer lugar, el VIO integra las mediciones de la IMU utilizando un filtro de preintegración, dado
-que la frecuencia de la IMU es típicamente mucho mayor que la de las cámaras.
-Luego, se realiza opcionalmente una consulta de covisibilidad al mapa persistente, para reintroducir keyframes
-y landmarks previamente marginalizados en la ventana de optimización local. Existen diferentes estrategias
-para que el mapa resuelva estas consultas, que se detallarán más adelante. Estos keyframes se introducen
-temporalmente, hasta la próxima consulta, en la ventana local. Esta funcionalidad se debe combinar con
-el recall, de modo que los keyframes reintroducidos sirvan para volver a trackear keypoints que se hayan
-perdido en el front-end y así obtener observaciones que relacionen los keyframes reintroducidos con los
-frames más recientes. De lo contrario, si no se habilita el recall, los keyframes reintroducidos no
-tendrán observaciones en la ventana local, quedando aislados y sin contribuir a mejorar la precisión en la
-optimización del estado.
-
-Luego, se almacenan las observaciones de los keypoints, que fueron detectados en el front-end, en
-la ventana local. (De los que ya estén triangulados y el frontend haya trackeado)
-
-Luego, se decide si se debe generar un nuevo keyframe a partir del frame actual, lo que se realiza mediante
-una heurística basada en: (1) la proporción de keypoints conectados del frame actual con otros
-keyframes de la ventana, con respecto a la cantidad total de keypoints detectados en el frame; y (2) la
-cantidad de frames desde el último keyframe.
-
-Si se decide tomar un nuevo keyframe, se procede a estimar la posición tridimensional de algunos keypoints,
-lo que se denomina triangulación de landmarks.
-
-Basalt intenta triangular aquellas
-observaciones que aún no están conectadas con la ventana. Para realizar esta triangulación, es
-necesario contar con una segunda observación del landmark en los frames posteriores al último
-keyframe, permitiendo así estimar su posición tridimensional.
-
-Entonces, para cada observación $z_{ih} \in \mathbb{R}^2$ del landmark $i$ en el frame actual $h$, al que
-llamaremos host, se recorren todos los frames desde el último keyframe en búsqueda de una
-segunda observación $z_{it} \in \mathbb{R}^2$ del mismo landmark. Llamaremos target ($t$) al frame donde se
-encuentra esta segunda observación. En caso de hallarse, la triangulación procede de la siguiente
-manera:
-1- se calcula la transformación relativa entre la cámara que observa el punto en el frame host y
-la cámara que lo observa en el frame target, utilizando las poses estimadas de ambos frames.
-2- si la distancia entre ambas cámaras en menor a un umbral predefinido, se descarta la triangulación, y
-se procede a buscar otro frame target.
-3- se desproyectan ambas observaciones a rayos normalizados en coordenadas de cámara.
-4- se calcula la posición tridimensional del landmark a partir de los rayos y la transformación relativa
-entre las cámaras, según lo descrito por Hartley y Zisserman en el Capítulo 12.
-
-El resultado es un vector de $\mathbb{R}^4$ en coordenadas homogéneas, donde los primeros tres elementos representan
-el vector unitario o bearing vector que determina la dirección desde el frame host al landmark y el
-cuarto corresponde a la distancia inversa. Luego, se utiliza la proyección estereográfica para
-representar el bearing vector en 2 dimensiones. La posición de cada landmark se almacena en la
-clase \texttt{LandmarkDatabase}, y queda ligada a la pose del keyframe host.
-
-
-Luego de procesar cada frame, Basalt realiza una optimización del estado del sistema para
-refinar tanto las poses de los keyframes y frames, como las posiciones de los landmarks presentes
-en la ventana. Para ello, Basalt modela la relación entre las variables de estado mediante un
-grafo de factores, donde los nodos representan las poses de los keyframes, frames y landmarks,
-mientras que los factores capturan las restricciones derivadas de las observaciones y mediciones
-de la IMU. De este modo, el proceso de optimización consiste en minimizar, mediante mínimos
-cuadrados, una función de error que combina los residuales introducidos por las observaciones
-de los landmarks, la preintegración de la IMU, y un término adicional que surge del proceso de
-marginalización.
-
-% aca debería al menos mencionar algo más, y poner una figura
-
-%A continuación, se describen en detalle los métodos y algoritmos implementados
-%en Basalt para llevar a cabo este proceso
-
-Luego de cada optimización, Basalt marginaliza variables del estado para mantener el sistema acotado
-en tamaño. El proceso determina qué variables eliminar según dos criterios: si hay más de 7 keyframes,
-se marginaliza aquel cuya proporción de landmarks hosteados que fueron observados en la ventana sea menor
-a un umbral, o en
-su defecto el más cercano espacialmente al resto (el más redundante). Adicionalmente, en toda iteración
-se marginaliza el frame más antiguo, eliminando
-velocidad y biases, conservando su pose únicamente si fue seleccionado como keyframe.
-
-Antes de descartar definitivamente esas variables, se calcula un prior de marginalización que condensa
-su información en dos matrices $H$ y $b$. Estas matrices se incorporan a la optimización de la siguiente
-iteración como un término adicional de marginalización, garantizando que la información de las variables
-eliminadas siga influyendo en el sistema. Finalmente, las poses, frames y landmarks marginalizados se
-eliminan del estado y de la \texttt{LandmarkDatabase}.
+El VIO mantiene una ventana local de keyframes, frames y landmarks que se optimiza continuamente, y se encuentra almacenada en una clase denominada \texttt{LandmarkDatabase} (véase Figura~\ref{fi:vio_window}). En primer lugar, el VIO integra las mediciones de la IMU utilizando un filtro de preintegración, dado que la frecuencia de la IMU es típicamente mucho mayor que la de las cámaras. Luego, se realiza opcionalmente una consulta de covisibilidad al mapa persistente, para reintroducir keyframes y landmarks previamente marginalizados en la ventana de optimización local. Existen diferentes estrategias para que el mapa resuelva estas consultas, que se detallarán más adelante. Estos keyframes se introducen temporalmente, hasta la próxima consulta. Esta funcionalidad se debe combinar con el recall, de modo que los keyframes reintroducidos sirvan para volver a trackear keypoints que se hayan perdido en el front-end y así obtener observaciones que relacionen los keyframes reintroducidos con los frames más recientes.
 
 \begin{figure}[h]
     \centering
@@ -222,70 +137,92 @@ eliminan del estado y de la \texttt{LandmarkDatabase}.
     \label{fig:vio_window}
 \end{figure}
 
-Finalmente, este thread envía una copia del objeto \texttt{LandmarkDatabase}, dentro de una estructura
-denominada \texttt{MapStamp} con la información de la ventana local al mapa persistente, para que este
-pueda actualizar su información a largo plazo.
+A continuación, se predice la pose del frame actual propagando las mediciones pre-integradas de la IMU desde la pose del frame anterior, y se registran las observaciones de los keypoints que el front-end detectó y el VIO había triangulado previamente. Finalmente, se evalúa si el frame actual debe promoverse a keyframe, decisión que se toma mediante una heurística basada en dos criterios: (1) la proporción de keypoints del frame actual con correspondencias en otros keyframes de la ventana, respecto del total de keypoints detectados; y (2) la cantidad de frames transcurridos desde el último keyframe.
 
-Antes de proceder a procesar el siguiente frame, este thread envía la estimación del estado, los landmarks
-de la ventana local, y una estimación de la profundidad promedio de la escena al front-end.
+Si se decide tomar un nuevo keyframe, se triangula la posición tridimensional de aquellos keypoints cuyas observaciones aún no están conectadas con la ventana. Para ello, es necesario contar con una segunda observación del landmark en alguno de los frames posteriores al último keyframe. Para cada observación $z_{ih} \in \mathbb{R}^2$ del landmark $i$ en el keyframe actual $h$, al que se denomina host, se recorren los frames desde el keyframe anterior en búsqueda de una segunda observación $z_{it} \in \mathbb{R}^2$ del mismo landmark en algún frame target $t$. En caso de hallarse, la triangulación procede de la siguiente manera:
+\begin{enumerate}
+    \item Se calcula la transformación relativa entre la cámara que observa el punto en el frame host y la cámara que lo observa en el frame target, utilizando las poses estimadas de ambos frames.
+    \item Si la distancia entre ambas cámaras es menor a un umbral predefinido, se descarta la triangulación, y se procede a buscar otro frame target.
+    \item Se desproyectan ambas observaciones a rayos normalizados en coordenadas de cámara.
+    \item Se calcula la posición tridimensional del landmark a partir de los rayos y la transformación relativa entre las cámaras, según lo descrito por Hartley y Zisserman~\cite{hartley2004multipleviewgeometry} en el Capítulo 12.
+\end{enumerate}
+
+El resultado de la triangulación es un vector de $\mathbb{R}^4$ en coordenadas homogéneas, donde los primeros tres elementos representan el vector unitario o bearing vector que determina la dirección desde el frame host al landmark y el cuarto corresponde a la distancia inversa. Luego, se utiliza la proyección estereográfica para representar el bearing vector en 2 dimensiones. La posición de cada landmark se almacena en la clase \texttt{LandmarkDatabase}, y queda ligada a la pose del keyframe host.
+
+Luego de procesar un frame, Basalt optimiza el estado del sistema $s = \{s_k, s_f, s_l\}$, donde $s_k$ son las poses de los keyframes de la ventana, $s_f$ las poses, velocidades y biases de los frames más recientes, y $s_l$ los landmarks de la ventana. Modela las relaciones entre variables con un grafo de factores, y mediante mínimos cuadrados no lineales con Levenberg-Marquardt, minimiza la función de energía:
+\begin{align}
+E = E_L + E_I + E_m
+  &= \sum_{\substack{i \in L \\ t \in \text{obs}(i)}} r_{it}^\top \Sigma_{it}^{-1} r_{it}
+   + \sum_{(i,j) \in C} r_{ij}^\top \Sigma_{ij}^{-1} r_{ij} + E_m,
+\end{align}
+donde $E_L$ agrega los residuales de reproyección de landmarks, $E_I$ los de preintegración de la IMU y $E_m$ un prior de marginalización.
+
+Luego de la optimización, Basalt marginaliza variables del estado para mantener el sistema acotado en tamaño. El proceso determina qué variables eliminar según dos criterios: si hay más de 7 keyframes, se marginaliza aquel cuya proporción de landmarks hosteados que fueron observados en la ventana sea menor a un umbral, o en su defecto el más cercano espacialmente al resto (el más redundante). Adicionalmente, en toda iteración se marginaliza el frame más antiguo, eliminando velocidad y biases, conservando su pose únicamente si fue seleccionado como keyframe.
+
+Antes de descartar definitivamente esas variables, se calcula un prior de marginalización que condensa su información en dos matrices $H$ y $b$. Estas matrices se incorporan a la optimización de la siguiente iteración como un término adicional de marginalización, garantizando que la información de las variables eliminadas siga influyendo en el sistema. Finalmente, las poses, frames y landmarks marginalizados se eliminan del estado y de la \texttt{LandmarkDatabase}.
+
+\begin{figure}[ht]
+    \centering
+    \begin{subfigure}[b]{0.32\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{img/method/basalt.state1.pdf}
+        \caption{}
+        \label{fig:basalt_state_a}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}[b]{0.32\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{img/method/basalt.state2.pdf}
+        \caption{}
+        \label{fig:basalt_state_b}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}[b]{0.32\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{img/method/basalt.state3.pdf}
+        \caption{}
+        \label{fig:basalt_state_c}
+    \end{subfigure}
+
+    \caption{Grafo de factores de Basalt. (\subref{fig:basalt_state_a}) después de marginalizar un frame, el sistema está compuesto por los últimos $n$ keyframes $K_1 \dots K_n$ y los $m - 1$ frames más recientes, $F_1$ y $F_2$ (en este ejemplo, el sistema trabaja con un máximo de 3 frames). Cuando llega un nuevo frame ($F_3$), se marginaliza el frame más antiguo ($F_1$), y se pueden dar dos escenarios. En el primero~(\subref{fig:basalt_state_b}), si $F_1$ no se convierte en un keyframe, el frame completo es marginalizado, eliminando bias, velocidad y pose. En el segundo~(\subref{fig:basalt_state_c}), si $F_1$ es promovido a keyframe, solo se marginalizan sus variables de bias y velocidad, a la vez que otro keyframe es seleccionado para ser marginalizado.}
+    \label{fig:basalt_state}
+\end{figure}
+
+Antes de pasar al siguiente frame, el thread envía al front-end la estimación del estado, los landmarks de la ventana local y la profundidad promedio de la escena. Asimismo, envía al mapa persistente una copia de la \texttt{LandmarkDatabase} encapsulada en una estructura \texttt{MapStamp}, para que este pueda actualizar su información a largo plazo.
 
 \subsubsection{Mapa persistente}
 
-Este mapa persistente almacena la información de los keyframes y landmarks tras ser optimizados
-por la capa del VIO.
-El mapa fue diseñado para actualizarse continuamente a medida que se exploran nuevas zonas, y,
-al mismo tiempo, permitir realizar consultas para reutilizar la información de forma inteligente.
+Este mapa persistente almacena la información de keyframes y landmarks una vez que han sido optimizados por la capa del VIO. Fue diseñado para actualizarse de forma continua a medida que se exploran nuevas zonas y, simultáneamente, para permitir realizar consultas que reutilicen esa información de manera inteligente (véase Figura~\ref{fig:persistent_map}).
 
-El mapa persistente se implementó mediante la clase MapDatabase, que se muestra en el Código
-4.3. Esta clase se encarga de inicializar el mapa, actualizarlo, gestionar consultas, y manejar el
-acceso de lectura y escritura. Para almacenar la información del mapa, se reutilizó la clase
-LandmarkDatabase, ya utilizada el VIO para representar la ventana de keyframes. Una de las principales
-ventajas de esta implementación es que es capaz de funcionar de manera asíncrona, permitiendo que
-otros componentes del sistema, como el VIO, puedan interactuar con el mapa mediante colas de trabajo
-sin bloquear su ejecución.
-
-Al inciarse, se ejecutan dos subprocesos principales: \texttt{reading\_thread} y \texttt{writing\_thread}.
-El primero se encarga de procesar las consultas de lectura realizadas al mapa, siendo la consulta de
-covisibilidad la única funcionalidad implementada de este tipo. Mientras que el segundo se ocupa de
-procesar las consultas de escritura, siendo la actualización del mapa mediante el \texttt{MapStamp} la
-única implementada. Para garantizar la consistencia de los datos,
-se implementa un mecanismo de bloqueo (mutex) que controla el acceso a la información del mapa, evitando
-condiciones de carrera y asegurando que las operaciones de lectura y escritura no interfieran entre sí.
-
-En cuanto a las estrategias para resolver la consulta de covisibilidad, se encuentran implementados dos
-métodos:
-\begin{itemize}
-    \item Covisibilidad por observaciones: La primera heurística se basa en la covisibilidad por observaciones.
-En este enfoque, la ventana de covisibilidad se compone del último keyframe
-introducido en el mapa, junto con todos aquellos keyframes que compartan al menos una
-observación en común con este último. Además, se incluyen todos los landmarks cuyo host
-se encuentre dentro de esos keyframes.
-    \item Covisibilidad espacial: La heurística de covisibilidad espacial selecciona keyframes que observan
-la misma región del espacio que el keyframe más reciente. Para cada keyframe se construye un cubo
-tridimensional (SpatialDistributionCube) centrado en la media de las posiciones 3D de sus landmarks
-y con extensión proporcional a la varianza de esas posiciones en cada eje. Cuando el VIO consulta el
-mapa, se devuelven los keyframes cuyos cubos se solapan con el del último keyframe introducido, priorizando
-los más antiguos para minimizar el drift acumulado, junto con todos los landmarks hosteados por esos
-keyframes, y limitando la cantidad total mediante un parámetro configurable del sistema.
-\end{itemize}
-
-\begin{figure}[h]
+\begin{figure}[ht]
     \centering
-    \includegraphics[width=0.8\linewidth]{img/method/covisibility.pdf}
-    \caption{Geometría epipolar. El punto $\mathbf{X}$ es observado desde dos cámaras con centros
-    ópticos $\mathbf{O}_l$ y $\mathbf{O}_r$, proyectándose en $\mathbf{x}_l$ y $\mathbf{x}_r$ respectivamente.
-    Los tres puntos $\mathbf{O}_l$, $\mathbf{O}_r$ y $\mathbf{X}$ definen el plano epipolar, cuya intersección
-    con cada imagen forma las líneas epipolares $\mathbf{l}_l$ y $\mathbf{l}_r$. Los puntos $\mathbf{e}_l$ y
-    $\mathbf{e}_r$ son los epípolos, es decir, las proyecciones de cada centro óptico en la imagen opuesta.
-    }
-    \label{fig:epipolar_geometry}
+    \begin{subfigure}[b]{0.4\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{img/method/persistent.map.png}
+        \caption{}
+        \label{fig:persistent_map_cenital}
+    \end{subfigure}
+    \hspace{2em}
+    \begin{subfigure}[b]{0.4\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{img/method/covisibility.pdf}
+        \caption{}
+        \label{fig:persistent_map_covisibility}
+    \end{subfigure}
+
+    \caption{Mapa persistente. En (\subref{fig:persistent_map_cenital}) una vista cenital del mapa persistente, con los landmarks en rosa y las poses de los keyframes a lo largo de la trayectoria. En (\subref{fig:persistent_map_covisibility}) un diagrama que ilustra la introducción de keyframes $C_1$, $C_2$ y $C_3$ del mapa, a la ventana local, mediante la consulta de covisibilidad.}
+    \label{fig:persistent_map}
 \end{figure}
 
-% captura de pantalla de un mapa estimado de basalt-xr
+La implementación del mapa persistente se encuentra en la clase \texttt{MapDatabase}, responsable de inicializarlo, actualizarlo, gestionar consultas y manejar el acceso de lectura y escritura. Para almacenar la información del mapa, se reutiliza la clase \texttt{LandmarkDatabase}, ya empleada por el VIO para representar la ventana de keyframes. Una ventaja clave de este diseño es su capacidad de funcionar de manera asíncrona: otros componentes del sistema, como el VIO, interactúan con el mapa a través de colas de trabajo sin bloquear su ejecución.
 
-% pseudo código de la clase MapDatabase
+Al iniciarse, se crean dos subprocesos principales: \texttt{reading\_thread} y \texttt{writing\_thread}. El primero procesa las consultas de lectura al mapa, siendo la consulta de covisibilidad la única funcionalidad implementada de este tipo. El segundo procesa las consultas de escritura, donde la única operación implementada es la actualización del mapa mediante el \texttt{MapStamp}. Para garantizar la consistencia de los datos, ambos subprocesos comparten un mecanismo de bloqueo mediante mutex que regula el acceso concurrente al mapa, evitando condiciones de carrera.
 
-% img de covisibilidad espacial?
+Se implementaron dos estrategias para resolver la consulta de covisibilidad:
+\begin{itemize}
+    \item Covisibilidad por observaciones: La ventana de covisibilidad se compone del último keyframe introducido en el mapa junto con todos aquellos keyframes que observen al menos un landmark en común con este. Además, se incluyen todos los landmarks cuyo host se encuentre entre esos keyframes.
+    \item Covisibilidad espacial: Esta estrategia selecciona keyframes que observan la misma región del espacio que el keyframe más reciente, siguiendo el enfoque presentado en~\cite{peng2021reidentification}. Para cada keyframe se construye un cubo tridimensional (\textit{spatial distribution cube}) centrado en la media de las posiciones 3D de sus landmarks, con extensión proporcional a la varianza de esas posiciones en cada eje. Ante una consulta del VIO, se devuelven los keyframes cuyos cubos se solapan con el del keyframe más reciente, priorizando los más antiguos para minimizar el drift acumulado, junto con todos los landmarks hosteados por ellos. La cantidad total de keyframes devueltos se limita mediante un parámetro configurable del sistema.
+\end{itemize}
 
 \section{Cierre de ciclos}
 
