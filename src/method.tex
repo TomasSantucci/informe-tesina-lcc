@@ -1,43 +1,12 @@
-% Componente FE
-% - sliding window?
-% Componente LC
-% Componente MapDatabase
-% Componente RootBA
-% Recuperacion de frames después de optimizar keyframes
-
-En este capítulo se presenta BasaltSLAM, el sistema VI-SLAM desarrollado durante el trabajo
-de tesina. Para ello primero se introduce el método VI-SLAM Basalt-XR como punto de partida,
-y luego se detallan las mejoras realizadas para sacar provecho del mapa persistente.
-
+En este capítulo se presenta el sistema VI-SLAM desarrollado durante el trabajo de tesina. Para ello primero se introduce el método VI-SLAM Basalt-XR como punto de partida, y luego se detallan las mejoras realizadas. Estas tienen el objetivo de aumentar la precisión del sistema mediante el uso de información del mapa, manteniendo la eficiencia característica de Basalt.
 
 \section{Basalt-XR: punto de partida}
 
-Basalt es un sistema de odometría visual inercial desarrollado por el Instituto Técnico de
-Múnich publicado en el año 2019 con actualizaciones significativas hasta fines del año 2021. Su
-sistema de odometría visual inercial (VIO) es capaz de correr en tiempo real y, a pesar de no
-contar con un mapa persistente (“olvidando” el mapa que se va construyendo), presenta una
-gran precisión y robustez en comparación a otros sistemas del estado del arte.
-En términos generales, el sistema se organiza en dos hilos principales que operan en
-paralelo: el front-end y el back-end.
-El front-end se encarga del procesamiento de imágenes a través de optical flow, lo
-que incluye la detección, seguimiento (tracking) y búsqueda de correspondencias visuales, denominadas
-features o keypoints. Por otro lado, el back-end se ocupa de procesar las mediciones de la IMU y
-los features extraídos de cada frame. Además, se encarga de triangular los keypoints, generando así
-puntos 3D (landmarks), que luego son almacenados en una base de datos. El back-end también
-realiza la optimización y marginalización del estado del sistema, que incluye la estimación
-de la pose de los keyframes y frames, y la posición de los landmarks. Como resultado, se obtiene
-una nueva estimación de la ventana de keyframes. Estos conceptos se abordarán con mayor
-detalle en las secciones siguientes.
+Basalt es un sistema de VIO desarrollado por el Instituto Técnico de Múnich publicado en el año 2019 con actualizaciones significativas hasta fines del año 2021. Su sistema de VIO es capaz de correr en tiempo real y, a pesar de no contar con un mapa persistente (“olvidando” el mapa que se va construyendo), presenta una gran precisión y robustez en comparación a otros sistemas del estado del arte. En términos generales, el sistema se organiza en dos hilos principales que operan en paralelo: el front-end y el back-end. El front-end se encarga del procesamiento de imágenes a través de optical flow, lo que incluye la detección, tracking y búsqueda de correspondencias visuales, denominadas features o keypoints. Por otro lado, el back-end se ocupa de procesar las mediciones de la IMU y los features extraídos de cada frame. Además, se encarga de triangular los keypoints, generando así puntos 3D (landmarks), que luego son almacenados en una base de datos. El back-end también realiza la optimización y marginalización del estado del sistema, que incluye la estimación de la pose de una ventana deslizante de keyframes y frames, y la posición de los landmarks. Como resultado, se obtiene una nueva estimación de la ventana de keyframes. Estos conceptos se abordarán con mayor detalle en las secciones siguientes.
 
-Posteriormente, este sistema fue extendido para ser utilizado en dispositivos de Realidad Extendida (XR)
-bajo el nombre de Basalt-XR. En la figura \ref{fig:arch_basaltxr} se muestra un diagrama que resume la
-arquitectura del sistema.
-Entre las mejoras incorporadas se encuentran: el soporte para cámaras
-no paralelas, el soporte para más de dos cámaras, el uso de la IMU en el frontend para mejorar el tracking
-en situaciones de movimientos rápidos, la reidentificación de features a corto plazo y la inclusión de un mapa
-persistente que permite reintroducir keyframes en la ventana de optimización después de haber sido marginalizados.
+Posteriormente, este sistema fue extendido para ser utilizado en dispositivos de Realidad Extendida (XR) bajo el nombre de Basalt-XR. En la figura \ref{fig:arch_basaltxr} se muestra un diagrama que resume la arquitectura del sistema. Entre las mejoras incorporadas se encuentran: el soporte para cámaras no paralelas, el soporte para más de dos cámaras, el uso de la IMU en el frontend para mejorar el tracking en situaciones de movimientos rápidos, la reidentificación de features a mediano plazo y la inclusión de un mapa persistente que permite reintroducir keyframes en la ventana de optimización después de haber sido marginalizados.
 
-% TODO: borrar la flecha que conecta marginalization con el mapdatabase
+% TODO: modificar esta, y la otra figura de la arch, para que el back-end englobe al VIO, MDB y LC. O simplemente reemplazar el nombre de back-end por VIO
 \begin{figure}[h]
     \centering
     \includegraphics[width=0.9\linewidth]{img/method/arch.basaltxr.pdf}
@@ -47,32 +16,13 @@ persistente que permite reintroducir keyframes en la ventana de optimización de
 
 \subsection{Front end}
 
-Este hilo se encarga de procesar las imágenes capturadas por las cámaras, detectando y siguiendo
-los features a través de los frames.
+Este hilo se encarga de procesar las imágenes capturadas por las cámaras, detectando y siguiendo los features a través de los frames.
 
-Las imágenes ingresan al pipeline de Basalt a través del hilo del front-end. Inicialmente, se
-genera una representación piramidal de las imágenes, también conocidas como mipmaps, que
-consisten en múltiples copias de la misma imagen en diferentes resoluciones. Los mipmaps se
-utilizan ampliamente en el procesamiento de imágenes y la visión por computadora para mejorar
-la eficiencia y robustez de los algoritmos frente a cambios de escala. Por ejemplo, en el cálculo del
-optical flow, los mipmaps se utilizan para manejar grandes movimientos de píxeles entre frames,
-calculando primero el movimiento en la resolución más baja y luego refinándolo en resoluciones más
-altas.
+Las imágenes ingresan al pipeline de Basalt a través del hilo del front-end. Inicialmente, se genera una representación piramidal de las imágenes, también conocidas como mipmaps, que consisten en múltiples copias de la misma imagen en diferentes resoluciones. Los mipmaps se utilizan ampliamente en el procesamiento de imágenes y visión por computadora para mejorar la eficiencia y robustez de los algoritmos frente a cambios de escala. Por ejemplo, en el cálculo del optical flow, los mipmaps se utilizan para manejar grandes movimientos de píxeles entre frames, calculando primero el movimiento en la resolución más baja y luego refinándolo en resoluciones más altas.
 
-El hilo comienza con el tracking de los features detectados en el frame anterior. Para ello,
-Basalt está basado en optical flow, utilizando el algoritmo de Lucas-Kanade (KLT) para el seguimiento
-de los features. Para ello, Basalt utiliza parches de 52 px por defecto.
-Para tener una buena estimación inicial (o prior) para el algoritmo, se utiliza la información de
-la IMU, que permite predecir la posición del keypoint en el siguiente frame a partir del movimiento
-de la cámara entre frames.
+El hilo comienza con el tracking de los features detectados en el frame anterior. Para ello, Basalt está basado en optical flow, utilizando el algoritmo de Lucas-Kanade (KLT)~\cite{lucas1981klt} para el seguimiento de los features. Para ello, Basalt utiliza parches de 52 px por defecto. Para tener una buena estimación inicial (o prior) para el algoritmo, se utiliza la información de la IMU, que permite predecir la posición del keypoint en el siguiente frame a partir del movimiento de la cámara entre frames.
 
-Una vez que se realiza el tracking, se intenta recuperar los features que se hayan perdido debido
-a oclusiones o movimientos rápidos, en un proceso al que se le llama \textit{recall}.
-Para ello, el front-end almacena el parche de cada keypoint detectado.
-Luego, proyecta los landmarks, que recibe del VIO, en el frame actual.
-Finalmente, intenta trackear cada uno de estos puntos con KLT, utilizando el parche almacenado
-y la proyección como prior. El proceso completo se muestra en la Figura \ref{fig:recall_frames},
-donde se observa la recuperación de un feature que se pierde debido a una oclusión de la cámara.
+Una vez que se completa el tracking, se intentan recuperar los features que se hayan perdido debido a oclusiones o movimientos rápidos, en un proceso que se denomina \textit{recall}. Para ello, el front-end almacena el parche de cada keypoint detectado. Luego, proyecta los landmarks, que recibe del back-end, en el frame actual. Finalmente, intenta trackear cada uno de estos puntos con KLT, utilizando el parche almacenado y la proyección como prior. El funcionamiento del proceso se muestra en la Figura \ref{fig:recall_frames}, donde se observa la recuperación de un feature que se pierde debido a una oclusión de la cámara.
 
 \begin{figure}[ht]
     \centering
@@ -105,41 +55,20 @@ donde se observa la recuperación de un feature que se pierde debido a una oclus
     \label{fig:recall_frames}
 \end{figure}
 
-Una vez completados dichos procesos que se basan en el seguimiento de los features,
-se realiza una detección de nuevos features utilizando el algoritmo FAST
-(Features from Accelerated Segment Test). Este algoritmo es un método eficiente para detectar
-esquinas en imágenes, lo que lo hace adecuado para aplicaciones en tiempo real como el SLAM.
-FAST funciona analizando un círculo de 16 píxeles alrededor de cada píxel candidato y clasificando
-el píxel como una esquina si un número suficiente de píxeles en el círculo son significativamente
-más brillantes o más oscuros que el píxel central. En la Figura \ref{fig:fast} se observa un parche
-de 16 px alrededor de un keypoint.
-Un potencial problema del algoritmo es que los
-keypoints detectados pueden no estar bien distribuidos en la imagen, lo que puede resultar en
-una concentración en ciertas áreas de la imagen mientras que otras áreas quedan sin suficientes
-keypoints. Para mitigar este problema, Basalt divide el frame en celdas (de 50 x 50 px por defecto),
-en donde se detectan los nuevos keypoints. Por celda, solo se conserva el keypoint de mejor calidad.
-Además, en aquellas celdas donde ya hay features trackeados, no se realiza la detección de nuevos keypoints.
-En el caso ideal, solo será necesario detectar keypoints en porciones de la imagen donde se observe una
-nueva escena.
+Una vez completados dichos procesos, que se basan en el seguimiento de los features, se realiza una detección de nuevos features utilizando el algoritmo FAST (Features from Accelerated Segment Test)~\cite{rosten2006fast}. Este algoritmo es un método eficiente para detectar esquinas en imágenes, lo que lo hace adecuado para aplicaciones en tiempo real como el SLAM.
+%FAST funciona analizando un círculo de 16 píxeles alrededor de cada píxel candidato y clasificando el píxel como una esquina si un número suficiente de píxeles en el círculo son significativamente más brillantes o más oscuros que el píxel central. En la Figura \ref{fig:fast} se observa un parche de 16 px alrededor de un keypoint.
+Un potencial problema del algoritmo es que los keypoints detectados pueden no estar bien distribuidos en la imagen, lo que puede resultar en una concentración en ciertas áreas de la imagen mientras que otras áreas quedan sin suficientes keypoints. Para mitigar este problema, Basalt divide el frame en celdas (de 50 x 50 px por defecto), en donde se detectan los nuevos keypoints. Por celda, solo se conserva el keypoint de mejor calidad. Además, en aquellas celdas donde ya hay features trackeados, no se realiza la detección de nuevos keypoints. En el caso ideal, solo será necesario detectar keypoints en porciones de la imagen donde se observe una nueva escena.
 
-\begin{figure}[h]
-    \centering
-    \includegraphics[width=0.8\linewidth]{img/method/FAST.pdf}
-    \caption{Imagen extraída del paper de FAST [10] donde se representa la detección de features
-    mediante un parche de 16 píxeles.}
-    \label{fig:fast}
-\end{figure}
+%\begin{figure}[h]
+%    \centering
+%    \includegraphics[width=0.8\linewidth]{img/method/FAST.pdf}
+%    \caption{Imagen extraída del paper de FAST [10] donde se representa la detección de features
+%    mediante un parche de 16 píxeles.}
+%    \label{fig:fast}
+%\end{figure}
 
-A continuación, se generan máscaras en las zonas superpuestas de las cámaras secundarias con la principal,
-con el objetivo de buscar correspondencias (matching) entre los keypoints de las cámaras. Para lograr
-esto, se aplica el mismo proceso de seguimiento de features utilizando KLT, pero en lugar de realizarse entre
-frames capturados en diferentes timestamps, se realiza entre frames capturados simultáneamente por las dos
-cámaras.
-Como el sistema debe funcionar en configuraciones de cámaras no paralelas, se utiliza un algoritmo que predice
-la posición de un keypoint en la cámara secundaria a partir de su posición en la
-cámara principal, utilizando una estimación de la profundidad de la escena que realiza el backend.
-Finalmente, se realiza una segunda detección de keypoints en las áreas no superpuestas, para asegurar
-que se detecten suficientes keypoints en toda la imagen. Este proceso se muestra en la Figura \ref{fig:frontend_detection_process}.
+A continuación, se generan máscaras en las zonas superpuestas de las cámaras secundarias con la principal, con el objetivo de buscar correspondencias (matching) entre los keypoints de las cámaras. Para lograr esto, se aplica el mismo proceso de seguimiento de features utilizando KLT, pero en lugar de realizarse entre frames capturados en diferentes timestamps, se realiza entre frames capturados simultáneamente por las dos cámaras.
+Como el sistema debe funcionar en configuraciones de cámaras no paralelas, se utiliza un algoritmo que predice la posición de un keypoint en la cámara secundaria a partir de su posición en la cámara principal, utilizando una estimación de la profundidad de la escena que realiza el back-end. Finalmente, se realiza una segunda detección de keypoints en las áreas no superpuestas, para asegurar que se detecten suficientes keypoints en toda la imagen. Este proceso se muestra en la Figura \ref{fig:frontend_detection_process}.
 
 \begin{figure}[ht]
     \centering
@@ -173,39 +102,23 @@ que se detecten suficientes keypoints en toda la imagen. Este proceso se muestra
         \label{fig:frontend_detection_process_d}
     \end{subfigure}
 
-    \caption{Proceso de detección del front-end luego de la mejora de soporte para múltiples
-    cámaras. En primer lugar, se detectan features en la cámara principal (\subref{fig:frontend_detection_process_a}), luego se generan
-    las máscaras para ignorar zonas superpuestas (\subref{fig:frontend_detection_process_b}) y se realiza el matching multicámaras (\subref{fig:frontend_detection_process_c}).
-    Finalmente, se realiza una segunda detección en las áreas no superpuestas (\subref{fig:frontend_detection_process_d})}
+    \caption{Proceso de detección del front-end luego de la mejora de soporte para múltiples cámaras. En primer lugar, se detectan features en la cámara principal (\subref{fig:frontend_detection_process_a}), luego se generan las máscaras para ignorar zonas superpuestas (\subref{fig:frontend_detection_process_b}) y se realiza el matching multicámaras (\subref{fig:frontend_detection_process_c}). Finalmente, se realiza una segunda detección en las áreas no superpuestas (\subref{fig:frontend_detection_process_d}).}
     \label{fig:frontend_detection_process}
 \end{figure}
 
-\begin{figure}[h]
-    \centering
-    \includegraphics[width=0.8\linewidth]{img/method/matching.pdf}
-    \caption{Ejemplo del proceso de matching estéreo.}
-    \label{fig:matching}
-\end{figure}
+%\begin{figure}[h]
+%    \centering
+%    \includegraphics[width=0.8\linewidth]{img/method/matching.pdf}
+%    \caption{Ejemplo del proceso de matching estéreo.}
+%    \label{fig:matching}
+%\end{figure}
 
-
-Finalmente, se realiza un filtrado de matches mediante la restricción epipolar.
-Para cada par de observaciones 2D del mismo keypoint en las dos cámaras, se desprojectan ambas posiciones
-a rayos normalizados en coordenadas de cámara. Luego se evalúa el error epipolar algebraico como
-$|{\mathbf{x}_l}^\top \mathbf{E} \, \mathbf{x}_r|$
-, donde $\mathbf{x}_l$ y $\mathbf{x}_r$ son dichos rayos y $\mathbf{E}$ es la matriz esencial entre el par de cámaras.
-Como se ilustra en la Figura \ref{fig:epipolar_geometry}, esta expresión cuantifica, para una correspondencia,
-cuánto se aleja de la condición de coplanaridad del plano epipolar. Si este error supera un umbral
-predefinido, la correspondencia es descartada.
+Finalmente, se realiza un filtrado de matches empleando la restricción epipolar, ilustrado en la Figura~\ref{fig:epipolar_geometry}. Para cada par de observaciones 2D del mismo keypoint en dos cámaras, se desprojectan ambas posiciones a rayos normalizados en coordenadas de cámara. Luego se evalúa el error epipolar algebraico como $|{\mathbf{x}_l}^\top \mathbf{E} \, \mathbf{x}_r|$, donde $\mathbf{x}_l$ y $\mathbf{x}_r$ son dichos rayos y $\mathbf{E}$ es la matriz esencial entre el par de cámaras. Esta expresión cuantifica, para una correspondencia, cuánto se aleja de la condición de coplanaridad del plano epipolar. Si este error supera un umbral predefinido, la correspondencia es descartada.
 
 \begin{figure}[h]
     \centering
-    \includegraphics[width=0.8\linewidth]{img/method/epipolar_geometry.pdf}
-    \caption{Geometría epipolar. El punto $\mathbf{X}$ es observado desde dos cámaras con centros
-    ópticos $\mathbf{O}_l$ y $\mathbf{O}_r$, proyectándose en $\mathbf{x}_l$ y $\mathbf{x}_r$ respectivamente.
-    Los tres puntos $\mathbf{O}_l$, $\mathbf{O}_r$ y $\mathbf{X}$ definen el plano epipolar, cuya intersección
-    con cada imagen forma las líneas epipolares $\mathbf{l}_l$ y $\mathbf{l}_r$. Los puntos $\mathbf{e}_l$ y
-    $\mathbf{e}_r$ son los epípolos, es decir, las proyecciones de cada centro óptico en la imagen opuesta.
-    }
+    \includegraphics[width=0.5\linewidth]{img/method/epipolar_geometry.pdf}
+    \caption{Geometría epipolar. El punto $\mathbf{X}$ es observado desde dos cámaras con centros ópticos $\mathbf{O}_l$ y $\mathbf{O}_r$, proyectándose en $\mathbf{x}_l$ y $\mathbf{x}_r$ respectivamente. Los tres puntos $\mathbf{O}_l$, $\mathbf{O}_r$ y $\mathbf{X}$ definen el plano epipolar, cuya intersección con cada imagen forma las líneas epipolares $\mathbf{l}_l$ y $\mathbf{l}_r$. Los puntos $\mathbf{e}_l$ y $\mathbf{e}_r$ son los epípolos, es decir, las proyecciones de cada centro óptico en la imagen opuesta.}
     \label{fig:epipolar_geometry}
 \end{figure}
 
