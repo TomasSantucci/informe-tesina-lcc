@@ -119,7 +119,7 @@ Juntos, estos mapas permiten moverse libremente entre el manifold curvo y el esp
 
 \begin{figure}[h]
     \centering
-    \includegraphics[width=0.4\linewidth]{img/prev_concepts/lie-algebra.pdf}
+    \includegraphics[width=0.6\linewidth]{img/prev_concepts/lie-algebra.pdf}
     \caption{Representación visual de un grupo de Lie, su álgebra de Lie asociada, y
     los mapas exponencial y logarítmico que conectan ambos espacios.}
     \label{fig:lie_algebra}
@@ -156,7 +156,7 @@ donde $\xi \in \mathfrak{se}(3)$ es un elemento del álgebra de Lie. En su repre
 %
 donde $[p]_\times$ denota la matriz antisimétrica asociada al vector de traslación $p$.
 
-Una propiedad fundamental de la representación adjunta, empleada extensamente en robótica, es que permite cambiar el marco de referencia en el que se expresa una perturbación o incremento. Dada una perturbación $\xi_b \in \mathbb{R}^6$ expresada en el marco $\{b\}$, su expresión equivalente en el marco $\{a\}$ está dada por~\cite{Lynch2017}
+Una propiedad fundamental de la representación adjunta, empleada extensamente en robótica, es que permite cambiar el sistema de referencia en el que se expresa una perturbación o incremento. Dada una perturbación $\xi_b \in \mathbb{R}^6$ expresada en el frame $\{b\}$, su expresión equivalente en el frame $\{a\}$ está dada por~\cite{Lynch2017}
 %
 \begin{equation}
     \xi_a = [\mathrm{Ad}_{T_{ab}}]\,\xi_b.
@@ -233,6 +233,32 @@ El proceso inverso, denominado desproyección (\textit{unprojection}), recupera 
 \end{equation}
 
 En la práctica, las lentes reales introducen distorsión que hace que la imagen se desvíe del modelo pinhole ideal. Existen modelos de cámara más complejos que incorporan parámetros adicionales para caracterizar estos efectos, como la distorsión radial, que hace que las líneas rectas aparezcan curvadas. Durante la \textit{calibración de la cámara} se optimizan estos parámetros, tras lo cual los puntos 3D pueden proyectarse, y los puntos 2D desproyectarse de acuerdo a las ecuaciones del modelo con los parámetros establecidos.
+
+\section{Sistemas multi-cámara}
+
+La Figura~\ref{fig:noncentral_abs_pose} ilustra la geometría del problema de pose absoluta no-central en sistemas multi-cámara. A diferencia del modelo de cámara central, en el que todos los rayos de proyección se originan en un único centro óptico, en estos sistemas cada cámara posee su propio centro óptico, desplazado espacialmente respecto de las demás. Dichos sistemas se describen mediante el modelo de cámara generalizada~\cite{pless2003manycamerasasone}, que unifica las observaciones de todas las cámaras bajo el sistema de referencia del body $\{b\}$, también denominado \textit{viewpoint}. Cada observación de imagen se representa como un bearing vector unitario $\mathbf{f}_i$, que parte del centro óptico de la cámara correspondiente y apunta hacia el landmark 3D observado. Al conjunto de cámaras montadas en una configuración rígida se lo denomina \textit{rig}. La posición de cada centro óptico en el body frame se denota $\mathbf{v}_{i0}$ y es conocida a partir de la calibración del rig. Esta abstracción permite tratar el sistema multi-cámara como un único sensor generalizado, del cual se estima una única pose de forma conjunta a partir de las observaciones de todas las cámaras.
+
+En este marco, la localización del rig en el mapa, necesaria por ejemplo durante la relocalización en un sistema SLAM, se reduce a recuperar la rotación $\mathbf{R}$ y la traslación $\mathbf{t}$ del body frame respecto del sistema de referencia del mundo $\{w\}$, dado un conjunto de correspondencias entre bearing vectors y landmarks $\mathbf{p}_i^w \in \mathbb{R}^3$. Este es el problema Non-Perspective-$n$-Point (NP$n$P), la generalización directa del clásico Perspective-$n$-Point (P$n$P) a sistemas multi-cámara. La pose buscada satisface
+\begin{equation}
+    \mathbf{R}\!\left(n_i\,\mathbf{f}_i + \mathbf{v}_{i0}\right) + \mathbf{t} = \mathbf{p}_i^w,
+    \label{eq:npnp}
+\end{equation}
+donde $n_i > 0$ es la profundidad desconocida del $i$-ésimo landmark a lo largo de su bearing vector.
+
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=0.55\textwidth]{img/prev_concepts/non-central-abs-pose.pdf}
+    \caption{El problema de pose absoluta no-central. Un viewpoint compuesto
+             por múltiples cámaras observa un conjunto de landmarks 3D del mundo
+             mediante bearing vectors $\mathbf{f}_i$. El objetivo es recuperar
+             la pose $(\mathbf{R}, \mathbf{t})$ del viewpoint en el sistema de
+             referencia del mundo.}
+    \label{fig:noncentral_abs_pose}
+\end{figure}
+
+Para resolver el problema NP$n$P de forma eficiente, Kneip et al.~\cite{kneip2013gpnp} propusieron dos soluciones. La primera, \textbf{gP3P}, es un solver mínimo que estima la pose a partir de exactamente tres correspondencias 3D--2D, posiblemente provenientes de distintas cámaras del rig, y devuelve hasta ocho soluciones candidatas que se desambiguan con un cuarto punto. La segunda, \textbf{gP$n$P}, es un solver no iterativo para $n$ correspondencias con complejidad lineal en el número de observaciones. Ambos operan directamente sobre bearing vectors y las transformaciones cámara-body conocidas, siendo aplicables a cualquier sistema óptico calibrado. La derivación algebraica completa se presenta en~\cite{kneip2013gpnp}.
+
+OpenGV~\cite{kneip2014opengv} es una biblioteca de código abierto en C++ que reúne una colección unificada de algoritmos de visión geométrica calibrada para sistemas de cámara central y no-central, incluyendo gP3P y gP$n$P. Cada solver se integra bajo una interfaz común con un esquema RANSAC~\cite{fischler1987ransac} y una etapa de refinamiento no lineal, lo que permite combinar estimación robusta con recuperación precisa de pose en un único pipeline.
 
 \section{Grafo de factores}
 
@@ -707,77 +733,3 @@ Comparado con otros métodos, HashBoW emplea una transformación de features loc
         \label{tab:hashbow-performance}
     \end{minipage}
 \end{figure}
-
-\section{Estimación de pose en sistemas multi-cámara}
-
-\subsection{El Problema de Pose Absoluta No-Central}
-
-La Figura \ref{fig:noncentral_abs_pose} ilustra la geometría del problema
-de pose absoluta no-central (\textit{non-central absolute pose}). En computer vision clásica, el modelo de cámara central asume que
-todos los rayos de proyección se originan en un único centro óptico. Al
-trabajar con sistemas multi-cámara, sin embargo, esta suposición no se
-cumple en general, ya que cada cámara tiene su propio centro óptico
-desplazado respecto de las demás. Dichos sistemas se describen
-mediante el modelo de cámara generalizada \cite{pless2003}, en el
-que las observaciones de distintas cámaras se unifican bajo un sistema de
-referencia común denominado \textit{body frame} (también llamado
-\textit{viewpoint}). Cada observación de imagen se representa como un
-\textit{bearing vector} unitario $\mathbf{f}_i$, que
-se origina en el centro de su cámara correspondiente y apunta hacia el
-landmark 3D observado, y cada cámara tiene un desplazamiento rígido
-conocido $\mathbf{v}_{i0}$ respecto del body frame. Esta abstracción
-permite tratar un sistema multi-cámara completo como un único sensor
-generalizado, a partir del cual se puede estimar una única pose de forma
-conjunta utilizando observaciones de todas las cámaras.
-
-El objetivo es recuperar la rotación $\mathbf{R}$ y la traslación
-$\mathbf{t}$ del body frame respecto de un sistema de referencia global
-conocido, dado un conjunto de correspondencias entre bearing vectors y
-puntos 3D del mundo $\mathbf{p}_i^w$ (correspondencias 3D--2D). Esto es
-la generalización del clásico problema Perspective-$n$-Point (P$n$P) a
-sistemas multi-cámara, conocido como el problema
-Non-Perspective-$n$-Point (NP$n$P). Formalmente, la transformación buscada
-satisface
-\begin{equation}
-    \mathbf{R}\left(n_i \mathbf{f}_i + \mathbf{v}_{i0}\right) + \mathbf{t}
-    = \mathbf{p}_i^w,
-    \label{eq:npnp}
-\end{equation}
-donde $n_i > 0$ es la profundidad desconocida del $i$-ésimo punto a lo
-largo de su bearing vector.
-
-\begin{figure}[h]
-    \centering
-    \includegraphics[width=0.55\textwidth]{img/prev_concepts/non-central-abs-pose.pdf}
-    \caption{El problema de pose absoluta no-central. Un viewpoint compuesto
-             por múltiples cámaras observa un conjunto de puntos 3D del mundo
-             mediante bearing vectors $\mathbf{f}_i$. El objetivo es recuperar
-             la pose $(\mathbf{R}, \mathbf{t})$ del viewpoint en el sistema de
-             referencia global.}
-    \label{fig:noncentral_abs_pose}
-\end{figure}
-
-
-\subsection{Los Algoritmos gP3P y gP\textit{n}P}
-
-Kneip et al.\ \cite{kneip2013gpnp} introdujeron dos soluciones eficientes
-al problema de pose absoluta no-central. La primera es \textbf{gP3P}, un
-solver mínimo que recupera la pose a partir de exactamente tres
-correspondencias 3D--2D, potencialmente provenientes de distintas cámaras
-del rig, devolviendo hasta ocho soluciones candidatas que se desambiguan
-mediante un cuarto punto. La segunda es \textbf{gP$n$P}, un solver de
-$n$-puntos no iterativo con complejidad lineal en el número
-de correspondencias. Ambos operan directamente sobre bearing vectors y las
-transformaciones de cámara a body conocidas, lo que los hace aplicables a
-cualquier sistema óptico calibrado. La derivación algebraica completa se
-describe en \cite{kneip2013gpnp}.
-
-\subsection{OpenGV}
-
-OpenGV \cite{kneip2014opengv} es una librería de C++ de código abierto que
-provee una colección unificada de algoritmos de visión geométrica
-calibrada para sistemas de cámara central y no-central, incluyendo gP3P y
-gP$n$P. Todos los solvers están integrados dentro de un esquema RANSAC
-\cite{fischler1981ransac} y una etapa de refinamiento no lineal bajo una
-interfaz común, lo que facilita combinar estimación robusta con recuperación
-precisa de pose en un único pipeline.
