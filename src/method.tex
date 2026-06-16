@@ -130,10 +130,27 @@ El back-end de Basalt-XR se ejecuta en hilos paralelos al front end. Consta de d
 
 El VIO mantiene una ventana local de keyframes, frames y landmarks que se optimiza continuamente, y se encuentra almacenada en una clase denominada \texttt{LandmarkDatabase} (véase Figura~\ref{fig:vio_window}). En primer lugar, el VIO integra las mediciones de la IMU utilizando un filtro de preintegración, dado que la frecuencia de la IMU es típicamente mucho mayor que la de las cámaras. Luego, se realiza opcionalmente una consulta de covisibilidad al mapa persistente, para reintroducir keyframes y landmarks previamente marginalizados en la ventana de optimización local. Existen diferentes estrategias para que el mapa resuelva estas consultas, que se detallarán más adelante. Estos keyframes se introducen temporalmente, hasta la próxima consulta. Esta funcionalidad se debe combinar con el recall, de modo que los keyframes reintroducidos sirvan para volver a trackear keypoints que se hayan perdido en el front-end y así obtener observaciones que relacionen los keyframes reintroducidos con los frames más recientes.
 
-\begin{figure}[h]
+\begin{figure}[ht]
     \centering
-    \includegraphics[width=0.5\linewidth]{img/method/vio.png}
-    \caption{Captura de pantalla de la ventana local de keyframes y landmarks del VIO.}
+    \begin{subfigure}[b]{0.32\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{img/method/basalt.vio.window.cam0.pdf}
+        \label{fig:basalt_vio_window_1}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}[b]{0.32\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{img/method/basalt.vio.window.cam1.pdf}
+        \label{fig:basalt_vio_window_2}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}[b]{0.32\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{img/method/basalt.vio.window.3d.pdf}
+        \label{fig:basalt_vio_window_3}
+    \end{subfigure}
+
+    \caption{Ventana local de keyframes y landmarks del VIO. A la izquierda, las imágenes de las cámaras con las observaciones de los landmarks. A la derecha, el mapa que contiene las poses de los keyframes y las posiciones de los landmarks de la ventana.}
     \label{fig:vio_window}
 \end{figure}
 
