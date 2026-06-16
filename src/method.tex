@@ -228,7 +228,6 @@ Se implementaron dos estrategias para resolver la consulta de covisibilidad:
 
 A partir del sistema descrito en la sección anterior, se propone la implementación de un módulo de cierre de ciclos capaz de detectar y corregir los errores acumulados en la estimación de la trayectoria a largo plazo. Para ello, se incorpora al back-end un nuevo thread denominado \texttt{LoopClosing}, que opera en paralelo al VIO y al mapa persistente. El proceso comprende tres etapas: detección, optimización del grafo de poses (PGO) y fusión de mapa. La Figura~\ref{fig:arch_basaltslam} muestra la arquitectura del sistema resultante.
 
-% TODO: de esta figura, eliminar el componente de RootBA
 \begin{figure}[h]
     \centering
     \includegraphics[width=0.9\linewidth]{img/method/arch.loopclosure.pdf}
@@ -530,7 +529,14 @@ while (running) {
 
 \section{RootBA para un sistema de SLAM}
 
-A partir del mapa resultante del sistema propuesto, así como realizan algunos sistemas VI-SLAM del estado del arte \cite{campos2021orbslam3} \cite{leutenegger2022okvis2}, es posible ejecutar una optimización global de bundle adjustment (BA) de manera offline, una vez finalizada la sesión de SLAM. A diferencia de las optimizaciones locales realizadas por el VIO durante la ejecución, que operan sobre una ventana acotada de keyframes, el bundle adjustment global utiliza todos los keyframes y landmarks del mapa de forma simultánea. El objetivo es refinar de manera conjunta las poses de los keyframes y las posiciones de los landmarks, reduciendo el error de reproyección acumulado a lo largo de toda la trayectoria.
+A partir del mapa resultante del sistema propuesto, así como realizan algunos sistemas VI-SLAM del estado del arte \cite{campos2021orbslam3} \cite{leutenegger2022okvis2}, es posible ejecutar una optimización global de bundle adjustment (BA) de manera offline, una vez finalizada la sesión de SLAM. A diferencia de las optimizaciones locales realizadas por el VIO durante la ejecución, que operan sobre una ventana acotada de keyframes, el bundle adjustment global utiliza todos los keyframes y landmarks del mapa de forma simultánea. El objetivo es refinar de manera conjunta las poses de los keyframes y las posiciones de los landmarks, reduciendo el error de reproyección acumulado a lo largo de toda la trayectoria. En la Figura~\ref{fig:arch_basaltfull} se encuentra la arquitectura completa del sistema propuesto.
+
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=0.9\linewidth]{img/method/arch.full.pdf}
+    \caption{Arquitectura final del sistema propuesto, con la incorporación de un componente de Bundle Adjustment global.}
+    \label{fig:arch_basaltfull}
+\end{figure}
 
 Para llevar a cabo esta etapa, se adoptó el método de Square Root Bundle Adjustment a gran escala (RootBA) propuesto en \cite{demmel2021largescalerootba}. La elección de este método se fundamenta en dos aspectos. En primer lugar, su formulación mediante factorización QR es numéricamente más estable que los enfoques clásicos basados en el complemento de Schur, lo que permite ejecutar la optimización en precisión simple sin pérdida de calidad. Esto se traduce en una ganancia de rendimiento considerable, algo deseable para una etapa de optimización global que de otro modo resultaría costosa. En segundo lugar, esta misma formulación ya fue incorporada al optimizador local del VIO de Basalt en \cite{demmel2022slidingrootba}, por lo que el sistema ya opera sobre esa base; extender RootBA al bundle adjustment global resulta una continuación natural de ese trabajo. Sin embargo, como RootBA fue diseñado originalmente para Structure from Motion (SfM), donde las imágenes no provienen necesariamente de un sistema multicámara con geometría rígida conocida, su formulación no está adaptada directamente a las particularidades del sistema desarrollado en esta tesina, y fue necesario realizarle algunas modificaciones.
 
