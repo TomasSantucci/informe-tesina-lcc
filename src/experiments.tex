@@ -1166,6 +1166,15 @@ otros sistemas del estado del arte. Se eligieron ORB-SLAM3 y OKVIS2 como sistema
 Ambos fueron ejecutados en sus versiones SLAM con loop closure y optimización final de bundle adjustment.
 Al igual que en el estudio de ablación, se analiza la estimación no causal de la trayectoria y la performance de cada sistema.
 
+La Figura~\ref{fig:sota_trajectories} muestra ejemplos cualitativos de trayectorias para secuencias representativas de los tres datasets.
+
+\begin{figure}[ht]
+    \centering
+    \includegraphics[width=\textwidth]{img/experiments/sota.trajectories.pdf}
+    \caption{Ejemplos de trayectorias para secuencias de distintos datasets, con ampliaciones en partes que resultan de interés. Se comparan Basalt en su versión VIO, con el sistema propuesto, y OKVIS2 y ORB-SLAM3 como referencias del estado del arte de VI-SLAM. En Magistrale 1 el sistema propuesto fue el único capaz de detectar el ciclo al reingresar en la habitación. Como se observa en la ampliación de su trayectoria, esta secuencia solo cuenta con ground-truth en la parte de la habitación, al comienzo y al final. En V102, si bien el método propuesto mejora la estimación del VIO de Basalt, no alcanza la precisión de OKVIS2 y ORB-SLAM3. Por último, en MIPP01, el método propuesto es el único capaz de mantener el drift acotado durante toda la secuencia. Tanto OKVIS2 como Basalt acumulan drift considerable, evidenciado por la gran separación entre el inicio y el fin de sus trayectorias. ORB-SLAM3 no es capaz de mantener el tracking y consigue estimar solo el 85\% del total de la secuencia.}
+    \label{fig:sota_trajectories}
+\end{figure}
+
 Primero, se presentarán los resultados en los datasets del estado del arte. Luego, se finalizará con los resultados en las
 secuencias de MSD, en las que además se analizará la performance y robustez.
 
