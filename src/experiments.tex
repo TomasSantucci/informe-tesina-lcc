@@ -1072,6 +1072,8 @@ Promedio & 0.09 & \textbf{0.02} & \textbf{0.02} \\
 
 \subsection{Resultados en datasets de XR}
 
+Dado su carácter no determinístico, ORB-SLAM3 y OKVIS2 se ejecutaron tres veces en cada secuencia, reportándose la corrida que procesó más frames y, en caso de empate, la de menor ATE y luego menor RTE.
+
 La Tabla~\ref{tab:msdmi_sota_all} muestra los resultados de ATE, RTE y porcentaje de secuencia completada de MI*. OKVIS2 obtiene la mejor mediana tanto en ATE como en RTE, aunque Basalt-LC-R se sitúa apenas 0.3 y 0.2 cm por encima, respectivamente. Sin embargo, Basalt-LC-R demuestra mayor robustez, lo que se refleja en el mejor promedio de ambas métricas. ORB-SLAM3 presenta resultados inferiores en ATE y RTE, y no completa un gran número de secuencias.
 
 \begin{table}[ht]
@@ -1093,42 +1095,42 @@ La Tabla~\ref{tab:msdmi_sota_all} muestra los resultados de ATE, RTE y porcentaj
 & \rotatebox{90}{\textbf{OKVIS2}\,}
 & \rotatebox{90}{\textbf{ORB-SLAM3}\,} \\
 \midrule
-MIO01   & \textbf{18.7} & 6912.6 & 56928.9 & \textbf{4.4} & 82.3  & 366.4 & \textbf{100} & \textbf{100} & 69 \\
-MIO02   & 23.6          & 146.7  & \textbf{6.8}    & 4.0          & 3.1   & \textbf{1.5}  & \textbf{100} & \textbf{100} & 27 \\
-MIO03   & \textbf{2.5}  & 4.4    & 3.7             & 1.0          & \textbf{0.7}  & 1.0  & \textbf{100} & \textbf{100} & 82 \\
-MIO04   & \textbf{7.4}  & 16.7   & 106.4           & 3.6          & \textbf{1.1}  & 39.4 & \textbf{100} & \textbf{100} & 95 \\
-MIO05   & \textbf{1.9}  & 2.4    & 2.0             & \textbf{0.3} & 1.2   & 0.8  & \textbf{100} & \textbf{100} & 78 \\
-MIO06   & \textbf{2.6}  & 6.4    & 31.7            & \textbf{1.4} & 1.6   & 11.3 & \textbf{100} & \textbf{100} & \textbf{100} \\
-MIO07   & 1.2           & 1.6    & \textbf{1.1}    & \textbf{0.2} & 0.6   & 0.6  & \textbf{100} & \textbf{100} & 59 \\
-MIO08   & 6.9           & 3.5    & \textbf{2.0}    & 3.9          & \textbf{0.6}  & 0.8  & \textbf{100} & \textbf{100} & 97 \\
-MIO09   & \textbf{0.2}  & 0.7    & 0.4             & \textbf{0.2} & 0.5   & 0.4  & \textbf{100} & 99  & 90 \\
-MIO10   & 1.8           & \textbf{1.5}    & --     & 0.6          & \textbf{0.5}  & --   & \textbf{100} & \textbf{100} & -- \\
-MIO11   & \textbf{2.3}  & 2.7    & --              & \textbf{0.6} & \textbf{0.6}  & --   & \textbf{100} & \textbf{100} & -- \\
-MIO12   & \textbf{4.2}  & 60.5   & 1141.6          & 0.6          & \textbf{0.5}  & 221.3 & \textbf{100} & \textbf{100} & 95 \\
-MIO13   & \textbf{28.0} & 35.6   & 109055.1        & 2.7          & \textbf{0.6}  & 505.2 & \textbf{100} & \textbf{100} & 30 \\
-MIO14   & \textbf{2.5}  & 2.7    & --              & \textbf{0.3} & 0.4   & --   & \textbf{100} & \textbf{100} & -- \\
-MIO15   & 10.7          & 13.3   & \textbf{3.0}    & 1.3          & \textbf{0.5}  & 1.4  & \textbf{100} & \textbf{100} & 37 \\
-MIO16   & 18.7          & 15.2   & \textbf{1.7}    & 2.5          & 0.9   & \textbf{0.4}  & \textbf{100} & \textbf{100} & 31 \\
-MIPB01  & 1.3           & 1.7    & \textbf{1.2}    & 0.6          & \textbf{0.5}  & 0.7  & \textbf{100} & \textbf{100} & 99 \\
-MIPB02  & 3.5           & 2.0    & \textbf{1.4}    & 2.7          & \textbf{0.5}  & 0.6  & \textbf{100} & \textbf{100} & 99 \\
-MIPB03  & \textbf{2.9}  & 5.2    & 9.1             & 0.7          & \textbf{0.5}  & 1.1  & \textbf{100} & \textbf{100} & 99 \\
-MIPB04  & 2.0           & 2.4    & \textbf{1.6}    & 0.6          & \textbf{0.4}  & 0.6  & \textbf{100} & \textbf{100} & 97 \\
-MIPB05  & \textbf{1.4}  & 2.1    & 1.9             & 0.5          & \textbf{0.4}  & 0.6  & \textbf{100} & \textbf{100} & 80 \\
-MIPB06  & 2.9           & 1.9    & \textbf{1.5}    & \textbf{0.5} & \textbf{0.5}  & 0.6  & \textbf{100} & \textbf{100} & 83 \\
-MIPB07  & 1.6           & 1.8    & \textbf{1.3}    & 0.5          & \textbf{0.4}  & 0.6  & \textbf{100} & \textbf{100} & 79 \\
-MIPB08  & 3.9           & \textbf{3.6}    & 25.9   & 0.5          & \textbf{0.4}  & 1.0  & \textbf{100} & \textbf{100} & 96 \\
-MIPP01  & \textbf{2.9}  & 10.1   & 24.4            & 1.1          & \textbf{0.5}  & 5.8  & \textbf{100} & \textbf{100} & 78 \\
-MIPP02  & 3.9           & \textbf{1.8}    & 4.2    & 1.7          & \textbf{0.4}  & 1.7  & \textbf{100} & \textbf{100} & 57 \\
-MIPP03  & 4.8           & \textbf{2.3}    & 6.3    & 2.3          & \textbf{0.5}  & 5.8  & \textbf{100} & \textbf{100} & 65 \\
-MIPP04  & 2.5           & \textbf{1.1}    & 1.7    & 1.0          & \textbf{0.4}  & 0.9  & \textbf{100} & \textbf{100} & 74 \\
-MIPP05  & 2.7           & 1.5    & \textbf{1.2}    & 1.9          & \textbf{0.4}  & 0.6  & \textbf{100} & \textbf{100} & 99 \\
-MIPP06  & 2.7           & \textbf{1.2}    & 87.7   & 1.2          & \textbf{0.4}  & 2.8  & \textbf{100} & \textbf{100} & 98 \\
-MIPT01  & 1.7           & 1.9    & \textbf{1.5}    & 0.5          & \textbf{0.4}  & 0.6  & \textbf{100} & \textbf{100} & \textbf{100} \\
-MIPT02  & 2.1           & 2.0    & \textbf{1.1}    & 0.5          & \textbf{0.4}  & 0.6  & \textbf{100} & \textbf{100} & 98 \\
-MIPT03  & \textbf{3.5}  & 4.6    & 34.4            & \textbf{0.6} & \textbf{0.6}  & 2.7  & \textbf{100} & \textbf{100} & 96 \\
+MIO01 & \textbf{18.7} & 6912.6 & 63841.4 & \textbf{4.4} & 82.3 & 389.6 & \textbf{100} & \textbf{100} & 87 \\
+MIO02 & \textbf{23.6} & 146.7 & 9914.8 & 4.0 & \textbf{3.1} & 133.7 & \textbf{100} & \textbf{100} & 99 \\
+MIO03 & \textbf{2.5} & 4.4 & 4.3 & 1.0 & \textbf{0.7} & 1.1 & \textbf{100} & \textbf{100} & 97 \\
+MIO04 & \textbf{7.4} & 16.7 & 235.4 & 3.6 & \textbf{1.1} & 3.9 & \textbf{100} & \textbf{100} & 95 \\
+MIO05 & \textbf{1.9} & 2.4 & 2.0 & \textbf{0.3} & 1.2 & 0.8 & \textbf{100} & \textbf{100} & 78 \\
+MIO06 & \textbf{2.6} & 6.4 & 31.7 & \textbf{1.4} & 1.6 & 11.3 & \textbf{100} & \textbf{100} & \textbf{100} \\
+MIO07 & \textbf{1.2} & 1.6 & 1.3 & \textbf{0.2} & 0.6 & 0.7 & \textbf{100} & \textbf{100} & 98 \\
+MIO08 & 6.9 & 3.5 & \textbf{2.0} & 3.9 & \textbf{0.6} & 0.8 & \textbf{100} & \textbf{100} & 97 \\
+MIO09 & \textbf{0.2} & 0.5 & 0.4 & \textbf{0.2} & 0.4 & 0.4 & \textbf{100} & 99 & 90 \\
+MIO10 & 1.8 & \textbf{1.4} & -- & 0.6 & \textbf{0.5} & -- & \textbf{100} & \textbf{100} & -- \\
+MIO11 & \textbf{2.3} & 2.7 & -- & \textbf{0.6} & \textbf{0.6} & -- & \textbf{100} & \textbf{100} & -- \\
+MIO12 & \textbf{4.2} & 60.5 & 1141.6 & 0.6 & \textbf{0.5} & 221.3 & \textbf{100} & \textbf{100} & 95 \\
+MIO13 & \textbf{28.0} & 35.6 & 290233.0 & 2.7 & \textbf{0.6} & 871.3 & \textbf{100} & \textbf{100} & 43 \\
+MIO14 & \textbf{2.5} & 2.7 & -- & \textbf{0.3} & 0.4 & -- & \textbf{100} & \textbf{100} & -- \\
+MIO15 & \textbf{10.7} & 13.3 & 153132.8 & 1.3 & \textbf{0.5} & 756.7 & \textbf{100} & \textbf{100} & 63 \\
+MIO16 & 18.7 & \textbf{15.2} & 29.6 & 2.5 & \textbf{0.9} & 1.1 & \textbf{100} & \textbf{100} & 92 \\
+MIPB01 & 1.3 & 1.7 & \textbf{1.2} & 0.6 & \textbf{0.5} & 0.7 & \textbf{100} & \textbf{100} & 99 \\
+MIPB02 & 3.5 & 2.0 & \textbf{1.4} & 2.7 & \textbf{0.5} & 0.6 & \textbf{100} & \textbf{100} & 99 \\
+MIPB03 & \textbf{2.9} & 5.2 & 9.1 & 0.7 & \textbf{0.5} & 1.1 & \textbf{100} & \textbf{100} & 99 \\
+MIPB04 & 2.0 & 2.4 & \textbf{1.6} & 0.6 & \textbf{0.4} & 0.6 & \textbf{100} & \textbf{100} & 97 \\
+MIPB05 & \textbf{1.4} & 2.1 & 2.1 & 0.5 & \textbf{0.4} & 1.7 & \textbf{100} & \textbf{100} & 82 \\
+MIPB06 & 2.9 & 1.9 & \textbf{1.6} & \textbf{0.5} & \textbf{0.5} & 0.6 & \textbf{100} & \textbf{100} & 91 \\
+MIPB07 & 1.6 & 1.8 & \textbf{1.3} & 0.5 & \textbf{0.4} & 0.7 & \textbf{100} & \textbf{100} & 81 \\
+MIPB08 & 3.9 & \textbf{3.6} & 25.9 & 0.5 & \textbf{0.4} & 1.0 & \textbf{100} & \textbf{100} & 96 \\
+MIPP01 & \textbf{2.9} & 10.1 & 24.8 & 1.1 & \textbf{0.5} & 4.4 & \textbf{100} & \textbf{100} & 89 \\
+MIPP02 & 3.9 & \textbf{1.8} & 6.3 & 1.7 & \textbf{0.4} & 1.4 & \textbf{100} & \textbf{100} & 99 \\
+MIPP03 & 4.8 & \textbf{2.3} & 13.9 & 2.3 & \textbf{0.5} & 5.0 & \textbf{100} & \textbf{100} & 98 \\
+MIPP04 & 2.5 & \textbf{1.1} & 2.5 & 1.0 & \textbf{0.4} & 0.8 & \textbf{100} & \textbf{100} & 79 \\
+MIPP05 & 2.7 & 1.5 & \textbf{1.2} & 1.9 & \textbf{0.4} & 0.6 & \textbf{100} & \textbf{100} & 99 \\
+MIPP06 & 2.7 & \textbf{1.2} & 595.9 & 1.2 & \textbf{0.4} & 4.4 & \textbf{100} & \textbf{100} & 98 \\
+MIPT01 & 1.7 & 1.9 & \textbf{1.5} & 0.5 & \textbf{0.4} & 0.6 & \textbf{100} & \textbf{100} & \textbf{100} \\
+MIPT02 & 2.1 & 2.0 & \textbf{1.1} & 0.5 & \textbf{0.4} & 0.6 & \textbf{100} & \textbf{100} & 98 \\
+MIPT03 & \textbf{3.5} & 4.6 & 34.4 & \textbf{0.6} & \textbf{0.6} & 2.7 & \textbf{100} & \textbf{100} & 96 \\
 \midrule
-Mediana & 2.7           & \textbf{2.4}    & 2.5    & 0.7          & \textbf{0.5}  & 0.9  & \textbf{100} & \textbf{100} & 86 \\
-Promedio & \textbf{5.4} & 220.4  & 5583.0          & \textbf{1.4} & 3.1   & 39.3 & \textbf{100} & \textbf{100} & 80 \\
+Mediana & 2.7 & \textbf{2.4} & 5.3 & 0.7 & \textbf{0.5} & 1.1 & \textbf{100} & \textbf{100} & 96 \\
+Promedio & \textbf{5.4} & 220.4 & 17309.9 & \textbf{1.4} & 3.1 & 80.7 & \textbf{100} & \textbf{100} & 91 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1155,14 +1157,14 @@ La Tabla~\ref{tab:msdmg_sota_all} muestra los resultados de ATE, RTE y porcentaj
 & \rotatebox{90}{\textbf{ORB-SLAM3}\,} \\
 \midrule
 MGO01 & 12.1 & 18.5 & \textbf{1.8} & 2.4 & \textbf{1.0} & 1.4 & \textbf{100} & \textbf{100} & \textbf{100} \\
-MGO02 & 7.5 & \textbf{7.0} & 38.0 & 3.1 & \textbf{1.7} & 2.0 & \textbf{100} & \textbf{100} & 83 \\
+MGO02 & 7.5 & \textbf{7.0} & 42.2 & 3.1 & \textbf{1.7} & 2.2 & \textbf{100} & \textbf{100} & \textbf{100} \\
 MGO03 & \textbf{1.7} & 1.8 & 1.8 & 1.1 & \textbf{0.8} & 1.1 & \textbf{100} & \textbf{100} & 98 \\
 MGO04 & 5.4 & 3.6 & \textbf{2.4} & 2.8 & \textbf{1.0} & 1.6 & \textbf{100} & \textbf{100} & 98 \\
-MGO05 & 1.7 & 1.3 & \textbf{1.1} & \textbf{0.3} & 0.4 & 0.7 & \textbf{100} & \textbf{100} & 83 \\
-MGO06 & 4.1 & \textbf{2.4} & 3.2 & 1.6 & \textbf{1.1} & 1.9 & \textbf{100} & \textbf{100} & 98 \\
+MGO05 & 1.7 & \textbf{1.3} & 3.4 & \textbf{0.3} & 0.4 & 2.5 & \textbf{100} & \textbf{100} & 99 \\
+MGO06 & 4.1 & \textbf{2.4} & 23.7 & 1.6 & \textbf{1.1} & 2.5 & \textbf{100} & \textbf{100} & \textbf{100} \\
 MGO07 & 1.4 & \textbf{0.9} & 1.9 & \textbf{0.4} & 0.5 & 1.0 & \textbf{100} & \textbf{100} & 98 \\
 MGO08 & 5.0 & \textbf{1.6} & -- & 3.5 & \textbf{1.1} & -- & \textbf{100} & \textbf{100} & -- \\
-MGO09 & 1.1 & \textbf{0.6} & 1.8 & 0.7 & \textbf{0.5} & 1.7 & \textbf{100} & 99 & 92 \\
+MGO09 & 1.1 & \textbf{0.7} & 1.8 & 0.7 & \textbf{0.6} & 1.7 & \textbf{100} & 99 & 92 \\
 MGO10 & 1.4 & \textbf{0.7} & 6.0 & \textbf{0.3} & \textbf{0.3} & 1.9 & \textbf{100} & \textbf{100} & 97 \\
 MGO11 & \textbf{1.0} & \textbf{1.0} & 5.5 & \textbf{0.4} & \textbf{0.4} & 2.0 & \textbf{100} & \textbf{100} & 98 \\
 MGO12 & 5.4 & \textbf{2.7} & 66.7 & 1.7 & \textbf{1.6} & 11.3 & \textbf{100} & \textbf{100} & \textbf{100} \\
@@ -1170,8 +1172,8 @@ MGO13 & \textbf{8.6} & 60.5 & 11397.0 & 4.1 & \textbf{1.8} & 131.0 & \textbf{100
 MGO14 & 1.9 & \textbf{1.5} & 2.0 & \textbf{0.9} & \textbf{0.9} & 1.2 & \textbf{100} & \textbf{100} & 99 \\
 MGO15 & \textbf{1.9} & 53.8 & 23.9 & \textbf{0.3} & 0.5 & 0.4 & \textbf{100} & \textbf{100} & \textbf{100} \\
 \midrule
-Mediana & 1.9 & \textbf{1.8} & 2.8 & 1.1 & \textbf{0.9} & 1.6 & \textbf{100} & \textbf{100} & 98 \\
-Promedio & \textbf{4.0} & 10.5 & 825.2 & 1.6 & \textbf{0.9} & 11.4 & \textbf{100} & \textbf{100} & 96 \\
+Mediana & 1.9 & \textbf{1.8} & 4.4 & 1.1 & \textbf{0.9} & 1.8 & \textbf{100} & \textbf{100} & 99 \\
+Promedio & \textbf{4.0} & 10.5 & 827.1 & 1.6 & \textbf{0.9} & 11.5 & \textbf{100} & \textbf{100} & 98 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1215,7 +1217,7 @@ MOO15 & 291.1 & 636.2 & \textbf{1.4} & 11.0 & 1.2 & \textbf{0.3} & \textbf{100} 
 MOO16 & 1.2 & \textbf{0.3} & -- & \textbf{0.1} & 0.2 & -- & \textbf{100} & \textbf{100} & -- \\
 \midrule
 Mediana & 3.0 & 1.9 & \textbf{1.6} & 1.1 & \textbf{0.7} & 1.3 & \textbf{100} & \textbf{100} & 98 \\
-Promedio   & \textbf{21.3} & 42.9 & 21.7 & 1.8 & \textbf{0.8} & 7.9 & \textbf{100} & \textbf{100} & 92 \\
+Promedio & \textbf{21.3} & 42.9 & 21.7 & 1.8 & \textbf{0.8} & 7.9 & \textbf{100} & \textbf{100} & 92 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1350,7 +1352,7 @@ Esta sección presenta un resumen y las conclusiones generales de los resultados
 
 El estudio de ablación muestra que Basalt-LC-R, que incorpora cierre de ciclos, culling de keyframes y optimización global con RootBA, es consistentemente la versión más precisa. La mejora es especialmente notoria en el Monado SLAM Dataset: la reducción en la mediana del ATE respecto de Basalt es superior al 85\% en MI* (de 19.8 a 2.7 cm), superior al 70\% en MG* (de 7.0 a 1.9 cm) y del 50\% en MO* (de 6.1 a 3.0 cm). En los datasets del estado del arte el comportamiento es más heterogéneo: en TUM-VI Room la precisión es milimétrica (mediana de ATE de 0.9 cm), mientras que en secuencias de exterior el sistema no logra mejorar respecto de Basalt porque los ciclos detectados corresponden a keyframes temporalmente cercanos y no corrigen el drift acumulado. En cuanto al rendimiento, la arquitectura asíncrona del sistema, con el VIO y el mapa ejecutándose en threads independientes, permite que Basalt-LC opere dentro de los límites de tiempo real en todos los headsets evaluados, con un margen ajustado para el Valve Index y sin degradar la performance de Basalt original. En trayectorias extensas, el culling de keyframes es el mecanismo que mantiene esta estabilidad, al evitar que el tiempo de optimización del grafo de poses crezca indefinidamente. Basalt-LC-R-CQ incorpora una consulta de covisibilidad para reinsertar keyframes del mapa en la ventana del VIO. Si bien ofrece mejoras puntuales de precisión, resulta menos robusto y más lento (llegando a perder la operación en tiempo real en el Valve Index), y presenta un problema de memoria no resuelto que le impide completar secuencias de larga duración.
 
-La comparación con OKVIS2 y ORB-SLAM3 confirma que el sistema propuesto ofrece la mejor combinación de precisión, robustez y rendimiento en tiempo real, principalmente en escenarios de XR. En el MSD, Basalt-LC-R y OKVIS2 completan el 100\% de los frames en todas las secuencias, mientras que ORB-SLAM3 completa en promedio el 80\% en MI*, el 92\% en MO* y el 96\% en MG*. Aunque OKVIS2 obtiene medianas de ATE levemente inferiores en MI* (2.4 cm frente a 2.7 cm) y MG* (1.8 cm frente a 1.9 cm), su promedio es marcadamente peor debido a fallos puntuales (220 cm frente a 5.4 cm en MI*), lo que refleja una menor robustez ante las condiciones del MSD. El factor más diferenciador es el rendimiento: OKVIS2 supera el límite de tiempo real entre 6 y 12 veces, y ORB-SLAM3 lo supera más del doble en el Valve Index, mientras que Basalt-LC se mantiene por debajo en todos los casos. En los datasets del estado del arte el panorama es más matizado. En TUM-VI, Basalt-LC-R consigue una precisión comparable a la de los demás sistemas en las secuencias de tipo Room y Corridor. En las restantes secuencias de TUM-VI, OKVIS2 obtiene ventaja al detectar ciclos que los otros sistemas no logran identificar, con la excepción de TM6, donde Basalt-LC-R es el único capaz de detectar el ciclo al reingresar a la habitación, obteniendo 2 cm de ATE frente a 63 cm de OKVIS2. En la mayoría de las secuencias restantes ningún sistema detecta ciclos, por lo que la comparación refleja esencialmente el rendimiento de sus respectivos módulos VIO. En EuRoC, Basalt-LC-R resulta inferior a OKVIS2 y ORB-SLAM3.
+La comparación con OKVIS2 y ORB-SLAM3 confirma que el sistema propuesto ofrece la mejor combinación de precisión, robustez y rendimiento en tiempo real, principalmente en escenarios de XR. En el MSD, Basalt-LC-R y OKVIS2 completan el 100\% de los frames en todas las secuencias, mientras que ORB-SLAM3 completa en promedio el 91\% en MI*, el 92\% en MO* y el 98\% en MG*, aun reportando para cada secuencia la mejor de tres corridas. Aunque OKVIS2 obtiene medianas de ATE levemente inferiores en MI* (2.4 cm frente a 2.7 cm) y MG* (1.8 cm frente a 1.9 cm), su promedio es marcadamente peor debido a fallos puntuales (220 cm frente a 5.4 cm en MI*), lo que refleja una menor robustez ante las condiciones del MSD. El factor más diferenciador es el rendimiento: OKVIS2 supera el límite de tiempo real entre 6 y 12 veces, y ORB-SLAM3 lo supera más del doble en el Valve Index, mientras que Basalt-LC se mantiene por debajo en todos los casos. En los datasets del estado del arte el panorama es más matizado. En TUM-VI, Basalt-LC-R consigue una precisión comparable a la de los demás sistemas en las secuencias de tipo Room y Corridor. En las restantes secuencias de TUM-VI, OKVIS2 obtiene ventaja al detectar ciclos que los otros sistemas no logran identificar, con la excepción de TM6, donde Basalt-LC-R es el único capaz de detectar el ciclo al reingresar a la habitación, obteniendo 2 cm de ATE frente a 63 cm de OKVIS2. En la mayoría de las secuencias restantes ningún sistema detecta ciclos, por lo que la comparación refleja esencialmente el rendimiento de sus respectivos módulos VIO. En EuRoC, Basalt-LC-R resulta inferior a OKVIS2 y ORB-SLAM3.
 
 Los experimentos sobre RootBA evidencian dos contribuciones diferenciadas. La optimización global del mapa al finalizar cada secuencia mejora la precisión de la trayectoria principalmente en escenarios como los del MSD. Además, la estabilidad numérica de RootBA permite ejecutarla en precisión simple sin degradar la calidad: la diferencia en ATE entre la versión en precisión simple y la de doble precisión es despreciable, mientras que el tiempo de ejecución se reduce un 50\% en MSD y EuRoC, y un 42\% en TUM-VI.
 
