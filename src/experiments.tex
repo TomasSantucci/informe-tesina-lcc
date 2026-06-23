@@ -27,6 +27,8 @@
 % https://mateosss.pages.freedesktop.org/-/basalt/-/jobs/100268854/artifacts/report.html
 % report job: https://gitlab.freedesktop.org/mateosss/basalt/-/jobs/100268854
 
+\todo{en este capítulo, y en general, tengo que traducir las figuras al español}
+
 En este capítulo se presentan los experimentos realizados para evaluar el sistema propuesto y el análisis de los resultados obtenidos. Primero se buscó dimensionar el impacto de las mejoras descritas en el Capítulo~\ref{sec:method}, para lo cual se realizó un estudio de ablación que compara Basalt original con distintas versiones del sistema que incorporan las funcionalidades del mapa. Luego se evaluó el sistema propuesto contra ORB-SLAM3 y OKVIS2 como referencias del estado del arte. En todos estos experimentos, no solo se evaluaron métricas de error de trayectoria, sino que también se hizo énfasis en el rendimiento, para determinar si el sistema propuesto cumple con las limitaciones impuestas para la operación en tiempo real. Finalmente, se concluye con un análisis de rendimiento detallado, que tiene en cuenta la arquitectura del sistema propuesto y las mejoras implementadas para utilizar una optimización de bundle adjustment basada en RootBA.
 
 La mayor parte de los experimentos fue realizada con un procesador Intel Core i5-13600 13th Gen con 32 GB de RAM; los restantes, con un procesador Intel Core Ultra 9 285H con 32 GB de RAM, indicándose explícitamente cuando corresponda.
@@ -446,7 +448,7 @@ Promedio & 102.5 & 92.6 & \textbf{91.8} & 117.4 & 11.8 & 10.9 & \textbf{10.8} & 
         \label{fig:loops_to7}
     \end{subfigure}
 
-    \caption{Detecciones de ciclo para algunas secuencias del TUM-VI Benchmark dataset}
+    \caption{Detecciones de ciclo para algunas secuencias del TUM-VI Benchmark dataset.}
     \label{fig:loops_tumvi}
 \end{figure}
 
@@ -789,7 +791,9 @@ Además, las Figuras~\ref{fig:mipp01_ablation_maps} y~\ref{fig:mgo01_ablation_ma
     \label{fig:msd_ablation_trajectories}
 \end{figure}
 
-\begin{figure}[ht]
+\todo{estos mapas están bastante feos. tengo que rehacer estas figuras (Figuras~\ref{fig:mipp01_ablation_maps} y \ref{fig:mgo01_basaltslam_map})}
+
+\begin{figure}[!htbp]
     \centering
     \begin{subfigure}[b]{0.32\textwidth}
         \centering
@@ -815,7 +819,7 @@ Además, las Figuras~\ref{fig:mipp01_ablation_maps} y~\ref{fig:mgo01_ablation_ma
     \label{fig:mipp01_ablation_maps}
 \end{figure}
 
-\begin{figure}[ht]
+\begin{figure}[!htbp]
     \centering
     \begin{subfigure}[b]{0.32\textwidth}
         \centering

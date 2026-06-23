@@ -89,6 +89,17 @@
 
 % ---------------- Macros / Custom commands ----------------
 
+% Notas de pendientes, bien visibles en el PDF.
+% Uso: \todo{texto de la nota}
+\newcommand{\todo}[1]{%
+    \noindent%
+    \colorbox{red!85!black}{%
+        \parbox{\dimexpr\linewidth-2\fboxsep\relax}{%
+            \color{white}\bfseries\sffamily TODO: #1%
+        }%
+    }%
+}
+
 % Title page
 \newcommand*{\titleGP}{\begingroup
     \centering
