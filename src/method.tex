@@ -296,33 +296,17 @@ Las verificaciones que se realizan sobre cada keyframe candidato $k_c$, en orden
 
 \begin{figure}[h]
     \centering
-    \includegraphics[width=0.8\linewidth]{img/method/projection\_search.pdf}
-    \caption{Ilustración de la isla de candidatos.}
+    \includegraphics[width=0.8\linewidth]{img/method/island.pdf}
+    \caption{Ilustración de la isla de candidatos. En lugar de buscar correspondencias 3D--2D únicamente entre los landmarks observados por el keyframe candidato $k_c$ y el keyframe más reciente $k_r$, se amplía el conjunto a los keyframes más covisibles con $k_c$ (tres en esta figura de ejemplo). De este modo se dispone de un mayor número de landmarks 3D para emparejar con los keypoints de $k_r$, lo que robustece la estimación de su pose.}
     \label{fig:candidates_island}
 \end{figure}
 
 \begin{figure}[h]
     \centering
-    \includegraphics[width=0.8\linewidth]{img/method/projection\_search.pdf}
-    \caption{Ilustración de la búsqueda de correspondencias mediante reproyección.}
+    \includegraphics[width=0.8\linewidth]{img/method/reprojection_illustration.pdf}
+    \caption{Ilustración de la búsqueda de correspondencias mediante reproyección. Los landmarks de la isla de candidatos que aún no fueron emparejados se reproyectan sobre el keyframe más reciente $k_r$, empleando la pose estimada en la verificación geométrica previa. Alrededor de cada proyección, en una ventana de 16~px, se detectan keypoints con FAST y se computan sus descriptores ORB. Si alguno coincide con el descriptor del landmark, la correspondencia se incorpora a las observaciones de $k_r$.}
     \label{fig:reprojection_search}
 \end{figure}
-
-%\begin{figure}[h]
-%    \centering
-%    \includegraphics[width=0.8\linewidth]{img/method/projection\_search.pdf}
-%    \caption{Proceso de reproyección y detección de keypoints en un cuadrado alrededor de cada proyección.}
-%    \label{fig:projection_search}
-%\end{figure}
-
-%\begin{figure}[h]
-%    \centering
-%    \includegraphics[width=0.8\linewidth]{img/method/loop\_detection.pdf}
-%    \caption{Detección de ciclo en detalle. Donde se muestran las correspondencias y el mapa, donde
-%    también se puede ver el grafo de covisibilidad (cuanto más oscuro el azul, mayor peso tiene
-%    la arista).}
-%    \label{fig:loop_detection}
-%\end{figure}
 
 Si ningún candidato supera todas las verificaciones, se concluye que no existe un ciclo detectable y el thread \texttt{LoopClosing} vuelve a esperar un nuevo keyframe proveniente del VIO.
 
@@ -446,18 +430,35 @@ $$ score(k) = 0.4 \cdot S_g + 0.2 \cdot S_l + 0.2 \cdot S_o + 0.1 \cdot S_c + 0.
 Los cinco factores se describen a continuación, en orden de mayor a menor peso:
 
 \begin{itemize}
-    \item Reemplazabilidad en el grafo ($S_g$, peso 0.4): Un keyframe es poco reemplazable si al eliminarlo la conectividad del grafo de covisibilidad se ve comprometida; lo es mucho si sus vecinos ya se observan entre sí. Como aproximación, se usa el grado de alta covisibilidad del nodo: cuantas más aristas de alta covisibilidad incidan en él, más fácilmente sus vecinos pueden suplir su rol. El puntaje es $1 - \min(x/10, 1)$, donde $x$ es ese grado, de modo que un nodo bien conectado obtiene un valor bajo. Se actualiza incrementalmente cada vez que se agrega o elimina una arista de alta covisibilidad incidente en el nodo.
+    \item Reemplazabilidad en el grafo ($S_g$, peso $0.4$): Un keyframe es poco reemplazable si al eliminarlo la conectividad del grafo de covisibilidad se ve comprometida; lo es mucho si sus vecinos ya se observan entre sí. Como aproximación, se usa el grado de alta covisibilidad del nodo: cuantas más aristas de alta covisibilidad incidan en él, más fácilmente sus vecinos pueden suplir su rol. El puntaje es $1 - \min(x/10, 1)$, donde $x$ es ese grado, de modo que un nodo bien conectado obtiene un valor bajo. Se actualiza incrementalmente cada vez que se agrega o elimina una arista de alta covisibilidad incidente en el nodo.
 
-    \item Participación en cierres de ciclo ($S_l$, peso 0.2): Los keyframes involucrados en cierres de ciclo anclan la consistencia global del mapa y no deben descartarse. El puntaje es $\frac{x}{x+1}$, donde $x$ es el número de ciclos en que participó el keyframe; incluso una sola detección eleva el puntaje de forma considerable. Se actualiza automáticamente al registrar nuevos ciclos.
+    \item Participación en cierres de ciclo ($S_l$, peso $0.2$): Los keyframes involucrados en cierres de ciclo anclan la consistencia global del mapa y no deben descartarse. El puntaje es $\frac{x}{x+1}$, donde $x$ es el número de ciclos en que participó el keyframe; incluso una sola detección eleva el puntaje de forma considerable. Se actualiza automáticamente al registrar nuevos ciclos.
 
-    \item Cantidad de observaciones ($S_o$, peso 0.2): Un keyframe con pocas observaciones (menos de 10) es posible que tenga una pose poco confiable; uno con muchas tiende a ser redundante con sus vecinos. El puntaje es $\frac{x}{x+10}$, que crece rápido para valores bajos y lento para valores altos. Se calcula una sola vez, al momento de la marginalización.
+    \item Cantidad de observaciones ($S_o$, peso $0.2$): Un keyframe con pocas observaciones (menos de 10) es posible que tenga una pose poco confiable; uno con muchas tiende a ser redundante con sus vecinos. El puntaje es $\frac{x}{x+10}$, que crece rápido para valores bajos y lento para valores altos. Se calcula una sola vez, al momento de la marginalización.
 
-    \item Cobertura de imagen ($S_c$, peso 0.1): Un keyframe cuyas observaciones se distribuyen sobre una mayor porción de la imagen es más informativo que uno que concentra sus puntos en una región pequeña. El puntaje es el promedio, sobre todas las cámaras, del ratio entre el área del \textit{bounding box} de las observaciones y el área total de la imagen. Se calcula una sola vez, al momento de la marginalización.
+    \item Cubrimiento de imagen ($S_c$, peso $0.1$): Un keyframe cuyas observaciones se distribuyen sobre una mayor porción de la imagen es más informativo que uno que concentra sus puntos en una región pequeña. El puntaje es el promedio, sobre todas las cámaras, del ratio entre el área del \textit{bounding box} de las observaciones y el área total de la imagen. Se calcula una sola vez, al momento de la marginalización.
 
-    \item Posición temporal ($S_t$, peso 0.1): Los keyframes más antiguos son valiosos por su menor drift acumulado; los más recientes, por pertenecer a la zona en exploración activa. Para penalizar a los intermedios se emplea la función en forma de ``V'', $|2x-1|$, donde $x$ es la posición relativa del keyframe en la secuencia temporal. Su peso es bajo dado que se trata de una heurística débil. Se recalcula para todos los keyframes del mapa cada vez que se supera el límite.
+    \item Posición temporal ($S_t$, peso $0.1$): Los keyframes más antiguos son valiosos por su menor drift acumulado; los más recientes, por pertenecer a la zona en exploración activa. Para penalizar a los intermedios se emplea la función en forma de ``V'', $|2x-1|$, donde $x$ es la posición relativa del keyframe en la secuencia temporal. Su peso es bajo dado que se trata de una heurística débil. Se recalcula para todos los keyframes del mapa cada vez que se supera el límite.
 \end{itemize}
 
-% TODO: poner alguna figura para mostrar la idea de algunos de esos puntajes. de S_g y S_c
+\begin{figure}[ht]
+    \centering
+    \begin{subfigure}[c]{0.38\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{img/method/replaceability_score.pdf}
+        \caption{Puntaje de reemplazabilidad en el grafo de covisibilidad. Los nodos con más vecinos obtienen un valor más bajo.}
+        \label{fig:island}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}[c]{0.58\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{img/method/coverage.pdf}
+        \caption{Puntajes de cubrimiento de imagen y cantidad de observaciones. El keyframe observa 26 keypoints únicos; por lo tanto, obtiene un puntaje $S_o=0.72$. El keyframe obtiene un cubrimiento del $33\%$ para la imagen izquierda, y del $21.7\%$ para la derecha; por lo tanto, el puntaje es $S_c=0.27$.}
+        \label{fig:image_coverage}
+    \end{subfigure}
+    \caption{Algunos scores empleados para determinar la calidad y utilidad de un keyframe.}
+    \label{fig:culling}
+\end{figure}
 
 Con este esquema, se fija un límite de 1500 keyframes en el mapa persistente. Cada vez que la llegada
 de un nuevo \texttt{MapStamp} supera ese límite, se eliminan los 30 keyframes con menor puntaje.
