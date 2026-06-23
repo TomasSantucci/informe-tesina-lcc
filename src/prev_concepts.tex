@@ -135,7 +135,6 @@ Supóngase que una estimación de pose $\mathbf{T}$ debe refinarse mediante un i
 Esto se denomina modelo de perturbación a izquierda (\textit{left perturbation model}): el incremento se calcula en el espacio euclídeo, se mapea al manifold mediante el mapa exponencial, y se compone con la estimación actual. Este marco permite aplicar técnicas de optimización estándar, como mínimos cuadrados no lineales a introducirse en la Sección~\ref{sec:least_squares}, respetando la geometría de las transformaciones rígidas.
 
 \subsection{Representación adjunta}
-% TODO: rever escritura de esto. por ejemplo: twist -> perturbación. pero el concepto y las referencias están.
 
 La representación adjunta es un mapa lineal asociado a cada elemento del grupo de Lie que describe cómo actúa el grupo sobre su álgebra de Lie por conjugación. Para un elemento $T \in SE(3)$, el mapa adjunto $\mathrm{Ad}_T : \mathfrak{se}(3) \to \mathfrak{se}(3)$ se define como
 %

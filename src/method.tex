@@ -357,9 +357,6 @@ El grafo que se optimiza en el PGO se construye uniendo el árbol de expansión,
 
 Para que el mapa persistente conozca cuáles keyframes pertenecen a la ventana activa del VIO en todo momento, se incorporó un canal de comunicación adicional entre ambos componentes: cada vez que el VIO marginaliza un keyframe, notifica al mapa persistente con su identificador.
 
-% TODO: agregar un diagrama de todo esto, donde muestro todo el CovisibilityGraph y que se fijan los keyframes
-% más recientes?
-
 \begin{figure}[h]
     \centering
     \includegraphics[width=0.4\linewidth]{img/method/pose-graph.pdf}
@@ -433,8 +430,6 @@ ajustes en la clase MapDatabase, que se detallan en esta sección.
 El grafo de covisibilidad introducido en la sección anterior permite mejorar la estrategia de covisibilidad por observaciones. Al recibir una consulta del VIO, se obtienen todos los keyframes que comparten al menos un mínimo configurable de observaciones con el último keyframe introducido, y se devuelven los 3 más antiguos junto con todos los landmarks que hostean. Esto produce una ventana de covisibilidad más informativa, que favorece la reintroducción de keyframes que hayan sido candidatos para algún cierre de ciclo.
 
 La estrategia de covisibilidad espacial, en cambio, presenta una complicación al combinarse con el cierre de ciclos: el proceso de PGO modifica las poses de todos los keyframes del mapa, a excepción de los aún activos en la ventana del VIO, lo que invalida los cubos de distribución espacial asociados a ellos. Recalcularlos tras cada optimización resultaría costoso, por lo que se optó por deshabilitar esta estrategia cuando el cierre de ciclos está activo. Una posible solución futura sería definir los cubos en coordenadas relativas a la pose del keyframe, de modo que permanezcan invariantes ante cambios de pose globales.
-
-% TODO: poner figura?
 
 \subsection{Culling de keyframes}
 
@@ -550,7 +545,7 @@ A partir del mapa resultante del sistema propuesto, así como realizan algunos s
 
 \begin{figure}[h]
     \centering
-    \includegraphics[width=0.9\linewidth]{img/method/arch.full.pdf}
+    \includegraphics[width=\linewidth]{img/method/arch.full.pdf}
     \caption{Arquitectura final del sistema propuesto, con la incorporación de un componente de Bundle Adjustment global.}
     \label{fig:arch_basaltfull}
 \end{figure}
