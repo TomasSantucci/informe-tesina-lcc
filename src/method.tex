@@ -151,7 +151,7 @@ El VIO mantiene una ventana local de keyframes, frames y landmarks que se optimi
         \label{fig:basalt_vio_window_3}
     \end{subfigure}
 
-    \caption{Ventana local de keyframes y landmarks del VIO. A la izquierda, las imágenes de las cámaras con las observaciones de los landmarks. A la derecha, el mapa que contiene las poses de los keyframes y las posiciones de los landmarks de la ventana.}
+    \caption{Ventana local de keyframes y landmarks del VIO. A la izquierda, las imágenes de las cámaras con las observaciones de los landmarks. A la derecha, el mapa que contiene las poses de los keyframes y las posiciones de los landmarks de la ventana. Imagen extraída de~\cite{usenko2020basalt}.}
     \label{fig:vio_window}
 \end{figure}
 
@@ -202,7 +202,7 @@ Antes de descartar definitivamente esas variables, se calcula un prior de margin
         \label{fig:basalt_state_c}
     \end{subfigure}
 
-    \caption{Grafo de factores de Basalt. (\subref{fig:basalt_state_a}) después de marginalizar un frame, el sistema está compuesto por los últimos $n$ keyframes $K_1 \dots K_n$ y los $m - 1$ frames más recientes, $F_1$ y $F_2$ (en este ejemplo, el sistema trabaja con un máximo de 3 frames). Cuando llega un nuevo frame ($F_3$), se marginaliza el frame más antiguo ($F_1$), y se pueden dar dos escenarios. En el primero~(\subref{fig:basalt_state_b}), si $F_1$ no se convierte en un keyframe, el frame completo es marginalizado, eliminando bias, velocidad y pose. En el segundo~(\subref{fig:basalt_state_c}), si $F_1$ es promovido a keyframe, solo se marginalizan sus variables de bias y velocidad, a la vez que otro keyframe es seleccionado para ser marginalizado.}
+    \caption{Grafo de factores de Basalt. (\subref{fig:basalt_state_a}) después de marginalizar un frame, el sistema está compuesto por los últimos $n$ keyframes $K_1 \dots K_n$ y los $m - 1$ frames más recientes, $F_1$ y $F_2$ (en este ejemplo, el sistema trabaja con un máximo de 3 frames). Cuando llega un nuevo frame ($F_3$), se marginaliza el frame más antiguo ($F_1$), y se pueden dar dos escenarios. En el primero~(\subref{fig:basalt_state_b}), si $F_1$ no se convierte en un keyframe, el frame completo es marginalizado, eliminando bias, velocidad y pose. En el segundo~(\subref{fig:basalt_state_c}), si $F_1$ es promovido a keyframe, solo se marginalizan sus variables de bias y velocidad, a la vez que otro keyframe es seleccionado para ser marginalizado. Imagen extraída de~\cite{usenko2020basalt}.}
     \label{fig:basalt_state}
 \end{figure}
 

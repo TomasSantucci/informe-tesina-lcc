@@ -121,7 +121,7 @@ Juntos, estos mapas permiten moverse libremente entre el manifold curvo y el esp
     \centering
     \includegraphics[width=0.6\linewidth]{img/prev_concepts/lie-algebra.pdf}
     \caption{Representación visual de un grupo de Lie, su álgebra de Lie asociada, y
-    los mapas exponencial y logarítmico que conectan ambos espacios.}
+    los mapas exponencial y logarítmico que conectan ambos espacios. Imagen extraída de~\cite{sola2018lie}.}
     \label{fig:lie_algebra}
 \end{figure}
 
@@ -251,7 +251,7 @@ donde $n_i > 0$ es la profundidad desconocida del $i$-ésimo landmark a lo largo
              por múltiples cámaras observa un conjunto de landmarks 3D del mundo
              mediante bearing vectors $\mathbf{f}_i$. El objetivo es recuperar
              la pose $(\mathbf{R}, \mathbf{t})$ del viewpoint en el sistema de
-             referencia del mundo.}
+             referencia del mundo. Imagen extraída de~\cite{kneip2014opengv}.}
     \label{fig:noncentral_abs_pose}
 \end{figure}
 
@@ -638,7 +638,7 @@ cuyo tamaño es significativamente menor que el del sistema original. A diferenc
 \begin{figure}[h]
     \centering
     \includegraphics[width=0.9\linewidth]{img/prev_concepts/qr-ba.pdf}
-    \caption{Diagrama de un Landmark Block. (a) Estructura de los Jacobianos y residuales. Los elementos distintos de cero se muestran en azul, los elementos potencialmente distintos de cero después de la factorización QR en gris, y los elementos que siempre serán cero en blanco. (b) Almacenamiento denso que guarda de manera eficiente todos los Jacobianos y residuales para un landmark. Se lo denomina Landmark Block. (c) Mismo landmark block luego de la marginalización \textit{in-place}.}
+    \caption{Diagrama de un Landmark Block. (a) Estructura de los Jacobianos y residuales. Los elementos distintos de cero se muestran en azul, los elementos potencialmente distintos de cero después de la factorización QR en gris, y los elementos que siempre serán cero en blanco. (b) Almacenamiento denso que guarda de manera eficiente todos los Jacobianos y residuales para un landmark. Se lo denomina Landmark Block. (c) Mismo landmark block luego de la marginalización \textit{in-place}. Imagen extraída de~\cite{demmel2021largescalerootba}.}
     \label{fig:qr-ba}
 \end{figure}
 
@@ -679,9 +679,7 @@ Las principales ventajas de los modelos BoW son su invarianza implícita al punt
         \centering
         \includegraphics[width=\textwidth]{img/prev_concepts/perceptual-aliasing-3.pdf}
     \end{subfigure}
-    % TODO: corregir este caption
-    \caption{escribir caption}
-%    \caption{Imagen extraída de HashBow, que a su vez la extrajo de Cummins and Newman [16, p. 2045].}
+    \caption{Pares de imágenes que ilustran el problema del perceptual aliasing. Cada uno de los tres pares muestra dos lugares distintos a pesar de tener una apariencia muy similar. Imagen extraída de~\cite{cummings2007probabilistic}.}
     \label{fig:perceptual-aliasing}
 \end{figure}
 
@@ -712,9 +710,7 @@ Comparado con otros métodos, HashBoW emplea una transformación de features loc
     \begin{minipage}[c]{0.54\textwidth}
         \centering
         \includegraphics[width=\textwidth]{img/prev_concepts/hashbow\_accuracy.pdf}
-        % TODO: corregir este caption
-%        \captionof{figure}{Imagen extraída de [...]. Comparativa de precisión de métodos de visual place recognition.}
-        \captionof{figure}{escribir caption}
+        \captionof{figure}{Comparativa de precisión de métodos de visual place recognition. Imagen extraída de~\cite{hashbow2024stricker}.}
         \label{fig:hashbow-precision}
     \end{minipage}
     \hfill
@@ -730,9 +726,7 @@ Comparado con otros métodos, HashBoW emplea una transformación de features loc
             HashBoW-trained &  0.32\,s &  3.74\,s \\
             \bottomrule
         \end{tabular}
-        % TODO: corregir este caption
-        \captionof{table}{escribir caption}
-%        \captionof{table}{Tabla extraída de [...]. Comparativa de tiempos de procesamiento de métodos de visual place recognition.}
+        \captionof{table}{Comparativa de tiempos de procesamiento de métodos de visual place recognition. Tabla extraída de~\cite{hashbow2024stricker}.}
         \label{tab:hashbow-performance}
     \end{minipage}
 \end{figure}
