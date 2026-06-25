@@ -6,11 +6,9 @@ Basalt es un sistema de VIO desarrollado por el Instituto Técnico de Múnich pu
 
 Posteriormente, este sistema fue extendido para ser utilizado en dispositivos de Realidad Extendida (XR) bajo el nombre de Basalt-XR. En la figura \ref{fig:arch_basaltxr} se muestra un diagrama que resume la arquitectura del sistema. Entre las mejoras incorporadas se encuentran: el soporte para cámaras no paralelas, el soporte para más de dos cámaras, el uso de la IMU en el frontend para mejorar el tracking en situaciones de movimientos rápidos, la reidentificación de features a mediano plazo y la inclusión de un mapa persistente que permite reintroducir keyframes en la ventana de optimización después de haber sido marginalizados.
 
-\todo{en estas figuras de la arquitectura, tengo que renombrar el backend por el VIO; y agregar un componente que se llame backend y englobe al VIO, MapDatabase y LoopClosing.}
-% TODO: modificar esta, y la otra figura de la arch, para que el back-end englobe al VIO, MDB y LC. O simplemente reemplazar el nombre de back-end por VIO
 \begin{figure}[h]
     \centering
-    \includegraphics[width=0.9\linewidth]{img/method/arch.basaltxr.pdf}
+    \includegraphics[width=\linewidth]{img/method/arch.basaltxr.pdf}
     \caption{Arquitectura de Basalt-XR.}
     \label{fig:arch_basaltxr}
 \end{figure}
@@ -248,7 +246,7 @@ A partir del sistema descrito en la sección anterior, se propone la implementac
 
 \begin{figure}[h]
     \centering
-    \includegraphics[width=0.9\linewidth]{img/method/arch.loopclosure.pdf}
+    \includegraphics[width=\linewidth]{img/method/arch.loopclosure.pdf}
     \caption{Arquitectura del sistema propuesto, con la incorporación del thread \texttt{LoopClosing}.}
     \label{fig:arch_basaltslam}
 \end{figure}
