@@ -27,8 +27,6 @@
 % https://mateosss.pages.freedesktop.org/-/basalt/-/jobs/100268854/artifacts/report.html
 % report job: https://gitlab.freedesktop.org/mateosss/basalt/-/jobs/100268854
 
-\todo{en este capítulo, y en general, tengo que traducir las figuras al español}
-
 En este capítulo se presentan los experimentos realizados para evaluar el sistema propuesto y el análisis de los resultados obtenidos. Primero se buscó dimensionar el impacto de las mejoras descritas en el Capítulo~\ref{sec:method}, para lo cual se realizó un estudio de ablación que compara Basalt original con distintas versiones del sistema que incorporan las funcionalidades del mapa. Luego se evaluó el sistema propuesto contra ORB-SLAM3 y OKVIS2 como referencias del estado del arte. En todos estos experimentos, no solo se evaluaron métricas de error de trayectoria, sino que también se hizo énfasis en el rendimiento, para determinar si el sistema propuesto cumple con las limitaciones impuestas para la operación en tiempo real. Finalmente, se concluye con un análisis de rendimiento detallado, que tiene en cuenta la arquitectura del sistema propuesto y las mejoras implementadas para utilizar una optimización de bundle adjustment basada en RootBA.
 
 La mayor parte de los experimentos fue realizada con un procesador Intel Core i5-13600 13th Gen con 32 GB de RAM; los restantes, con un procesador Intel Core Ultra 9 285H con 32 GB de RAM, indicándose explícitamente cuando corresponda.
@@ -420,14 +418,14 @@ Promedio & 102.5 & 92.6 & \textbf{91.8} & 117.4 & 11.8 & 10.9 & \textbf{10.8} & 
     \centering
     \begin{subfigure}[b]{0.48\textwidth}
         \centering
-        \includegraphics[width=\textwidth]{img/experiments/TC1.loops.pdf}
+        \includegraphics[width=\textwidth]{img/experiments/TC1.loops-sp.pdf}
         \caption{TUM-VI Corridor 1}
         \label{fig:loops_tc1}
     \end{subfigure}
     \hfill
     \begin{subfigure}[b]{0.48\textwidth}
         \centering
-        \includegraphics[width=\textwidth]{img/experiments/TM1.loops.pdf}
+        \includegraphics[width=\textwidth]{img/experiments/TM1.loops-sp.pdf}
         \caption{TUM-VI Magistrale 1}
         \label{fig:loops_tm1}
     \end{subfigure}
@@ -436,14 +434,14 @@ Promedio & 102.5 & 92.6 & \textbf{91.8} & 117.4 & 11.8 & 10.9 & \textbf{10.8} & 
 
     \begin{subfigure}[b]{0.48\textwidth}
         \centering
-        \includegraphics[width=\textwidth]{img/experiments/TO3.loops.pdf}
+        \includegraphics[width=\textwidth]{img/experiments/TO3.loops-sp.pdf}
         \caption{TUM-VI Outdoors 3}
         \label{fig:loops_to3}
     \end{subfigure}
     \hfill
     \begin{subfigure}[b]{0.48\textwidth}
         \centering
-        \includegraphics[width=\textwidth]{img/experiments/TO7.loops.pdf}
+        \includegraphics[width=\textwidth]{img/experiments/TO7.loops-sp.pdf}
         \caption{TUM-VI Outdoors 7}
         \label{fig:loops_to7}
     \end{subfigure}
@@ -556,38 +554,9 @@ Promedio & 7.8 & \textbf{5.0} & 9.1 & 10.6 & \textbf{1.2} & 1.5 & 3.9 & 4.5 & --
 \end{tabular}
 \end{table}
 
-\begin{figure}[ht]
+\begin{figure}[!htbp]
     \centering
-    \begin{subfigure}[b]{0.48\textwidth}
-        \centering
-        \includegraphics[width=\textwidth]{img/experiments/MH_04.traj.pdf}
-        \caption{Machine Hall - Secuencia 4}
-        \label{fig:traj_mh04}
-    \end{subfigure}
-    \hfill
-    \begin{subfigure}[b]{0.48\textwidth}
-        \centering
-        \includegraphics[width=\textwidth]{img/experiments/V2_02.traj.pdf}
-        \caption{Vicon Room 2 - Secuencia 2}
-        \label{fig:traj_v202}
-    \end{subfigure}
-
-    \vspace{0.5em}
-
-    \begin{subfigure}[b]{0.48\textwidth}
-        \centering
-        \includegraphics[width=\textwidth]{img/experiments/TM1.traj.pdf}
-        \caption{TUM-VI Magistrale 1}
-        \label{fig:traj_tm1}
-    \end{subfigure}
-    \hfill
-    \begin{subfigure}[b]{0.48\textwidth}
-        \centering
-        \includegraphics[width=\textwidth]{img/experiments/TR5.traj.pdf}
-        \caption{TUM-VI Room 5}
-        \label{fig:traj_tr5}
-    \end{subfigure}
-
+    \includegraphics[width=0.9\textwidth]{img/experiments/trajectories.ablation.euroc.tum.pdf}
     \caption{Comparativa de las trayectorias estimadas por Basalt, Basalt-LC y Basalt-LC-R para algunas secuencias del TUM-VI Benchmark dataset y EuRoC MAV dataset.}
     \label{fig:trajectories}
 \end{figure}
@@ -753,43 +722,14 @@ Promedio & 26.7 & 21.6 & 21.3 & \textbf{3.4} & \textbf{1.1} & 1.3 & 1.8 & 1.3 & 
 
 En la Figura~\ref{fig:msd_ablation_trajectories} se muestran algunas trayectorias estimadas por los diferentes sistemas en las secuencias de MSD. Se puede observar, de manera cualitativa, el impacto de las detecciones y cierres de ciclos en las trayectorias estimadas.
 
-Además, las Figuras~\ref{fig:mipp01_ablation_maps} y~\ref{fig:mgo01_ablation_maps} muestran los mapas obtenidos por los distintos sistemas en las secuencias MIPP01 y MGO01, respectivamente. En Basalt-LC se aprecia una disminución en el ruido de los puntos, gracias al cierre de ciclos y el culling de keyframes. En Basalt-LC-R, la optimización global de RootBA produce un mapa más denso y detallado.
-
-\begin{figure}[ht]
+\begin{figure}[!htbp]
     \centering
-    \begin{subfigure}[b]{0.48\textwidth}
-        \centering
-        \includegraphics[width=\textwidth]{img/experiments/MOO13.traj.pdf}
-        \caption{MOO13}
-        \label{fig:traj_moo13}
-    \end{subfigure}
-    \hfill
-    \begin{subfigure}[b]{0.48\textwidth}
-        \centering
-        \includegraphics[width=\textwidth]{img/experiments/MGO04.traj.pdf}
-        \caption{MGO04}
-        \label{fig:traj_mgo04}
-    \end{subfigure}
-
-    \vspace{0.5em}
-
-    \begin{subfigure}[b]{0.48\textwidth}
-        \centering
-        \includegraphics[width=\textwidth]{img/experiments/MIPT02.traj.pdf}
-        \caption{MIPT02}
-        \label{fig:traj_mipt02}
-    \end{subfigure}
-    \hfill
-    \begin{subfigure}[b]{0.48\textwidth}
-        \centering
-        \includegraphics[width=\textwidth]{img/experiments/MIO01.traj.pdf}
-        \caption{MIO01}
-        \label{fig:traj_mio01}
-    \end{subfigure}
-
+    \includegraphics[width=0.9\textwidth]{img/experiments/trajectories.ablation.msd.pdf}
     \caption{Comparativa de las trayectorias estimadas por Basalt, Basalt-LC y Basalt-LC-R para algunas secuencias de MSD.}
     \label{fig:msd_ablation_trajectories}
 \end{figure}
+
+Además, las Figuras~\ref{fig:mipp01_ablation_maps} y~\ref{fig:mgo01_ablation_maps} muestran los mapas obtenidos por los distintos sistemas en las secuencias MIPP01 y MGO01, respectivamente. En Basalt-LC se aprecia una disminución en el ruido de los puntos, gracias al cierre de ciclos y el culling de keyframes. En Basalt-LC-R, la optimización global de RootBA produce un mapa más denso y detallado.
 
 \begin{figure}[!htbp]
     \centering
@@ -849,21 +789,21 @@ La Figura \ref{fig:msd_ablation_timings} muestra los tiempos de procesamiento po
     \centering
     \begin{subfigure}[b]{0.48\textwidth}
         \centering
-        \includegraphics[width=\textwidth]{img/experiments/MOO01.timings.ablation.pdf}
+        \includegraphics[width=\textwidth]{img/experiments/MOO01.timings.ablation-sp.pdf}
         \caption{Secuencia capturada con Odyssey+.}
         \label{fig:experiments_figure16}
     \end{subfigure}
     \hfill
     \begin{subfigure}[b]{0.48\textwidth}
         \centering
-        \includegraphics[width=\textwidth]{img/experiments/MGO04.timings.ablation.pdf}
+        \includegraphics[width=\textwidth]{img/experiments/MGO04.timings.ablation-sp.pdf}
         \caption{Secuencia capturada con HP Reverb G2 V2.}
         \label{fig:experiments_figure17}
     \end{subfigure}
     \hfill
     \begin{subfigure}[b]{0.48\textwidth}
         \centering
-        \includegraphics[width=\textwidth]{img/experiments/MIO02.timings.ablation.pdf}
+        \includegraphics[width=\textwidth]{img/experiments/MIO02.timings.ablation-sp.pdf}
         \caption{Secuencia capturada con Valve Index.}
         \label{fig:experiments_figure18}
     \end{subfigure}
@@ -881,7 +821,7 @@ La Figura~\ref{fig:sota_trajectories} muestra ejemplos cualitativos de trayector
 
 \begin{figure}[ht]
     \centering
-    \includegraphics[width=\textwidth]{img/experiments/sota.trajectories.pdf}
+    \includegraphics[width=\textwidth]{img/experiments/sota.trajectories-sp.pdf}
     \caption{Ejemplos de trayectorias para secuencias de distintos datasets, con ampliaciones en partes que resultan de interés. Se comparan Basalt en su versión VIO, con Basalt-LC-R, y OKVIS2 y ORB-SLAM3 como referencias del estado del arte de VI-SLAM. En Magistrale 1 Basalt-LC-R fue el único capaz de detectar el ciclo al reingresar en la habitación. Como se observa en la ampliación de su trayectoria, esta secuencia solo cuenta con ground truth en la parte de la habitación, al comienzo y al final. En V102, si bien Basalt-LC-R mejora la estimación del VIO de Basalt, no alcanza la precisión de OKVIS2 y ORB-SLAM3. Por último, en MIPP01, Basalt-LC-R es el único capaz de mantener el drift acotado durante toda la secuencia. Tanto OKVIS2 como Basalt acumulan drift considerable, evidenciado por la gran separación entre el inicio y el fin de sus trayectorias. ORB-SLAM3 no es capaz de mantener el tracking y consigue estimar solo el 85\% del total de la secuencia.}
     \label{fig:sota_trajectories}
 \end{figure}
@@ -964,7 +904,7 @@ Promedio & 62.26 & \textbf{11.60} & 17.87 \\
 
 \begin{figure}[ht]
     \centering
-    \includegraphics[width=0.8\textwidth]{img/experiments/TO2.hard_loop.pdf}
+    \includegraphics[width=0.8\textwidth]{img/experiments/TO2.hard_loop-sp.pdf}
     \caption{Ciclo detectado en la secuencia TO2, con una intersección pequeña entre la escena inicial y la final. Para detectarlo, se redujeron los parámetros de detección de Basalt-LC-R a solo 10 inliers. Se muestra la trayectoria de ground truth en lugar de la estimada, dado que esta última presentó un gran número de falsos positivos que la corrompieron.}
     \label{fig:to2_hard_loop}
 \end{figure}
@@ -1230,21 +1170,21 @@ Finalmente, la Figura~\ref{fig:msd_sota_timings} muestra el rendimiento de cada 
     \centering
     \begin{subfigure}[b]{0.48\textwidth}
         \centering
-        \includegraphics[width=\textwidth]{img/experiments/MOO01.timings.pdf}
+        \includegraphics[width=\textwidth]{img/experiments/MOO01.timings-sp.pdf}
         \caption{Secuencia capturada con Odyssey+.}
         \label{fig:msdmo_sota_timings}
     \end{subfigure}
     \hfill
     \begin{subfigure}[b]{0.48\textwidth}
         \centering
-        \includegraphics[width=\textwidth]{img/experiments/MGO04.timings.pdf}
+        \includegraphics[width=\textwidth]{img/experiments/MGO04.timings-sp.pdf}
         \caption{Secuencia capturada con HP Reverb G2 V2.}
         \label{fig:msdmg_sota_timings}
     \end{subfigure}
     \hfill
     \begin{subfigure}[b]{0.48\textwidth}
         \centering
-        \includegraphics[width=\textwidth]{img/experiments/MIO02.timings.pdf}
+        \includegraphics[width=\textwidth]{img/experiments/MIO02.timings-sp.pdf}
         \caption{Secuencia capturada con Valve Index.}
         \label{fig:msdmi_sota_timings}
     \end{subfigure}
@@ -1262,7 +1202,7 @@ La Figura~\ref{fig:async_timings_basaltslam} muestra el tiempo medio de procesam
 
 \begin{figure}[ht]
     \centering
-    \includegraphics[width=0.8\textwidth]{img/experiments/timings.barplot.pdf}
+    \includegraphics[width=0.8\textwidth]{img/experiments/mean.timings.barplot-sp.pdf}
     \caption{Para cada secuencia, se ejecuta Basalt-LC en su versión completamente asíncrona y se calcula el tiempo medio por frame, dividiendo el tiempo total por la cantidad de frames. Luego, estos valores se promedian agrupados por tipo de secuencia. Cada barra muestra también la varianza dentro de su grupo.}
     \label{fig:async_timings_basaltslam}
 \end{figure}
@@ -1277,14 +1217,14 @@ La Figura~\ref{fig:stacked_timings_basaltslam} muestra el tiempo de procesamient
 
 \begin{figure}[ht]
     \centering
-    \includegraphics[width=0.8\textwidth]{img/experiments/kftimings.MGO12.pdf}
+    \includegraphics[width=0.8\textwidth]{img/experiments/kftimings.MGO12-sp.pdf}
     \caption{Tiempo de procesamiento por keyframe para la secuencia MGO12, de más de 40 minutos de duración y 4 cámaras. Para cada keyframe se desglosa el tiempo de cada etapa del pipeline de Basalt-LC. El sistema se ejecutó en modo síncrono, lo que explica los tiempos más elevados y los picos durante las operaciones más costosas del mapa.}
     \label{fig:stacked_timings_basaltslam}
 \end{figure}
 
 \begin{figure}[ht]
     \centering
-    \includegraphics[width=0.8\textwidth]{img/experiments/pgo.timings.MGO12.pdf}
+    \includegraphics[width=0.8\textwidth]{img/experiments/pgo.timings.MGO12-sp.pdf}
     \caption{Tiempo total de optimización del grafo de poses por cierre de ciclo, para la secuencia MGO12, de más de 40 minutos de duración. Se comparan dos versiones de Basalt-LC: una con culling de keyframes y otra sin él. La línea punteada roja marca el límite aproximado de tiempo real.}
     \label{fig:pgo_timings_culling}
 \end{figure}
@@ -1326,22 +1266,24 @@ En las secuencias de \textit{Outdoors}, el tiempo de ejecución es elevado, aunq
     \centering
     \begin{subfigure}[b]{0.8\textwidth}
         \centering
-        \includegraphics[width=\textwidth]{img/experiments/msd.rootba.times.pdf}
-        \caption{Secuencias de MSD.}
+        \includegraphics[width=\textwidth]{img/experiments/msd.rootba.times-sp.pdf}
+%        \caption{Secuencias de MSD.}
         \label{fig:msd_rootba_timings}
     \end{subfigure}
-    \hfill
+
+    \vspace{1em}
     \begin{subfigure}[b]{0.8\textwidth}
         \centering
-        \includegraphics[width=\textwidth]{img/experiments/tumvi.rootba.times.pdf}
-        \caption{Secuencias de TUM-VI.}
+        \includegraphics[width=\textwidth]{img/experiments/tumvi.rootba.times-sp.pdf}
+%        \caption{Secuencias de TUM-VI.}
         \label{fig:tumvi_rootba_timings}
     \end{subfigure}
-    \hfill
+
+    \vspace{1em}
     \begin{subfigure}[b]{0.8\textwidth}
         \centering
-        \includegraphics[width=\textwidth]{img/experiments/euroc.rootba.times.pdf}
-        \caption{Secuencias de EuRoC.}
+        \includegraphics[width=\textwidth]{img/experiments/euroc.rootba.times-sp.pdf}
+%        \caption{Secuencias de EuRoC.}
         \label{fig:euroc_rootba_timings}
     \end{subfigure}
     \caption{Boxplots de tiempos totales de ejecución de RootBA en precisión simple y doble para cada secuencia. Ambas versiones fueron ejecutadas sobre el mismo mapa. Experimento realizado en un procesador Intel Core i5-13600 13th Gen con 32 GB de RAM.}

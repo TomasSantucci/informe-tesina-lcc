@@ -221,7 +221,7 @@ Este mapa persistente almacena la información de keyframes y landmarks una vez 
     \hspace{2em}
     \begin{subfigure}[b]{0.4\textwidth}
         \centering
-        \includegraphics[width=\textwidth]{img/method/covisibility.pdf}
+        \includegraphics[width=\textwidth]{img/method/covisibility-sp.pdf}
         \caption{}
         \label{fig:persistent_map_covisibility}
     \end{subfigure}
@@ -257,14 +257,14 @@ La Figura~\ref{fig:loop_decision} resume el flujo de comunicación entre \texttt
     \centering
     \begin{subfigure}[b]{0.36\textwidth}
         \centering
-        \includegraphics[width=\textwidth]{img/method/loop_decision_ok.pdf}
+        \includegraphics[width=\textwidth]{img/method/loop_decision_ok-sp.pdf}
         \caption{Detección con suficiente drift.}
         \label{fig:loop_decision_ok}
     \end{subfigure}
     \hspace{4em}
     \begin{subfigure}[b]{0.36\textwidth}
         \centering
-        \includegraphics[width=\textwidth]{img/method/loop_decision_rej.pdf}
+        \includegraphics[width=\textwidth]{img/method/loop_decision_rej-sp.pdf}
         \caption{Detección con drift insuficiente.}
         \label{fig:loop_decision_rej}
     \end{subfigure}
@@ -295,14 +295,14 @@ Las verificaciones que se realizan sobre cada keyframe candidato $k_c$, en orden
 
 \begin{figure}[h]
     \centering
-    \includegraphics[width=0.8\linewidth]{img/method/island.pdf}
+    \includegraphics[width=0.8\linewidth]{img/method/island-sp.pdf}
     \caption{Ilustración de la isla de candidatos. En lugar de buscar correspondencias 3D--2D únicamente entre los landmarks observados por el keyframe candidato $k_c$ y el keyframe más reciente $k_r$, se amplía el conjunto a los keyframes más covisibles con $k_c$ (tres en esta figura de ejemplo). De este modo se dispone de un mayor número de landmarks 3D para emparejar con los keypoints de $k_r$, lo que robustece la estimación de su pose.}
     \label{fig:candidates_island}
 \end{figure}
 
 \begin{figure}[h]
     \centering
-    \includegraphics[width=0.8\linewidth]{img/method/reprojection_illustration.pdf}
+    \includegraphics[width=0.8\linewidth]{img/method/reprojection_illustration-sp.pdf}
     \caption{Ilustración de la búsqueda de correspondencias mediante reproyección. Los landmarks de la isla de candidatos que aún no fueron emparejados se reproyectan sobre el keyframe más reciente $k_r$, empleando la pose estimada en la verificación geométrica previa. Alrededor de cada proyección, en una ventana de 16~px, se detectan keypoints con FAST y se computan sus descriptores ORB. Si alguno coincide con el descriptor del landmark, la correspondencia se incorpora a las observaciones de $k_r$.}
     \label{fig:reprojection_search}
 \end{figure}
@@ -342,7 +342,7 @@ Para que el mapa persistente conozca cuáles keyframes pertenecen a la ventana a
 
 \begin{figure}[h]
     \centering
-    \includegraphics[width=0.4\linewidth]{img/method/pose-graph.pdf}
+    \includegraphics[width=0.4\linewidth]{img/method/pose-graph-sp.pdf}
     \caption{Grafo de poses que se optimiza en PGO.}
     \label{fig:essential_graph}
 \end{figure}
@@ -451,7 +451,7 @@ Los cinco factores se describen a continuación, en orden de mayor a menor peso:
     \hfill
     \begin{subfigure}[c]{0.58\textwidth}
         \centering
-        \includegraphics[width=\textwidth]{img/method/coverage.pdf}
+        \includegraphics[width=\textwidth]{img/method/coverage-sp.pdf}
         \caption{Puntajes de cubrimiento de imagen y cantidad de observaciones. El keyframe observa 26 keypoints únicos; por lo tanto, obtiene un puntaje $S_o=0.72$. El keyframe obtiene un cubrimiento del $33\%$ para la imagen izquierda, y del $21.7\%$ para la derecha; por lo tanto, el puntaje es $S_c=0.27$.}
         \label{fig:image_coverage}
     \end{subfigure}
