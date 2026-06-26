@@ -5,8 +5,8 @@ En este capítulo se presenta el sistema VI-SLAM desarrollado durante el trabajo
 Basalt es un sistema de VIO desarrollado por el Instituto Técnico de Múnich publicado en el año 2019 con actualizaciones significativas hasta fines del año 2021. Su sistema de VIO es capaz de correr en tiempo real y, a pesar de no contar con un mapa persistente (“olvidando” el mapa que se va construyendo), presenta una gran precisión y robustez en comparación a otros sistemas del estado del arte. En términos generales, el sistema se organiza en dos hilos principales que operan en paralelo: el front-end y el back-end. El front-end se encarga del procesamiento de imágenes a través de optical flow, lo que incluye la detección, tracking y búsqueda de correspondencias visuales, denominadas features o keypoints. Por otro lado, el back-end se ocupa de procesar las mediciones de la IMU y los features extraídos de cada frame. Además, se encarga de triangular los keypoints, generando así puntos 3D (landmarks), que luego son almacenados en una base de datos. El back-end también realiza la optimización y marginalización del estado del sistema, que incluye la estimación de la pose de una ventana deslizante de keyframes y frames, y la posición de los landmarks. Como resultado, se obtiene una nueva estimación de la ventana de keyframes. Estos conceptos se abordarán con mayor detalle en las secciones siguientes.
 
 Posteriormente, este sistema fue extendido para ser utilizado en dispositivos de Realidad Extendida (XR) bajo el nombre de Basalt-XR. En la figura \ref{fig:arch_basaltxr} se muestra un diagrama que resume la arquitectura del sistema. Entre las mejoras incorporadas se encuentran: el soporte para cámaras no paralelas, el soporte para más de dos cámaras, el uso de la IMU en el frontend para mejorar el tracking en situaciones de movimientos rápidos, la reidentificación de features a mediano plazo y la inclusión de un mapa persistente que permite reintroducir keyframes en la ventana de optimización después de haber sido marginalizados.
-
-\begin{figure}[h]
+%
+\begin{figure}[!htbp]
     \centering
     \includegraphics[width=\linewidth]{img/method/arch.basaltxr.pdf}
     \caption{Arquitectura de Basalt-XR.}
@@ -22,8 +22,8 @@ Las imágenes ingresan al pipeline de Basalt a través del hilo del front-end. I
 El hilo comienza con el tracking de los features detectados en el frame anterior. Para ello, Basalt está basado en optical flow, utilizando el algoritmo de Lucas-Kanade (KLT)~\cite{lucas1981klt} para el seguimiento de los features. Para ello, Basalt utiliza parches de 52 px por defecto. Para tener una buena estimación inicial (o prior) para el algoritmo, se utiliza la información de la IMU, que permite predecir la posición del keypoint en el siguiente frame a partir del movimiento de la cámara entre frames.
 
 Una vez que se completa el tracking, se intentan recuperar los features que se hayan perdido debido a oclusiones o movimientos rápidos, en un proceso que se denomina \textit{recall}. Para ello, el front-end almacena el parche de cada keypoint detectado. Luego, proyecta los landmarks, que recibe del back-end, en el frame actual. Finalmente, intenta trackear cada uno de estos puntos con KLT, utilizando el parche almacenado y la proyección como prior. El funcionamiento del proceso se muestra en la Figura \ref{fig:recall_frames}, donde se observa la recuperación de un feature que se pierde debido a una oclusión de la cámara.
-
-\begin{figure}[ht]
+%
+\begin{figure}[!htbp]
     \centering
     \begin{subfigure}[b]{0.32\textwidth}
         \centering
@@ -57,8 +57,8 @@ Una vez que se completa el tracking, se intentan recuperar los features que se h
 Una vez completados dichos procesos, que se basan en el seguimiento de los features, se realiza una detección de nuevos features utilizando el algoritmo FAST (Features from Accelerated Segment Test)~\cite{rosten2006fast}. Este algoritmo es un método eficiente para detectar esquinas en imágenes, lo que lo hace adecuado para aplicaciones en tiempo real como el SLAM.
 %FAST funciona analizando un círculo de 16 píxeles alrededor de cada píxel candidato y clasificando el píxel como una esquina si un número suficiente de píxeles en el círculo son significativamente más brillantes o más oscuros que el píxel central. En la Figura \ref{fig:fast} se observa un parche de 16 px alrededor de un keypoint.
 Un potencial problema del algoritmo es que los keypoints detectados pueden no estar bien distribuidos en la imagen, lo que puede resultar en una concentración en ciertas áreas de la imagen mientras que otras áreas quedan sin suficientes keypoints. Para mitigar este problema, Basalt divide el frame en celdas (de 50 x 50 px por defecto), en donde se detectan los nuevos keypoints. Por celda, solo se conserva el keypoint de mejor calidad. Además, en aquellas celdas donde ya hay features trackeados, no se realiza la detección de nuevos keypoints. En el caso ideal, solo será necesario detectar keypoints en porciones de la imagen donde se observe una nueva escena.
-
-%\begin{figure}[h]
+%
+%\begin{figure}[!htbp]
 %    \centering
 %    \includegraphics[width=0.8\linewidth]{img/method/FAST.pdf}
 %    \caption{Imagen extraída del paper de FAST [10] donde se representa la detección de features
@@ -68,8 +68,8 @@ Un potencial problema del algoritmo es que los keypoints detectados pueden no es
 
 A continuación, se generan máscaras en las zonas superpuestas de las cámaras secundarias con la principal, con el objetivo de buscar correspondencias (matching) entre los keypoints de las cámaras. Para lograr esto, se aplica el mismo proceso de seguimiento de features utilizando KLT, pero en lugar de realizarse entre frames capturados en diferentes timestamps, se realiza entre frames capturados simultáneamente por las dos cámaras.
 Como el sistema debe funcionar en configuraciones de cámaras no paralelas, se utiliza un algoritmo que predice la posición de un keypoint en la cámara secundaria a partir de su posición en la cámara principal, utilizando una estimación de la profundidad de la escena que realiza el back-end. Finalmente, se realiza una segunda detección de keypoints en las áreas no superpuestas, para asegurar que se detecten suficientes keypoints en toda la imagen. Este proceso se muestra en la Figura \ref{fig:frontend_detection_process}.
-
-\begin{figure}[ht]
+%
+\begin{figure}[!htbp]
     \centering
     \begin{subfigure}[b]{0.48\textwidth}
         \centering
@@ -104,8 +104,8 @@ Como el sistema debe funcionar en configuraciones de cámaras no paralelas, se u
     \caption{Proceso de detección del front-end luego de la mejora de soporte para múltiples cámaras. En primer lugar, se detectan features en la cámara principal (\subref{fig:frontend_detection_process_a}), luego se generan las máscaras para ignorar zonas superpuestas (\subref{fig:frontend_detection_process_b}) y se realiza el matching multicámaras (\subref{fig:frontend_detection_process_c}). Finalmente, se realiza una segunda detección en las áreas no superpuestas (\subref{fig:frontend_detection_process_d}).}
     \label{fig:frontend_detection_process}
 \end{figure}
-
-%\begin{figure}[h]
+%
+%\begin{figure}[!htbp]
 %    \centering
 %    \includegraphics[width=0.8\linewidth]{img/method/matching.pdf}
 %    \caption{Ejemplo del proceso de matching estéreo.}
@@ -113,8 +113,8 @@ Como el sistema debe funcionar en configuraciones de cámaras no paralelas, se u
 %\end{figure}
 
 Finalmente, se realiza un filtrado de matches empleando la restricción epipolar, ilustrado en la Figura~\ref{fig:epipolar_geometry}. Para cada par de observaciones 2D del mismo keypoint en dos cámaras, se desprojectan ambas posiciones a rayos normalizados en coordenadas de cámara. Luego se evalúa el error epipolar algebraico como $|{\mathbf{x}_l}^\top \mathbf{E} \, \mathbf{x}_r|$, donde $\mathbf{x}_l$ y $\mathbf{x}_r$ son dichos rayos y $\mathbf{E}$ es la matriz esencial entre el par de cámaras. Esta expresión cuantifica, para una correspondencia, cuánto se aleja de la condición de coplanaridad del plano epipolar. Si este error supera un umbral predefinido, la correspondencia es descartada.
-
-\begin{figure}[h]
+%
+\begin{figure}[!htbp]
     \centering
     \includegraphics[width=0.5\linewidth]{img/method/epipolar_geometry.pdf}
     \caption{Geometría epipolar. El punto $\mathbf{X}$ es observado desde dos cámaras con centros ópticos $\mathbf{O}_l$ y $\mathbf{O}_r$, proyectándose en $\mathbf{x}_l$ y $\mathbf{x}_r$ respectivamente. Los tres puntos $\mathbf{O}_l$, $\mathbf{O}_r$ y $\mathbf{X}$ definen el plano epipolar, cuya intersección con cada imagen forma las líneas epipolares $\mathbf{l}_l$ y $\mathbf{l}_r$. Los puntos $\mathbf{e}_l$ y $\mathbf{e}_r$ son los epípolos, es decir, las proyecciones de cada centro óptico en la imagen opuesta.}
@@ -128,8 +128,8 @@ El back-end de Basalt-XR se ejecuta en hilos paralelos al front end. Consta de d
 \subsubsection{VIO}
 
 El VIO mantiene una ventana local de keyframes, frames y landmarks que se optimiza continuamente, y se encuentra almacenada en una clase denominada \texttt{LandmarkDatabase} (véase Figura~\ref{fig:vio_window}). En primer lugar, el VIO integra las mediciones de la IMU utilizando un filtro de preintegración, dado que la frecuencia de la IMU es típicamente mucho mayor que la de las cámaras. Luego, se realiza opcionalmente una consulta de covisibilidad al mapa persistente, para reintroducir keyframes y landmarks previamente marginalizados en la ventana de optimización local. Existen diferentes estrategias para que el mapa resuelva estas consultas, que se detallarán más adelante. Estos keyframes se introducen temporalmente, hasta la próxima consulta. Esta funcionalidad se debe combinar con el recall, de modo que los keyframes reintroducidos sirvan para volver a trackear keypoints que se hayan perdido en el front-end y así obtener observaciones que relacionen los keyframes reintroducidos con los frames más recientes.
-
-\begin{figure}[ht]
+%
+\begin{figure}[!htbp]
     \centering
     \begin{subfigure}[b]{0.32\textwidth}
         \centering
@@ -176,8 +176,8 @@ donde $E_L$ agrega los residuales de reproyección de landmarks, $E_I$ los de pr
 Luego de la optimización, Basalt marginaliza variables del estado para mantener el sistema acotado en tamaño. El proceso determina qué variables eliminar según dos criterios: si hay más de 7 keyframes, se marginaliza aquel cuya proporción de landmarks hosteados que fueron observados en la ventana sea menor a un umbral, o en su defecto el más cercano espacialmente al resto (el más redundante). Adicionalmente, en toda iteración se marginaliza el frame más antiguo, eliminando velocidad y biases, conservando su pose únicamente si fue seleccionado como keyframe.
 
 Antes de descartar definitivamente esas variables, se calcula un prior de marginalización que condensa su información en dos matrices $H$ y $b$. Estas matrices se incorporan a la optimización de la siguiente iteración como un término adicional de marginalización, garantizando que la información de las variables eliminadas siga influyendo en el sistema. Finalmente, las poses, frames y landmarks marginalizados se eliminan del estado y de la \texttt{LandmarkDatabase}.
-
-\begin{figure}[ht]
+%
+\begin{figure}[!htbp]
     \centering
     \begin{subfigure}[b]{0.32\textwidth}
         \centering
@@ -209,8 +209,8 @@ Antes de pasar al siguiente frame, el thread envía al front-end la estimación 
 \subsubsection{Mapa persistente}
 
 Este mapa persistente almacena la información de keyframes y landmarks una vez que han sido optimizados por la capa del VIO. Fue diseñado para actualizarse de forma continua a medida que se exploran nuevas zonas y, simultáneamente, para permitir realizar consultas que reutilicen esa información de manera inteligente (véase Figura~\ref{fig:persistent_map}).
-
-\begin{figure}[ht]
+%
+\begin{figure}[!htbp]
     \centering
     \begin{subfigure}[b]{0.4\textwidth}
         \centering
@@ -243,8 +243,8 @@ Se implementaron dos estrategias para resolver la consulta de covisibilidad:
 \section{Cierre de ciclos}
 
 A partir del sistema descrito en la sección anterior, se propone la implementación de un módulo de cierre de ciclos capaz de detectar y corregir los errores acumulados en la estimación de la trayectoria a largo plazo. Para ello, se incorpora al back-end un nuevo thread denominado \texttt{LoopClosing}, que opera en paralelo al VIO y al mapa persistente. El proceso comprende tres etapas: detección, optimización del grafo de poses (PGO) y fusión de mapa. La Figura~\ref{fig:arch_basaltslam} muestra la arquitectura del sistema resultante.
-
-\begin{figure}[h]
+%
+\begin{figure}[!htbp]
     \centering
     \includegraphics[width=\linewidth]{img/method/arch.loopclosure.pdf}
     \caption{Arquitectura del sistema propuesto, con la incorporación del thread \texttt{LoopClosing}.}
@@ -252,8 +252,8 @@ A partir del sistema descrito en la sección anterior, se propone la implementac
 \end{figure}
 
 La Figura~\ref{fig:loop_decision} resume el flujo de comunicación entre \texttt{LoopClosing} y \texttt{MapDatabase}. Ante la detección de un ciclo, el mapa persistente evalúa si el drift acumulado es suficiente para justificar una corrección. De ser así, envía al thread \texttt{LoopClosing} un puntero a una copia liviana del mapa con las poses de los keyframes, junto con las aristas del grafo de poses necesarias para optimizar la trayectoria mediante PGO. Las poses optimizadas resultantes se devuelven al mapa persistente para su aplicación. De lo contrario, el mapa notifica al thread que la optimización no procederá, permitiéndole continuar su ejecución. En ambos casos, para el mapa persistente, el proceso finaliza con la etapa de fusión de mapa.
-
-\begin{figure}[ht]
+%
+\begin{figure}[!htbp]
     \centering
     \begin{subfigure}[b]{0.36\textwidth}
         \centering
@@ -277,12 +277,12 @@ La Figura~\ref{fig:loop_decision} resume el flujo de comunicación entre \texttt
 La detección de ciclos consiste en reconocer cuándo el sistema vuelve a observar una escena previamente visitada. Los métodos de \textit{place recognition} suelen basarse en descriptores visuales globales; en este trabajo se adopta un enfoque de Bag of Words (BoW), aprovechando los keypoints ya detectados por el front-end. En particular, se emplea el método HashBoW por su eficiencia computacional frente a otras alternativas, junto con descriptores locales binarios ORB, que ofrecen velocidad, robustez e invarianza ante rotaciones.
 
 Se utiliza una configuración de HashBoW con 16 bits y vocabulario aleatorio, prescindiendo de entrenamiento previo. Esta decisión obedece a que un sistema de SLAM debe operar en entornos arbitrarios, lo que requeriría un vocabulario excesivamente general para ser útil; por ello se opta directamente por uno aleatorio. La similitud entre vectores BoW se mide mediante la norma $L_1$, y cada consulta devuelve los 10 keyframes más similares. Si bien se introducen una cantidad elevada de falsos positivos por las razones expuestas en la Sección~\ref{sec:hashbow}, el efecto se mitiga mediante una serie de verificaciones de consistencia adicionales descritas a continuación.
-
+%
 % The weighting type is a simple term frequency scheme. And the chosen similarity score between two BoW vectors is the L1 score (based on the L1 norm).
 
 Como se observa en la Figura~\ref{fig:arch_basaltslam}, el proceso comienza cuando el VIO selecciona un keyframe y, tras enviar el \texttt{MapStamp} al mapa persistente, envía sus imágenes y los keypoints detectados al thread \texttt{LoopClosing}. Al recibirlos, se computan y almacenan los descriptores ORB de cada keypoint, se calcula un vector BoW por cámara a partir de dichos descriptores y se indexan en la HashBoW. Seguidamente, se consulta esta estructura con el vector de la cámara izquierda para obtener los candidatos, sobre los que se itera secuencialmente. El primer candidato que supere todas las verificaciones se selecciona para el cierre de ciclo.
 
-Las verificaciones que se realizan sobre cada keyframe candidato $k_c$, en orden, son las siguientes (donde $k_r$ denota el keyframe más reciente): % a esto de k_r mencionarlo en otro lado tal vez, o mejor redactado
+Las verificaciones que se realizan sobre cada keyframe candidato $k_c$, en orden, son las siguientes (donde $k_r$ denota el keyframe más reciente):
 \begin{enumerate}
     \item Verificación de covisibilidad. Se comprueba que $k_r$ no comparta ninguna observación con $k_c$. De compartirlas, ambos keyframes estarían observando la misma escena sin drift acumulado, con lo que no habría ciclo que corregir.
     \item Correspondencias iniciales. Dado que este proceso se ejecuta para cada uno de los 10 candidatos, se realiza primero una búsqueda rápida de correspondencias mediante descriptores ORB. Si el número de matches es insuficiente, el candidato se descarta de forma temprana.
@@ -293,14 +293,14 @@ Las verificaciones que se realizan sobre cada keyframe candidato $k_c$, en orden
     \item Verificación geométrica con más correspondencias. Se repite la verificación geométrica del paso 5 con el conjunto ampliado de correspondencias, obteniendo una estimación de la pose de $k_r$ más precisa y robusta.
 \end{enumerate}
 
-\begin{figure}[h]
+\begin{figure}[!htbp]
     \centering
     \includegraphics[width=0.8\linewidth]{img/method/island-sp.pdf}
     \caption{Ilustración de la isla de candidatos. En lugar de buscar correspondencias 3D--2D únicamente entre los landmarks observados por el keyframe candidato $k_c$ y el keyframe más reciente $k_r$, se amplía el conjunto a los keyframes más covisibles con $k_c$ (tres en esta figura de ejemplo). De este modo se dispone de un mayor número de landmarks 3D para emparejar con los keypoints de $k_r$, lo que robustece la estimación de su pose.}
     \label{fig:candidates_island}
 \end{figure}
 
-\begin{figure}[h]
+\begin{figure}[!htbp]
     \centering
     \includegraphics[width=0.8\linewidth]{img/method/reprojection_illustration-sp.pdf}
     \caption{Ilustración de la búsqueda de correspondencias mediante reproyección. Los landmarks de la isla de candidatos que aún no fueron emparejados se reproyectan sobre el keyframe más reciente $k_r$, empleando la pose estimada en la verificación geométrica previa. Alrededor de cada proyección, en una ventana de 16~px, se detectan keypoints con FAST y se computan sus descriptores ORB. Si alguno coincide con el descriptor del landmark, la correspondencia se incorpora a las observaciones de $k_r$.}
@@ -337,15 +337,15 @@ class CovisibilityGraph {
 \end{lstlisting}
 
 El grafo que se optimiza en el PGO se construye uniendo el árbol de expansión, las aristas del grafo de ciclos y las aristas de alta covisibilidad, tal como se ilustra en la Figura~\ref{fig:essential_graph}. Todas las aristas se ponderan de igual manera, con la identidad como matriz de información. La optimización se resuelve con Ceres, fijando la pose del keyframe más reciente y la de todos aquellos que aún pertenecen a la ventana activa del VIO. De esta forma, la corrección se aplica sobre la trayectoria histórica sin necesidad de propagarla al VIO.
-
-Para que el mapa persistente conozca cuáles keyframes pertenecen a la ventana activa del VIO en todo momento, se incorporó un canal de comunicación adicional entre ambos componentes: cada vez que el VIO marginaliza un keyframe, notifica al mapa persistente con su identificador.
-
-\begin{figure}[h]
+%
+\begin{figure}[!htbp]
     \centering
     \includegraphics[width=0.4\linewidth]{img/method/pose-graph-sp.pdf}
     \caption{Grafo de poses que se optimiza en PGO.}
     \label{fig:essential_graph}
 \end{figure}
+
+Para que el mapa persistente conozca qué keyframes pertenecen a la ventana activa del VIO en todo momento, se incorporó un canal de comunicación adicional entre ambos componentes: cada vez que el VIO marginaliza un keyframe, notifica al mapa persistente con su identificador.
 
 Una vez finalizada la optimización, las poses resultantes se devuelven al mapa persistente. A continuación se inicia la etapa de fusión de mapa, descrita en la sección siguiente.
 
@@ -374,7 +374,6 @@ void LandmarkDatabase<Scalar_>::mergeKeyframesPoses(
 A continuación, se registra el ciclo detectado en el grafo de ciclos, agregando una arista que conecta $k_r$ con $k_c$.
 
 Finalmente, se fusionan los landmarks que resultaron inliers durante la verificación geométrica. Para cada correspondencia se presentan dos casos:
-
 \begin{itemize}
     \item El keypoint de $k_r$ no está triangulado. Esto ocurre cuando el front-end lo detectó pero el VIO no pudo triangularlo, o cuando fue agregado durante la proyección de landmarks en la etapa de detección. En ambos casos, se registra una nueva observación del landmark de $k_c$ en $k_r$.
     \item El keypoint de $k_r$ ya está triangulado. Existen entonces dos landmarks con distintos identificadores que representan el mismo punto del mundo. Se fusionan transfiriendo todas las observaciones de uno al otro y eliminando el primero (Código~\ref{lst:map_merge_landmarks}). Se conserva el landmark de $k_r$, dado que puede encontrarse aún en la ventana activa del VIO; de este modo se evita tener que notificarle sobre la fusión.
@@ -423,11 +422,9 @@ Al eliminar un keyframe, se descartan su pose, los landmarks que hosteaba y toda
 La primera estrategia, análoga al culling de ORB-SLAM3, se aplica cada vez que el VIO marginaliza un keyframe. \texttt{MapDatabase} calcula el porcentaje de landmarks observados por ese keyframe que también son observados por al menos otros 3 keyframes del mapa. Si el porcentaje supera el 90\%, el keyframe se considera redundante y se elimina. Este mecanismo actúa principalmente cuando las cámaras permanecen estáticas frente a la misma escena.
 
 La segunda estrategia, más agresiva, establece un número máximo de keyframes en el mapa. Cuando se supera ese límite, se calculan puntajes de utilidad para cada keyframe y se eliminan los de menor valor en batches. El puntaje es una combinación ponderada de cinco factores:
-
 $$ score(k) = 0.4 \cdot S_g + 0.2 \cdot S_l + 0.2 \cdot S_o + 0.1 \cdot S_c + 0.1 \cdot S_t $$
 
 Los cinco factores se describen a continuación, en orden de mayor a menor peso:
-
 \begin{itemize}
     \item Reemplazabilidad en el grafo ($S_g$, peso $0.4$): Un keyframe es poco reemplazable si al eliminarlo la conectividad del grafo de covisibilidad se ve comprometida; lo es mucho si sus vecinos ya se observan entre sí. Como aproximación, se usa el grado de alta covisibilidad del nodo: cuantas más aristas de alta covisibilidad incidan en él, más fácilmente sus vecinos pueden suplir su rol. El puntaje es $1 - \min(x/10, 1)$, donde $x$ es ese grado, de modo que un nodo bien conectado obtiene un valor bajo. Se actualiza incrementalmente cada vez que se agrega o elimina una arista de alta covisibilidad incidente en el nodo.
 
@@ -440,7 +437,7 @@ Los cinco factores se describen a continuación, en orden de mayor a menor peso:
     \item Posición temporal ($S_t$, peso $0.1$): Los keyframes más antiguos son valiosos por su menor drift acumulado; los más recientes, por pertenecer a la zona en exploración activa. Para penalizar a los intermedios se emplea la función en forma de ``V'', $|2x-1|$, donde $x$ es la posición relativa del keyframe en la secuencia temporal. Su peso es bajo dado que se trata de una heurística débil. Se recalcula para todos los keyframes del mapa cada vez que se supera el límite.
 \end{itemize}
 
-\begin{figure}[ht]
+\begin{figure}[!htbp]
     \centering
     \begin{subfigure}[c]{0.38\textwidth}
         \centering
@@ -464,13 +461,11 @@ de un nuevo \texttt{MapStamp} supera ese límite, se eliminan los 30 keyframes c
 
 \subsection{Interfaz final del mapa persistente}
 
-% por ahí lo puedo mandar al apendice
-
 Toda la comunicación que se dirija al mapa persistente, pasa por una de las dos colas de trabajo
 disponibles: \texttt{read\_queue} y \texttt{write\_queue}. Dada la variedad de mensajes que pueden
 recibir, se definen tipos variante para cada una de las colas, como se muestra en el Código
 \ref{lst:map_message_types}.
-
+%
 \begin{lstlisting}[language=C++, caption={Definición de los tipos de mensajes aceptados por las colas de lectura y escritura del mapa persistente.}, label={lst:map_message_types}]
 using MapWriteMessage = std::variant<MapStamp::Ptr,
                                      MarginalizationStamp::Ptr,
@@ -483,10 +478,9 @@ using MapReadMessage = std::variant<CovisibilityRequest::Ptr,
                                     StopMsg>;
 \end{lstlisting}
 
-
 Luego, cada thread del mapa persistente se implementa como se muestra en el Código \ref{lst:map_read_thread}
 y \ref{lst:map_write_thread}.
-
+%
 \begin{lstlisting}[language=C++, caption={Pseudocódigo del thread de lectura del mapa persistente.}, label={lst:map_read_thread}]
 MapReadMessage msg;
 bool running = true;
@@ -542,8 +536,8 @@ while (running) {
 \section{RootBA para un sistema de SLAM}
 
 A partir del mapa resultante del sistema propuesto, así como realizan algunos sistemas VI-SLAM del estado del arte \cite{campos2021orbslam3} \cite{leutenegger2022okvis2}, es posible ejecutar una optimización global de bundle adjustment (BA) de manera offline, una vez finalizada la sesión de SLAM. A diferencia de las optimizaciones locales realizadas por el VIO durante la ejecución, que operan sobre una ventana acotada de keyframes, el bundle adjustment global utiliza todos los keyframes y landmarks del mapa de forma simultánea. El objetivo es refinar de manera conjunta las poses de los keyframes y las posiciones de los landmarks, reduciendo el error de reproyección acumulado a lo largo de toda la trayectoria. En la Figura~\ref{fig:arch_basaltfull} se encuentra la arquitectura completa del sistema propuesto.
-
-\begin{figure}[h]
+%
+\begin{figure}[!htbp]
     \centering
     \includegraphics[width=\linewidth]{img/method/arch.full.pdf}
     \caption{Arquitectura final del sistema propuesto, con la incorporación de un componente de Bundle Adjustment global.}
@@ -593,7 +587,7 @@ Aplicando la regla de la cadena, el jacobiano del residual respecto a $x_b$ qued
 En la práctica, adoptar la parametrización por body equivale simplemente a postmultiplicar el jacobiano calculado por la formulación original por la matriz adjunta $\mathrm{Ad}_{T_{c_k b}}$. Esta es una modificación local que no altera la estructura global del sistema de ecuaciones normales. Adicionalmente, una consecuencia favorable de esta parametrización es que las observaciones de distintas cámaras del rig en un mismo keyframe se acumulan en una única columna del Landmark Block, correspondiente a la variable $x_b$ de ese keyframe.
 
 La Figura~\ref{fig:landmark_block} ilustra el efecto conjunto de ambas modificaciones sobre la estructura de un Landmark Block.
-
+%
 \begin{figure}[!htbp]
     \centering
     \includegraphics[width=0.8\linewidth]{img/method/rootba-mod.pdf}

@@ -116,8 +116,8 @@ garantizando que las poses optimizadas permanezcan sobre el manifold. El mapa lo
 \]
 
 Juntos, estos mapas permiten moverse libremente entre el manifold curvo y el espacio tangente plano donde las operaciones lineales estándar son válidas.
-
-\begin{figure}[h]
+%
+\begin{figure}[!htbp]
     \centering
     \includegraphics[width=0.6\linewidth]{img/prev_concepts/lie-algebra.pdf}
     \caption{Representación visual de un grupo de Lie, su álgebra de Lie asociada, y
@@ -202,7 +202,7 @@ Cuando el punto está expresado en un sistema de referencia global en lugar del 
     \label{eq:full_projection}
 \end{equation}
 
-\begin{figure}[ht]
+\begin{figure}[!htbp]
     \centering
     \begin{subfigure}[b]{0.48\textwidth}
         \centering
@@ -244,7 +244,7 @@ En este marco, la localización del rig en el mapa, necesaria por ejemplo durant
 \end{equation}
 donde $n_i > 0$ es la profundidad desconocida del $i$-ésimo landmark a lo largo de su bearing vector.
 
-\begin{figure}[h]
+\begin{figure}[!htbp]
     \centering
     \includegraphics[width=0.55\textwidth]{img/prev_concepts/non-central-abs-pose.pdf}
     \caption{El problema de pose absoluta no-central. Un viewpoint compuesto
@@ -283,7 +283,7 @@ $f_1, f_2, f_3$ representan las restricciones que vinculan estas variables:
 g(X_1, X_2, X_3, X_4) = f_1(X_1, X_2, X_4)\,f_2(X_2, X_3)\,f_3(X_3).
 \]
 
-\begin{figure}[h]
+\begin{figure}[!htbp]
     \centering
     \includegraphics[width=0.4\linewidth]{img/prev_concepts/factor-graph.pdf}
     \caption{Ejemplo de un grafo de factores que representa la función $g()$.}
@@ -302,8 +302,8 @@ encontrar las estimaciones de las variables que mejor satisfagan todas las restr
 por las mediciones sensoriales. Este proceso se realiza mediante algoritmos de optimización no
 lineal, como Gauss-Newton o Levenberg-Marquardt. En la Figura \ref{fig:real_factor_graph}, se muestra un ejemplo de
 un grafo de factores de un sistema SLAM.
-
-\begin{figure}[h]
+%
+\begin{figure}[!htbp]
     \centering
     \includegraphics[width=0.4\linewidth]{img/prev_concepts/real-factor-graph.pdf}
     \caption{Ejemplo de un grafo de factores de un sistema SLAM.}
@@ -331,7 +331,7 @@ donde:
 \pi(\mathbf{T}_{cw}\mathbf{p}_w),
 \]
 
-\begin{figure}[h]
+\begin{figure}[!htbp]
     \centering
     \includegraphics[width=0.4\linewidth]{img/prev_concepts/reproj-error-sp.pdf}
     \caption{Ejemplo de un error de reproyección en un sistema SLAM.}
@@ -562,7 +562,7 @@ mientras que las posiciones de los landmarks se actualizan de forma aditiva:
 \mathbf{x}_l + \Delta \mathbf{x}_l.
 \]
 
-\begin{figure}[h]
+\begin{figure}[!htbp]
     \centering
     \includegraphics[width=0.7\linewidth]{img/prev_concepts/normal-equations.pdf}
     \caption{Parte del proceso de minimización del problema de minimos cuadrados de Bundle Adjustment. En (a), la estructura de los Jacobianos $J_p$ y $J_l$ y residuales $r$; en (b) la matriz Hessiana utilizada en el sistema de ecuaciones normales.}
@@ -635,7 +635,7 @@ El problema completo se reduce entonces a minimizar únicamente el segundo térm
 \]
 cuyo tamaño es significativamente menor que el del sistema original. A diferencia del complemento de Schur, este enfoque nunca forma la Hessiana $\mathbf{H}$ explícitamente, lo que puede mejorar la estabilidad numérica. La Figura~\ref{fig:qr-ba} ilustra la estructura del problema antes y después de aplicar la factorización QR.
 
-\begin{figure}[h]
+\begin{figure}[!htbp]
     \centering
     \includegraphics[width=0.9\linewidth]{img/prev_concepts/qr-ba.pdf}
     \caption{Diagrama de un Landmark Block. (a) Estructura de los Jacobianos y residuales. Los elementos distintos de cero se muestran en azul, los elementos potencialmente distintos de cero después de la factorización QR en gris, y los elementos que siempre serán cero en blanco. (b) Almacenamiento denso que guarda de manera eficiente todos los Jacobianos y residuales para un landmark. Se lo denomina Landmark Block. (c) Mismo landmark block luego de la marginalización \textit{in-place}. Imagen extraída de~\cite{demmel2021largescalerootba}.}
@@ -649,8 +649,8 @@ La recuperación de imágenes (\textit{image retrieval}) es el problema de encon
 \subsection{Modelo Bag of Words}
 
 El modelo de Bag of Words (BoW) es una técnica desarrollada originalmente para la recuperación de texto (\textit{text retrieval}), donde el objetivo es encontrar documentos relevantes en una gran base de datos dada una consulta. La suposición central es que documentos similares tienden a contener las mismas palabras, o al menos una distribución similar de ellas. Un documento puede representarse como un vector en el que cada elemento corresponde a una palabra específica del vocabulario, con su valor codificando si la palabra aparece (representación binaria) o con qué frecuencia lo hace. La similitud entre documentos se mide comparando estos vectores mediante métricas de distancia estándar (véase la Figura~\ref{fig:bow}).
-
-\begin{figure}[h]
+%
+\begin{figure}[!htbp]
     \centering
     \includegraphics[width=0.6\linewidth]{img/prev_concepts/bow-sp.pdf}
     \caption{Representación Bag of Words para recuperación de texto. Cada documento se convierte en un vector de frecuencias sobre el vocabulario, donde cada componente indica cuántas veces aparece la palabra correspondiente en el documento.}
@@ -662,8 +662,8 @@ Sivic y Zisserman~\cite{sivic2003videogoogle} transfirieron esta idea a datos vi
 %En este trabajo, los features locales utilizados son los descriptores ORB. ORB mejora el detector FAST produciendo features a múltiples escalas con una orientación asociada, que se utiliza para calcular una versión invariante a la rotación y escala del descriptor BRIEF. El resultado es un descriptor binario compacto de 256 bits, eficiente de extraer y comparable mediante la distancia de Hamming.
 
 Las principales ventajas de los modelos BoW son su invarianza implícita al punto de vista, ya que descartan la disposición geométrica de los features, y su eficiencia gracias al índice invertido y las estructuras jerárquicas de vocabulario. Su principal limitación es la susceptibilidad al \textit{perceptual aliasing}, que se muestra en la Figura~\ref{fig:perceptual-aliasing}: distintos lugares con apariencia visual similar pueden producir representaciones de bag of words parecidas, lo que lleva a reconocimientos de lugar incorrectos. Este es un desafío fundamental en cualquier sistema de place recognition basado en apariencia.
-
-\begin{figure}[ht]
+%
+\begin{figure}[!htbp]
     \centering
     \begin{subfigure}[b]{0.24\textwidth}
         \centering
@@ -689,8 +689,8 @@ Entre los métodos más destacados que siguen este paradigma se encuentran DBoW2
 \label{sec:hashbow}
 
 HashBoW~\cite{hashbow2024stricker} es un método de recuperación de imágenes basado en el modelo de bag of words. Discretiza el espacio de descriptores mediante hashing y trata directamente los hashes como palabras visuales, como se puede observar en la Figura~\ref{fig:hashbow}.
-
-\begin{figure}[h]
+%
+\begin{figure}[!htbp]
     \centering
     \includegraphics[width=0.8\linewidth]{img/prev_concepts/hashbow.pdf}
     \caption{Generación de la representación vectorial de una imagen usando HashBoW. Tras extraer los features locales (1), los descriptores (2) se hashean según sus valores de bit en índices predefinidos. Los códigos hash resultantes (3) representan los términos del modelo bag-of-words. Una imagen queda entonces caracterizada por la distribución de estas palabras (4). Imagen extraída de~\cite{hashbow2024stricker}.}
@@ -704,8 +704,8 @@ Aunque puede generalizarse, el método opera exclusivamente sobre descriptores b
 Dado que índices de bits elegidos aleatoriamente pueden distribuir los descriptores de forma desigual, HashBoW utiliza un procedimiento de entrenamiento basado en entropía para seleccionarlos. Los índices de bits se eligen de forma greedy y secuencial, seleccionando en cada paso el índice que maximiza la entropía de la distribución hash resultante, condicionada a los índices ya seleccionados. Esto garantiza que el vocabulario discretice el espacio de descriptores de la manera más uniforme posible para un conjunto de imágenes de entrenamiento.
 
 Comparado con otros métodos, HashBoW emplea una transformación de features locales a palabras visuales más simple, lo que le otorga mayor eficiencia como se observa en la Tabla~\ref{tab:hashbow-performance}, en detrimento de cierta precisión en el retrieval (véase Figura~\ref{fig:hashbow-precision}). Por esta razón, dentro de un sistema SLAM, debería complementarse con verificaciones de consistencia adicionales para filtrar falsos candidatos. Su simplicidad y bajo costo computacional lo convierten, en consecuencia, en una opción atractiva para la detección de ciclos en entornos con recursos limitados.
-
-\begin{figure}[ht]
+%
+\begin{figure}[!htbp]
     \centering
     \begin{minipage}[c]{0.54\textwidth}
         \centering
