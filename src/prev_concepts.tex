@@ -29,7 +29,7 @@ Las propiedades de una matriz de rotación son:
 
 Si bien una matriz de rotación tiene nueve elementos, el espacio SO(3) tiene solo tres grados de libertad.
 
-\subsection{Grupo de transformaciones}
+\subsection{Grupo de transformaciones rígidas}
 
 Las transformaciones rígidas en el espacio 3D pertenecen al grupo euclídeo especial $SE(3)$:
 
@@ -175,7 +175,7 @@ que vincula la acción adjunta con el mapa exponencial del grupo.
 
 \section{Modelos de cámara}
 
-Una cámara proyecta el mundo 3D sobre una imagen 2D. Comprender cómo funciona este mapeo es fundamental para cualquier sistema basado en visión. A continuación se presenta el modelo pinhole, la abstracción más simple para cámaras de perspectiva, aunque existen modelos más complejos para lentes con mayor distorsión~\cite{usenko2018doublesphere}.
+Una cámara proyecta el mundo 3D sobre una imagen 2D. Comprender cómo funciona este mapeo es fundamental para cualquier sistema basado en visión. A continuación se presenta el modelo pinhole, la abstracción más simple para cámaras de perspectiva.
 
 En el modelo de cámara pinhole, la cámara es un único punto en el espacio, el centro óptico, a través del cual pasan todos los rayos de luz. Un punto 3D $\mathbf{P}^c = [x, y, z]^T$, expresado en el sistema de referencia de la cámara, se proyecta como la intersección del rayo que lo une con el centro óptico y el plano de imagen, ubicado a una distancia focal $f$ (véase la Figura~\ref{fig:pinhole-model}). La función de proyección $\pi(\cdot)$, que mapea un punto 3D a coordenadas de píxel, se define como:
 \begin{equation}
@@ -231,7 +231,8 @@ El proceso inverso, denominado desproyección (\textit{unprojection}), recupera 
     \label{eq:unprojection}
 \end{equation}
 
-En la práctica, las lentes reales introducen distorsión que hace que la imagen se desvíe del modelo pinhole ideal. Existen modelos de cámara más complejos que incorporan parámetros adicionales para caracterizar estos efectos, como la distorsión radial, que hace que las líneas rectas aparezcan curvadas. Durante la \textit{calibración de la cámara} se optimizan estos parámetros, tras lo cual los puntos 3D pueden proyectarse, y los puntos 2D desproyectarse de acuerdo a las ecuaciones del modelo con los parámetros establecidos.
+En la práctica, las lentes reales introducen distorsión que hace que la imagen se desvíe del modelo pinhole ideal. Existen modelos de cámara más complejos que incorporan parámetros adicionales para caracterizar estos efectos, como la distorsión radial, que hace que las líneas rectas aparezcan curvadas. Durante la \textit{calibración de la cámara} se optimizan estos parámetros, tras lo cual los puntos 3D pueden proyectarse, y los puntos 2D desproyectarse de acuerdo a las ecuaciones del modelo con los parámetros establecidos. En este trabajo, se utilizan los modelos Double Sphere~\cite{usenko2018doublesphere}, Radial-Tangential con 8 parámetros y Kannala-Brandt~\cite{kannala2006kannalabrandt}.
+% TODO: cuál es la ref de radtan8?
 
 \section{Sistemas multi-cámara}
 
@@ -305,8 +306,8 @@ un grafo de factores de un sistema SLAM.
 %
 \begin{figure}[!htbp]
     \centering
-    \includegraphics[width=0.4\linewidth]{img/prev_concepts/real-factor-graph.pdf}
-    \caption{Ejemplo de un grafo de factores de un sistema SLAM.}
+    \includegraphics[width=0.6\linewidth]{img/prev_concepts/real-factor-graph.pdf}
+    \caption{Ejemplo de un grafo de factores de un sistema SLAM. Imagen extraída de~\cite{dellaert2017factorgraphs}.}
     \label{fig:real_factor_graph}
 \end{figure}
 
@@ -390,7 +391,7 @@ Este tipo de error se utiliza, por ejemplo, al incorporar restricciones de ciclo
 
 % TODO: agregar figura de un pose graph con loop constraints?
 
-\section{Minimos cuadrados}
+\section{Mínimos cuadrados}
 \label{sec:least_squares}
 
 El problema de mínimos cuadrados es una técnica fundamental en estadística y optimización matemática que se utiliza para ajustar un modelo a un conjunto de datos observados. Su objetivo es encontrar la mejor aproximación posible de los parámetros de un modelo, de manera que se minimice la diferencia entre las predicciones del modelo y los datos observados. El enfoque de mínimos cuadrados busca minimizar el error total o residual, que es la suma de los cuadrados de las diferencias entre los valores observados y los valores estimados por el modelo. Matemáticamente, el problema puede expresarse como:
@@ -565,7 +566,7 @@ mientras que las posiciones de los landmarks se actualizan de forma aditiva:
 \begin{figure}[!htbp]
     \centering
     \includegraphics[width=0.7\linewidth]{img/prev_concepts/normal-equations.pdf}
-    \caption{Parte del proceso de minimización del problema de minimos cuadrados de Bundle Adjustment. En (a), la estructura de los Jacobianos $J_p$ y $J_l$ y residuales $r$; en (b) la matriz Hessiana utilizada en el sistema de ecuaciones normales.}
+    \caption{Parte del proceso de minimización del problema de mínimos cuadrados de Bundle Adjustment. En (a), la estructura de los Jacobianos $J_p$ y $J_l$ y residuales $r$; en (b) la matriz Hessiana utilizada en el sistema de ecuaciones normales.}
     \label{fig:normal-equations}
 \end{figure}
 
@@ -642,9 +643,9 @@ cuyo tamaño es significativamente menor que el del sistema original. A diferenc
     \label{fig:qr-ba}
 \end{figure}
 
-\section{Recuperación de imágenes}
+\section{Visual place recognition}
 
-La recuperación de imágenes (\textit{image retrieval}) es el problema de encontrar, dentro de una base de datos, las imágenes más similares a una imagen de consulta dada. En robótica y visión por computadora, esta capacidad es fundamental para el reconocimiento de lugares (\textit{place recognition}): un robot debe identificar si una escena observada ya fue visitada previamente, incluso bajo cambios de iluminación, punto de vista o condiciones ambientales. Los métodos modernos abordan este problema extrayendo representaciones compactas de las imágenes y comparándolas eficientemente mediante estructuras de indexado.
+El reconocimiento visual de lugares (\textit{visual place recognition})~\cite{lowry2016vprsurvey} es el problema de identificar si una escena observada ya fue visitada previamente, a partir únicamente de su apariencia visual e incluso bajo cambios de iluminación, punto de vista o condiciones ambientales. En robótica y visión por computadora, esta capacidad es fundamental: en un sistema SLAM, por ejemplo, permite reconocer lugares ya recorridos para cerrar ciclos y corregir el error acumulado en la trayectoria. En primera instancia, el problema se formula como uno de recuperación de imágenes (\textit{image retrieval}): encontrar, dentro de una base de datos, las imágenes más similares a una imagen de consulta dada, lo que los métodos modernos resuelven extrayendo representaciones compactas de las imágenes y comparándolas eficientemente mediante estructuras de indexado. Esta recuperación, sin embargo, solo provee candidatos por similitud de apariencia, por lo que típicamente se complementa con verificaciones de consistencia que descartan falsas coincidencias.
 
 \subsection{Modelo Bag of Words}
 
