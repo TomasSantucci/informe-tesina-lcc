@@ -48,21 +48,21 @@ El dataset EuRoC (European Robotics Challenge) MAV (Micro Aerial Vehicle) es uno
         \centering
         \includegraphics[width=\textwidth]{img/experiments/example_frames/MH03.png}
         \caption{Machine Hall}
-        \label{fig:experiments_figure15}
+        \label{fig:euroc_mav_frames_mh}
     \end{subfigure}
     \hfill
     \begin{subfigure}[b]{0.32\textwidth}
         \centering
         \includegraphics[width=\textwidth]{img/experiments/example_frames/V102.png}
         \caption{Vicon Room 1}
-        \label{fig:experiments_figure16}
+        \label{fig:euroc_mav_frames_v1}
     \end{subfigure}
     \hfill
     \begin{subfigure}[b]{0.32\textwidth}
         \centering
         \includegraphics[width=\textwidth]{img/experiments/example_frames/V202.png}
         \caption{Vicon Room 2}
-        \label{fig:experiments_figure18}
+        \label{fig:euroc_mav_frames_v2}
     \end{subfigure}
     \caption{Frames de ejemplo del EuRoC MAV dataset.}
     \label{fig:euroc_mav_frames}
@@ -86,35 +86,35 @@ Las secuencias fueron capturadas con un dispositivo sostenido manualmente (\text
         \centering
         \includegraphics[width=\textwidth]{img/experiments/example_frames/TC1.png}
         \caption{Corridor}
-        \label{fig:experiments_figure15}
+        \label{fig:tum_vi_frames_corridor}
     \end{subfigure}
     \hfill
     \begin{subfigure}[b]{0.19\textwidth}
         \centering
         \includegraphics[width=\textwidth]{img/experiments/example_frames/TM1.png}
         \caption{Magistrale}
-        \label{fig:experiments_figure16}
+        \label{fig:tum_vi_frames_magistrale}
     \end{subfigure}
     \hfill
     \begin{subfigure}[b]{0.19\textwidth}
         \centering
         \includegraphics[width=\textwidth]{img/experiments/example_frames/TO2.png}
         \caption{Outdoors}
-        \label{fig:experiments_figure18}
+        \label{fig:tum_vi_frames_outdoors}
     \end{subfigure}
     \hfill
     \begin{subfigure}[b]{0.19\textwidth}
         \centering
         \includegraphics[width=\textwidth]{img/experiments/example_frames/TR4.png}
         \caption{Room}
-        \label{fig:experiments_figure20}
+        \label{fig:tum_vi_frames_room}
     \end{subfigure}
     \hfill
     \begin{subfigure}[b]{0.19\textwidth}
         \centering
         \includegraphics[width=\textwidth]{img/experiments/example_frames/TS1.png}
         \caption{Slides}
-        \label{fig:experiments_figure19}
+        \label{fig:tum_vi_frames_slides}
     \end{subfigure}
     \caption{Frames de ejemplo del TUM-VI benchmark dataset.}
     \label{fig:tum_vi_frames}
@@ -556,7 +556,7 @@ Promedio & 7.8 & \textbf{5.0} & 9.1 & 10.6 & \textbf{1.2} & 1.5 & 3.9 & 4.5 & --
     \centering
     \includegraphics[width=0.9\textwidth]{img/experiments/trajectories.ablation.euroc.tum.pdf}
     \caption{Comparativa de las trayectorias estimadas por Basalt, Basalt-LC y Basalt-LC-R para algunas secuencias del TUM-VI Benchmark dataset y EuRoC MAV dataset.}
-    \label{fig:trajectories}
+    \label{fig:trajectories_ablation_euroc_tum}
 \end{figure}
 
 \subsection{Resultados en datasets de XR} \label{sec:results_xr}
@@ -788,21 +788,21 @@ La Figura \ref{fig:msd_ablation_timings} muestra los tiempos de procesamiento po
         \centering
         \includegraphics[width=\textwidth]{img/experiments/MOO01.timings.ablation-sp.pdf}
         \caption{Secuencia capturada con Odyssey+.}
-        \label{fig:experiments_figure16}
+        \label{fig:msdmo_ablation_timings}
     \end{subfigure}
     \hfill
     \begin{subfigure}[b]{0.48\textwidth}
         \centering
         \includegraphics[width=\textwidth]{img/experiments/MGO04.timings.ablation-sp.pdf}
         \caption{Secuencia capturada con HP Reverb G2 V2.}
-        \label{fig:experiments_figure17}
+        \label{fig:msdmg_ablation_timings}
     \end{subfigure}
     \hfill
     \begin{subfigure}[b]{0.48\textwidth}
         \centering
         \includegraphics[width=\textwidth]{img/experiments/MIO02.timings.ablation-sp.pdf}
         \caption{Secuencia capturada con Valve Index.}
-        \label{fig:experiments_figure18}
+        \label{fig:msdmi_ablation_timings}
     \end{subfigure}
     \caption{Tiempo de procesamiento por frame para cada sistema en las secuencias de MO*, MG* y MI* respectivamente. Se muestra un promedio móvil con una ventana de 60 frames. En el fondo, los datos sin procesar muestran outliers y jitter para cada sistema. Una línea roja marca el límite de tiempo para la operación en tiempo real para cada headset. Nótese que Basalt-LC y Basalt-LC-CQ se ejecutaron en su versión síncrona, con el mapa asíncrono. Experimento realizado en un procesador Intel Core Ultra 9 285H con 32 GB de RAM.}
     \label{fig:msd_ablation_timings}
