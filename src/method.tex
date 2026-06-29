@@ -112,7 +112,7 @@ Como el sistema debe funcionar en configuraciones de cámaras no paralelas, se u
 %    \label{fig:matching}
 %\end{figure}
 
-Finalmente, se realiza un filtrado de matches empleando la restricción epipolar, ilustrado en la Figura~\ref{fig:epipolar_geometry}. Para cada par de observaciones 2D del mismo keypoint en dos cámaras, se desprojectan ambas posiciones a rayos normalizados en coordenadas de cámara. Luego se evalúa el error epipolar algebraico como $|{\mathbf{x}_l}^\top \mathbf{E} \, \mathbf{x}_r|$, donde $\mathbf{x}_l$ y $\mathbf{x}_r$ son dichos rayos y $\mathbf{E}$ es la matriz esencial entre el par de cámaras. Esta expresión cuantifica, para una correspondencia, cuánto se aleja de la condición de coplanaridad del plano epipolar. Si este error supera un umbral predefinido, la correspondencia es descartada.
+Finalmente, se realiza un filtrado de matches empleando la restricción epipolar, ilustrado en la Figura~\ref{fig:epipolar_geometry}. Para cada par de observaciones 2D del mismo keypoint en dos cámaras, se desproyectan ambas posiciones a rayos normalizados en coordenadas de cámara. Luego se evalúa el error epipolar algebraico como $|{\mathbf{x}_l}^\top \mathbf{E} \, \mathbf{x}_r|$, donde $\mathbf{x}_l$ y $\mathbf{x}_r$ son dichos rayos y $\mathbf{E}$ es la matriz esencial entre el par de cámaras. Esta expresión cuantifica, para una correspondencia, cuánto se aleja de la condición de coplanaridad del plano epipolar. Si este error supera un umbral predefinido, la correspondencia es descartada.
 %
 \begin{figure}[!htbp]
     \centering
@@ -375,7 +375,7 @@ A continuación, se registra el ciclo detectado en el grafo de ciclos, agregando
 
 Finalmente, se fusionan los landmarks que resultaron inliers durante la verificación geométrica. Para cada correspondencia se presentan dos casos:
 \begin{itemize}
-    \item El keypoint de $k_r$ no está triangulado. Esto ocurre cuando el front-end lo detectó pero el VIO no pudo triangularlo, o cuando fue agregado durante la proyección de landmarks en la etapa de detección. En ambos casos, se registra una nueva observación del landmark de $k_c$ en $k_r$.
+    \item El keypoint de $k_r$ no está triangulado. Esto ocurre cuando el front-end lo detectó, pero el VIO no pudo triangularlo, o cuando fue agregado durante la proyección de landmarks en la etapa de detección. En ambos casos, se registra una nueva observación del landmark de $k_c$ en $k_r$.
     \item El keypoint de $k_r$ ya está triangulado. Existen entonces dos landmarks con distintos identificadores que representan el mismo punto del mundo. Se fusionan transfiriendo todas las observaciones de uno al otro y eliminando el primero (Código~\ref{lst:map_merge_landmarks}). Se conserva el landmark de $k_r$, dado que puede encontrarse aún en la ventana activa del VIO; de este modo se evita tener que notificarle sobre la fusión.
 \end{itemize}
 
