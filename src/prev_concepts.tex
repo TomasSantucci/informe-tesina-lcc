@@ -231,7 +231,7 @@ El proceso inverso, denominado desproyección (\textit{unprojection}), recupera 
     \label{eq:unprojection}
 \end{equation}
 
-En la práctica, las lentes reales introducen distorsión que hace que la imagen se desvíe del modelo pinhole ideal. Existen modelos de cámara más complejos que incorporan parámetros adicionales para caracterizar estos efectos, como la distorsión radial, que hace que las líneas rectas aparezcan curvadas. Durante la \textit{calibración de la cámara} se optimizan estos parámetros, tras lo cual los puntos 3D pueden proyectarse, y los puntos 2D desproyectarse de acuerdo a las ecuaciones del modelo con los parámetros establecidos. En este trabajo, se utilizan los modelos Double Sphere~\cite{usenko2018doublesphere}, Radial-Tangential con 8 parámetros y Kannala-Brandt~\cite{kannala2006kannalabrandt}.
+En la práctica, las lentes reales introducen distorsión que hace que la imagen se desvíe del modelo pinhole ideal. Existen modelos de cámara más complejos que incorporan parámetros adicionales para caracterizar estos efectos, como la distorsión radial, que hace que las líneas rectas aparezcan curvadas. Durante la \textit{calibración de la cámara} se optimizan estos parámetros, tras lo cual los puntos 3D pueden proyectarse, y los puntos 2D desproyectarse de acuerdo a las ecuaciones del modelo con los parámetros establecidos. En este trabajo, se utilizan los modelos Double Sphere~\cite{usenko2018doublesphere}, Radial-Tangential con 8 parámetros (citar open cv) y Kannala-Brandt~\cite{kannala2006kannalabrandt}.
 % TODO: cuál es la ref de radtan8?
 
 \section{Sistemas multi-cámara}

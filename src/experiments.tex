@@ -27,7 +27,7 @@
 % https://mateosss.pages.freedesktop.org/-/basalt/-/jobs/100268854/artifacts/report.html
 % report job: https://gitlab.freedesktop.org/mateosss/basalt/-/jobs/100268854
 
-En este capítulo se presentan los experimentos realizados para evaluar el sistema propuesto y el análisis de los resultados obtenidos. Primero se buscó dimensionar el impacto de las mejoras descritas en el Capítulo~\ref{sec:method}, para lo cual se realizó un estudio de ablación que compara Basalt original con distintas versiones del sistema que incorporan las funcionalidades del mapa. Luego se evaluó el sistema propuesto contra ORB-SLAM3 y OKVIS2 como referencias del estado del arte. En todos estos experimentos, no solo se evaluaron métricas de error de trayectoria, sino que también se hizo énfasis en el rendimiento, para determinar si el sistema propuesto cumple con las limitaciones impuestas para la operación en tiempo real. Finalmente, se concluye con un análisis de rendimiento detallado, que tiene en cuenta la arquitectura del sistema propuesto y las mejoras implementadas para utilizar una optimización de bundle adjustment basada en RootBA.
+En este capítulo se presentan los experimentos realizados para evaluar el sistema propuesto y el análisis de los resultados obtenidos. Primero se buscó dimensionar el impacto de las mejoras descritas en el Capítulo~\ref{sec:method}, para lo cual se realizó un estudio de ablación que compara BasaltMSD original con distintas versiones del sistema que incorporan las funcionalidades del mapa. Luego se evaluó el sistema propuesto contra ORB-SLAM3 y OKVIS2 como referencias del estado del arte. En todos estos experimentos, no solo se evaluaron métricas de error de trayectoria, sino que también se hizo énfasis en el rendimiento, para determinar si el sistema propuesto cumple con las limitaciones impuestas para la operación en tiempo real. Finalmente, se concluye con un análisis de rendimiento detallado, que tiene en cuenta la arquitectura del sistema propuesto y las mejoras implementadas para utilizar una optimización de bundle adjustment basada en RootBA.
 
 La mayor parte de los experimentos fue realizada con un procesador Intel Core i5-13600 13th Gen con 32 GB de RAM; los restantes, con un procesador Intel Core Ultra 9 285H con 32 GB de RAM, indicándose explícitamente cuando corresponda.
 
@@ -124,39 +124,20 @@ Las secuencias fueron capturadas con un dispositivo sostenido manualmente (\text
 
 El Monado SLAM Dataset (MSD) es un dataset visual-inercial de licencia permisiva creado específicamente para el caso de uso de aplicaciones XR. Incluye varios tipos de secuencias, desde juegos de VR hasta escenarios de inspección y mapeo de una habitación, proporcionando una amplia variedad de datos para evaluar algoritmos de SLAM en contextos de XR. El dataset contiene datos de ground truth con una precisión de 1 cm, capturado mediante un sistema de tres sensores externos lighthouses. Cuenta con 64 secuencias, con un total de 5 horas y 15 minutos de grabación en escenarios del mundo real, incluyendo secuencias largas e ininterrumpidas de hasta 40 minutos y secuencias de juego de ritmo rápido.
 
-Todas las secuencias son capturadas por una persona utilizando diferentes cascos XR de uso comercial para aumentar la diversidad de los datos, como se puede ver en la Figura \ref{fig:headsets}: un Valve Index, un HP Reverb G2 y un Samsung Odyssey+.
+Todas las secuencias son capturadas por una persona utilizando diferentes cascos XR de uso comercial para aumentar la diversidad de los datos, como se puede ver en la Figura~\ref{fig:devices}.
 %
 \begin{figure}[!htbp]
     \centering
-    \begin{subfigure}[b]{0.32\textwidth}
-        \centering
-        \includegraphics[width=\textwidth]{img/experiments/headset.VI.png}
-        \caption{Valve Index}
-        \label{fig:valve_index_headset}
-    \end{subfigure}
-    \hfill
-    \begin{subfigure}[b]{0.32\textwidth}
-        \centering
-        \includegraphics[width=\textwidth]{img/experiments/headset.RG2V2.png}
-        \caption{HP Reverb G2}
-        \label{fig:hp_reverb_g2_headset}
-    \end{subfigure}
-    \hfill
-    \begin{subfigure}[b]{0.32\textwidth}
-        \centering
-        \includegraphics[width=\textwidth]{img/experiments/headset.OPlus.png}
-        \caption{Samsung Odyssey+}
-        \label{fig:samsung_odyssey_plus_headset}
-    \end{subfigure}
-    \caption{Headsets utilizados en el Monado SLAM Dataset.}
-    \label{fig:headsets}
+    \includegraphics[width=0.8\textwidth]{img/experiments/devices.pdf}
+    \caption{Los dispositivos involucrados en la grabación. Imagen extraída de~\cite{demayo2025monadoslamdataset}.}
+    \label{fig:devices}
 \end{figure}
 
 Las secuencias se clasifican de la siguiente manera:
 \begin{itemize}
     \item MI*: Conjunto de secuencias grabadas con el casco Valve Index que cuenta con dos cámaras con resolución 960 x 960 px a 54 fps y una IMU a 1000 Hz. Las secuencias MIO* incluyen diferentes escenarios como simulaciones de juegos, escaneo/mapeo de una habitación y algunos objetos o personas en movimiento en el entorno. Las secuencias MIP* son casos donde el usuario se encuentra jugando diferentes juegos XR, como por ejemplo Beat Saber en SteamVR (ver Figura \ref{fig:msdmi_frame}).
-    \item MO*: Conjunto de secuencias grabadas con el casco Odyssey+ el cual tiene dos cámaras con resolución 640 x 480 px a 30 fps y una IMU a 250 Hz (ver Figura \ref{fig:msdmo_frame}).
-    \item MG*: Conjunto de secuencias grabadas con el casco Reverb G2 V2 el cual tiene cuatro cámaras con resolución 640 x 480 px a 30 fps y una IMU a 512 Hz (ver Figura \ref{fig:msdmg_frame}).
+    \item MO*: Conjunto de secuencias grabadas con el casco Odyssey+ el cual tiene dos cámaras con resolución 640 x 480 px a 30 fps y una IMU a 1000 Hz (ver Figura \ref{fig:msdmo_frame}).
+    \item MG*: Conjunto de secuencias grabadas con el casco Reverb G2 V2 el cual tiene cuatro cámaras con resolución 640 x 480 px a 30 fps y una IMU a 1000 Hz (ver Figura \ref{fig:msdmg_frame}).
 \end{itemize}
 
 \begin{figure}[!htbp]
@@ -198,11 +179,11 @@ donde $\mathrm{trans}(\cdot)$ extrae el componente de traslación. El ATE captur
 \begin{equation}
     E_{\mathrm{RTE}} = \sqrt{\frac{1}{M}\sum_{j=1}^{M-1} \left\| \mathrm{trans}\!\left(\delta(P,j)^{-1}\,\delta(R,j)\right) \right\|^2}
 \end{equation}
-donde $\delta(X, k) = X_{k\Delta}^{-1}\,X_{(k+1)\Delta}$ es el movimiento relativo en el intervalo $k$, y $M = \lfloor N/\Delta \rfloor$. En este trabajo se emplea $\Delta = 6$ frames.
+donde $\delta(X, k) = X_{k\Delta}^{-1}\,X_{(k+1)\Delta}$ es el movimiento relativo en el intervalo $k$, y $M = \lfloor N/\Delta \rfloor$. En este trabajo se emplea $\Delta = 6$ frames, igual que en~\cite{demayo2025monadoslamdataset}.
 
 Además, existen dos modalidades de evaluación de trayectorias: causal y no causal. En la evaluación causal, cada pose se compara contra el ground truth en el mismo instante en que el sistema la estima, usando únicamente las mediciones disponibles hasta ese momento; es decir, la pose no se beneficia de ninguna corrección posterior. En la evaluación no causal, en cambio, se compara la trayectoria final que entrega el sistema luego de haber procesado toda la secuencia, donde todas las poses han sido refinadas globalmente incorporando, por ejemplo, correcciones de loop closure. La distinción es relevante porque una misma pose puede diferir significativamente entre ambas evaluaciones: el sistema puede haberla estimado con error en tiempo real, pero luego corregirla al cerrar un ciclo.
 
-En los sistemas tradicionales, en la evaluación causal el error de drift acumulado puede dominar las estadísticas del ATE, ya que la trayectoria contiene los característicos ``saltos'' cuando se cierran ciclos. En cambio, para el sistema implementado en este trabajo, esto no sucede en las evaluaciones causales, porque la pose del keyframe más reciente se mantiene fija en la etapa de PGO. Sin embargo, el error causal no tendrá ninguna corrección de drift, y esto hará que sea exactamente igual al error de Basalt en su versión VIO. Por estos motivos, en la totalidad de los experimentos, se opta por usar la trayectoria no causal.
+En los sistemas tradicionales, en la evaluación causal el error de drift acumulado puede dominar las estadísticas del ATE, ya que la trayectoria contiene los característicos ``saltos'' cuando se cierran ciclos. En cambio, para el sistema implementado en este trabajo, esto no sucede en las evaluaciones causales, porque la pose del keyframe más reciente se mantiene fija en la etapa de PGO. Sin embargo, el error causal no tendrá ninguna corrección de drift, y esto hará que sea exactamente igual al error de BasaltMSD en su versión VIO. Por estos motivos, en la totalidad de los experimentos, se opta por usar la trayectoria no causal.
 
 Cabe notar que en el mapa se almacenan únicamente poses de keyframes, dado que tanto la optimización de loop closure como el bundle adjustment final se realizan sobre ellos. Para comparar las trayectorias estimadas por este sistema con las de los sistemas del estado del arte, las poses de los frames intermedios se recuperan mediante interpolación entre los keyframes temporalmente más cercanos, tanto para el ATE como para el RTE.
 
@@ -215,10 +196,10 @@ Además de las métricas cuantitativas anteriores, se analizará el rendimiento 
 
 \section{Estudio de ablación}
 
-Con el fin de cuantificar el impacto individual de cada mejora implementada, se realizó un estudio de ablación que compara Basalt original con distintas versiones del sistema, incorporando progresivamente las funcionalidades propuestas. Las versiones evaluadas son:
+Con el fin de cuantificar el impacto individual de cada mejora implementada, se realizó un estudio de ablación que compara BasaltMSD original con distintas versiones del sistema, incorporando progresivamente las funcionalidades propuestas. Las versiones evaluadas son:
 \begin{itemize}
-    \item Basalt: Versión original de Basalt, no mantiene un mapa persistente.
-    \item Basalt-LC: Versión de Basalt que mantiene un mapa persistente, detecta y cierra ciclos, y realiza keyframe culling.
+    \item BasaltMSD: Sistema original, en su configuración VIO.
+    \item Basalt-LC: Versión que mantiene un mapa persistente, detecta y cierra ciclos, y realiza keyframe culling.
     \item Basalt-LC-R: Se extiende Basalt-LC con una optimización global del mapa final mediante RootBA.
     \item Basalt-LC-R-CQ: Se extiende Basalt-LC-R reintroduciendo hasta 3 keyframes del mapa en la ventana de keyframes del VIO, mediante la estrategia que emplea el grafo de covisibilidad.
 \end{itemize}
@@ -238,15 +219,15 @@ En la Tabla~\ref{tab:corridor_ablation_all} se muestran los resultados de ATE, R
 & \multicolumn{4}{c|}{\textbf{ATE [cm]}} & \multicolumn{4}{c|}{\textbf{RTE [cm]}} & \multicolumn{4}{c}{\textbf{Ciclos}} \\
 \cmidrule(lr){2-5} \cmidrule(lr){6-9} \cmidrule(lr){10-13}
 \textbf{Secuencia}
-& \rotatebox{90}{\textbf{Basalt}\,}
+& \rotatebox{90}{\textbf{BasaltMSD}\,}
 & \rotatebox{90}{\textbf{Basalt-LC}\,}
 & \rotatebox{90}{\textbf{Basalt-LC-R}\,}
 & \rotatebox{90}{\textbf{Basalt-LC-R-CQ}\,}
-& \rotatebox{90}{\textbf{Basalt}\,}
+& \rotatebox{90}{\textbf{BasaltMSD}\,}
 & \rotatebox{90}{\textbf{Basalt-LC}\,}
 & \rotatebox{90}{\textbf{Basalt-LC-R}\,}
 & \rotatebox{90}{\textbf{Basalt-LC-R-CQ}\,}
-& \rotatebox{90}{\textbf{Basalt}\,}
+& \rotatebox{90}{\textbf{BasaltMSD}\,}
 & \rotatebox{90}{\textbf{Basalt-LC}\,}
 & \rotatebox{90}{\textbf{Basalt-LC-R}\,}
 & \rotatebox{90}{\textbf{Basalt-LC-R-CQ}\,} \\
@@ -274,15 +255,15 @@ La Tabla~\ref{tab:magistrale_ablation_all} muestra los resultados de ATE, RTE y 
 & \multicolumn{4}{c|}{\textbf{ATE [cm]}} & \multicolumn{4}{c|}{\textbf{RTE [cm]}} & \multicolumn{4}{c}{\textbf{Ciclos}} \\
 \cmidrule(lr){2-5} \cmidrule(lr){6-9} \cmidrule(lr){10-13}
 \textbf{Secuencia}
-& \rotatebox{90}{\textbf{Basalt}\,}
+& \rotatebox{90}{\textbf{BasaltMSD}\,}
 & \rotatebox{90}{\textbf{Basalt-LC}\,}
 & \rotatebox{90}{\textbf{Basalt-LC-R}\,}
 & \rotatebox{90}{\textbf{Basalt-LC-R-CQ}\,}
-& \rotatebox{90}{\textbf{Basalt}\,}
+& \rotatebox{90}{\textbf{BasaltMSD}\,}
 & \rotatebox{90}{\textbf{Basalt-LC}\,}
 & \rotatebox{90}{\textbf{Basalt-LC-R}\,}
 & \rotatebox{90}{\textbf{Basalt-LC-R-CQ}\,}
-& \rotatebox{90}{\textbf{Basalt}\,}
+& \rotatebox{90}{\textbf{BasaltMSD}\,}
 & \rotatebox{90}{\textbf{Basalt-LC}\,}
 & \rotatebox{90}{\textbf{Basalt-LC-R}\,}
 & \rotatebox{90}{\textbf{Basalt-LC-R-CQ}\,} \\
@@ -312,15 +293,15 @@ La Tabla~\ref{tab:outdoors_ablation_all} muestra los resultados de ATE, RTE y ci
 & \multicolumn{4}{c|}{\textbf{ATE [cm]}} & \multicolumn{4}{c|}{\textbf{RTE [cm]}} & \multicolumn{4}{c}{\textbf{Ciclos}} \\
 \cmidrule(lr){2-5} \cmidrule(lr){6-9} \cmidrule(lr){10-13}
 \textbf{Secuencia}
-& \rotatebox{90}{\textbf{Basalt}\,}
+& \rotatebox{90}{\textbf{BasaltMSD}\,}
 & \rotatebox{90}{\textbf{Basalt-LC}\,}
 & \rotatebox{90}{\textbf{Basalt-LC-R}\,}
 & \rotatebox{90}{\textbf{Basalt-LC-R-CQ}\,}
-& \rotatebox{90}{\textbf{Basalt}\,}
+& \rotatebox{90}{\textbf{BasaltMSD}\,}
 & \rotatebox{90}{\textbf{Basalt-LC}\,}
 & \rotatebox{90}{\textbf{Basalt-LC-R}\,}
 & \rotatebox{90}{\textbf{Basalt-LC-R-CQ}\,}
-& \rotatebox{90}{\textbf{Basalt}\,}
+& \rotatebox{90}{\textbf{BasaltMSD}\,}
 & \rotatebox{90}{\textbf{Basalt-LC}\,}
 & \rotatebox{90}{\textbf{Basalt-LC-R}\,}
 & \rotatebox{90}{\textbf{Basalt-LC-R-CQ}\,} \\
@@ -352,15 +333,15 @@ La Tabla \ref{tab:room_ablation_all} muestra los resultados de ATE, RTE y ciclos
 & \multicolumn{4}{c|}{\textbf{ATE [cm]}} & \multicolumn{4}{c|}{\textbf{RTE [cm]}} & \multicolumn{4}{c}{\textbf{Ciclos}} \\
 \cmidrule(lr){2-5} \cmidrule(lr){6-9} \cmidrule(lr){10-13}
 \textbf{Secuencia}
-& \rotatebox{90}{\textbf{Basalt}\,}
+& \rotatebox{90}{\textbf{BasaltMSD}\,}
 & \rotatebox{90}{\textbf{Basalt-LC}\,}
 & \rotatebox{90}{\textbf{Basalt-LC-R}\,}
 & \rotatebox{90}{\textbf{Basalt-LC-R-CQ}\,}
-& \rotatebox{90}{\textbf{Basalt}\,}
+& \rotatebox{90}{\textbf{BasaltMSD}\,}
 & \rotatebox{90}{\textbf{Basalt-LC}\,}
 & \rotatebox{90}{\textbf{Basalt-LC-R}\,}
 & \rotatebox{90}{\textbf{Basalt-LC-R-CQ}\,}
-& \rotatebox{90}{\textbf{Basalt}\,}
+& \rotatebox{90}{\textbf{BasaltMSD}\,}
 & \rotatebox{90}{\textbf{Basalt-LC}\,}
 & \rotatebox{90}{\textbf{Basalt-LC-R}\,}
 & \rotatebox{90}{\textbf{Basalt-LC-R-CQ}\,} \\
@@ -389,15 +370,15 @@ La Tabla~\ref{tab:slides_ablation_all} muestra los resultados de ATE, RTE y cicl
 & \multicolumn{4}{c|}{\textbf{ATE [cm]}} & \multicolumn{4}{c|}{\textbf{RTE [cm]}} & \multicolumn{4}{c}{\textbf{Ciclos}} \\
 \cmidrule(lr){2-5} \cmidrule(lr){6-9} \cmidrule(lr){10-13}
 \textbf{Secuencia}
-& \rotatebox{90}{\textbf{Basalt}\,}
+& \rotatebox{90}{\textbf{BasaltMSD}\,}
 & \rotatebox{90}{\textbf{Basalt-LC}\,}
 & \rotatebox{90}{\textbf{Basalt-LC-R}\,}
 & \rotatebox{90}{\textbf{Basalt-LC-R-CQ}\,}
-& \rotatebox{90}{\textbf{Basalt}\,}
+& \rotatebox{90}{\textbf{BasaltMSD}\,}
 & \rotatebox{90}{\textbf{Basalt-LC}\,}
 & \rotatebox{90}{\textbf{Basalt-LC-R}\,}
 & \rotatebox{90}{\textbf{Basalt-LC-R-CQ}\,}
-& \rotatebox{90}{\textbf{Basalt}\,}
+& \rotatebox{90}{\textbf{BasaltMSD}\,}
 & \rotatebox{90}{\textbf{Basalt-LC}\,}
 & \rotatebox{90}{\textbf{Basalt-LC-R}\,}
 & \rotatebox{90}{\textbf{Basalt-LC-R-CQ}\,} \\
@@ -448,7 +429,7 @@ Promedio & 102.5 & 92.6 & \textbf{91.8} & 117.4 & 11.8 & 10.9 & \textbf{10.8} & 
     \label{fig:loops_tumvi}
 \end{figure}
 
-La Tabla~\ref{tab:MH_ablation_all} muestra los resultados de ATE, RTE y ciclos detectados en las secuencias de \textit{Machine Hall}. En este caso, el sistema que mayor precisión logra es Basalt-LC, aunque la mejora respecto a Basalt original no es tan notable. Es interesante que la introducción de RootBA en Basalt-LC-R empeora la precisión por unos centímetros. En términos de RTE, todos los sistemas mantienen una precisión similar.
+La Tabla~\ref{tab:MH_ablation_all} muestra los resultados de ATE, RTE y ciclos detectados en las secuencias de \textit{Machine Hall}. En este caso, el sistema que mayor precisión logra es Basalt-LC, aunque la mejora respecto a BasaltMSD no es tan notable. Es interesante que la introducción de RootBA en Basalt-LC-R empeora la precisión por unos centímetros. En términos de RTE, todos los sistemas mantienen una precisión similar.
 %
 \begin{table}[!htbp]
 \centering
@@ -459,15 +440,15 @@ La Tabla~\ref{tab:MH_ablation_all} muestra los resultados de ATE, RTE y ciclos d
 & \multicolumn{4}{c|}{\textbf{ATE [cm]}} & \multicolumn{4}{c|}{\textbf{RTE [cm]}} & \multicolumn{4}{c}{\textbf{Ciclos}} \\
 \cmidrule(lr){2-5} \cmidrule(lr){6-9} \cmidrule(lr){10-13}
 \textbf{Secuencia}
-& \rotatebox{90}{\textbf{Basalt}\,}
+& \rotatebox{90}{\textbf{BasaltMSD}\,}
 & \rotatebox{90}{\textbf{Basalt-LC}\,}
 & \rotatebox{90}{\textbf{Basalt-LC-R}\,}
 & \rotatebox{90}{\textbf{Basalt-LC-R-CQ}\,}
-& \rotatebox{90}{\textbf{Basalt}\,}
+& \rotatebox{90}{\textbf{BasaltMSD}\,}
 & \rotatebox{90}{\textbf{Basalt-LC}\,}
 & \rotatebox{90}{\textbf{Basalt-LC-R}\,}
 & \rotatebox{90}{\textbf{Basalt-LC-R-CQ}\,}
-& \rotatebox{90}{\textbf{Basalt}\,}
+& \rotatebox{90}{\textbf{BasaltMSD}\,}
 & \rotatebox{90}{\textbf{Basalt-LC}\,}
 & \rotatebox{90}{\textbf{Basalt-LC-R}\,}
 & \rotatebox{90}{\textbf{Basalt-LC-R-CQ}\,} \\
@@ -495,15 +476,15 @@ La Tabla~\ref{tab:V1_ablation_all} muestra los resultados de ATE, RTE y ciclos d
 & \multicolumn{4}{c|}{\textbf{ATE [cm]}} & \multicolumn{4}{c|}{\textbf{RTE [cm]}} & \multicolumn{4}{c}{\textbf{Ciclos}} \\
 \cmidrule(lr){2-5} \cmidrule(lr){6-9} \cmidrule(lr){10-13}
 \textbf{Secuencia}
-& \rotatebox{90}{\textbf{Basalt}\,}
+& \rotatebox{90}{\textbf{BasaltMSD}\,}
 & \rotatebox{90}{\textbf{Basalt-LC}\,}
 & \rotatebox{90}{\textbf{Basalt-LC-R}\,}
 & \rotatebox{90}{\textbf{Basalt-LC-R-CQ}\,}
-& \rotatebox{90}{\textbf{Basalt}\,}
+& \rotatebox{90}{\textbf{BasaltMSD}\,}
 & \rotatebox{90}{\textbf{Basalt-LC}\,}
 & \rotatebox{90}{\textbf{Basalt-LC-R}\,}
 & \rotatebox{90}{\textbf{Basalt-LC-R-CQ}\,}
-& \rotatebox{90}{\textbf{Basalt}\,}
+& \rotatebox{90}{\textbf{BasaltMSD}\,}
 & \rotatebox{90}{\textbf{Basalt-LC}\,}
 & \rotatebox{90}{\textbf{Basalt-LC-R}\,}
 & \rotatebox{90}{\textbf{Basalt-LC-R-CQ}\,} \\
@@ -518,7 +499,7 @@ Promedio & 5.1 & 5.0 & 6.7 & \textbf{4.6} & \textbf{1.2} & 1.3 & 2.2 & 1.6 & -- 
 \end{tabular}
 \end{table}
 
-Finalmente, la Tabla~\ref{tab:V2_ablation_all} muestra los resultados de ATE, RTE y ciclos detectados en las secuencias de \textit{Vicon Room 2}. En este caso, Basalt-LC es el que logra una mayor precisión en ATE, aunque en RTE Basalt mantiene el mejor resultado. Con la introducción de RootBA en Basalt-LC-R, se observa una vez más que se reduce la precisión notablemente.
+Finalmente, la Tabla~\ref{tab:V2_ablation_all} muestra los resultados de ATE, RTE y ciclos detectados en las secuencias de \textit{Vicon Room 2}. En este caso, Basalt-LC es el que logra una mayor precisión en ATE, aunque en RTE BasaltMSD mantiene el mejor resultado. Con la introducción de RootBA en Basalt-LC-R, se observa una vez más que se reduce la precisión notablemente.
 %
 \begin{table}[!htbp]
 \centering
@@ -529,15 +510,15 @@ Finalmente, la Tabla~\ref{tab:V2_ablation_all} muestra los resultados de ATE, RT
 & \multicolumn{4}{c|}{\textbf{ATE [cm]}} & \multicolumn{4}{c|}{\textbf{RTE [cm]}} & \multicolumn{4}{c}{\textbf{Ciclos}} \\
 \cmidrule(lr){2-5} \cmidrule(lr){6-9} \cmidrule(lr){10-13}
 \textbf{Secuencia}
-& \rotatebox{90}{\textbf{Basalt}\,}
+& \rotatebox{90}{\textbf{BasaltMSD}\,}
 & \rotatebox{90}{\textbf{Basalt-LC}\,}
 & \rotatebox{90}{\textbf{Basalt-LC-R}\,}
 & \rotatebox{90}{\textbf{Basalt-LC-R-CQ}\,}
-& \rotatebox{90}{\textbf{Basalt}\,}
+& \rotatebox{90}{\textbf{BasaltMSD}\,}
 & \rotatebox{90}{\textbf{Basalt-LC}\,}
 & \rotatebox{90}{\textbf{Basalt-LC-R}\,}
 & \rotatebox{90}{\textbf{Basalt-LC-R-CQ}\,}
-& \rotatebox{90}{\textbf{Basalt}\,}
+& \rotatebox{90}{\textbf{BasaltMSD}\,}
 & \rotatebox{90}{\textbf{Basalt-LC}\,}
 & \rotatebox{90}{\textbf{Basalt-LC-R}\,}
 & \rotatebox{90}{\textbf{Basalt-LC-R-CQ}\,} \\
@@ -561,7 +542,7 @@ Promedio & 7.8 & \textbf{5.0} & 9.1 & 10.6 & \textbf{1.2} & 1.5 & 3.9 & 4.5 & --
 
 \subsection{Resultados en datasets de XR} \label{sec:results_xr}
 
-La Tabla~\ref{tab:msdmi_ablation_all} muestra los resultados de ATE, RTE y ciclos detectados en las secuencias de MI*. En la mayoría de las secuencias se detecta un elevado número de ciclos, lo que permite a Basalt-LC reducir la mediana del ATE en más de un 85\% respecto de Basalt. Con la incorporación de RootBA en Basalt-LC-R se obtiene una mejora adicional, alcanzando un error menor a 3 cm en la mayoría de las secuencias. En cuanto a Basalt-LC-R-CQ, en algunas secuencias se observan mejoras destacables, como en MIPB02 o MIO16. Sin embargo, en MIO01, la consulta de covisibilidad provoca la pérdida de localización del sistema, lo que puede atribuirse a la reidentificación incorrecta de un landmark, aunque el problema requiere investigación más profunda. Además, Basalt-LC-R-CQ no logra completar la secuencia MIPB08, de más de 35 minutos de duración. Esto se debe a que, según el diseño actual del sistema, para reidentificar landmarks se almacenan los parches de todos los keypoints detectados desde el inicio de la secuencia, por lo que su número crece indefinidamente hasta agotar la memoria disponible. En términos de RTE, Basalt obtiene la mejor precisión, aunque Basalt-LC y Basalt-LC-R alcanzan resultados comparables.
+La Tabla~\ref{tab:msdmi_ablation_all} muestra los resultados de ATE, RTE y ciclos detectados en las secuencias de MI*. En la mayoría de las secuencias se detecta un elevado número de ciclos, lo que permite a Basalt-LC reducir la mediana del ATE en más de un 85\% respecto de Basalt. Con la incorporación de RootBA en Basalt-LC-R se obtiene una mejora adicional, alcanzando un error menor a 3 cm en la mayoría de las secuencias. En cuanto a Basalt-LC-R-CQ, en algunas secuencias se observan mejoras destacables, como en MIPB02 o MIO16. Sin embargo, en MIO01, la consulta de covisibilidad provoca la pérdida de localización del sistema, lo que puede atribuirse a la reidentificación incorrecta de un landmark, aunque el problema requiere investigación más profunda. Además, Basalt-LC-R-CQ no logra completar la secuencia MIPB08, de más de 35 minutos de duración. Esto se debe a que, según el diseño actual del sistema, para reidentificar landmarks se almacenan los parches de todos los keypoints detectados desde el inicio de la secuencia, por lo que su número crece indefinidamente hasta agotar la memoria disponible. En términos de RTE, BasaltMSD obtiene la mejor precisión, aunque Basalt-LC y Basalt-LC-R alcanzan resultados comparables.
 %
 \begin{table}[!htbp]
 \centering
@@ -572,15 +553,15 @@ La Tabla~\ref{tab:msdmi_ablation_all} muestra los resultados de ATE, RTE y ciclo
 & \multicolumn{4}{c|}{\textbf{ATE [cm]}} & \multicolumn{4}{c|}{\textbf{RTE [cm]}} & \multicolumn{4}{c}{\textbf{Ciclos}} \\
 \cmidrule(lr){2-5} \cmidrule(lr){6-9} \cmidrule(lr){10-13}
 \textbf{Secuencia}
-& \rotatebox{90}{\textbf{Basalt}\,}
+& \rotatebox{90}{\textbf{BasaltMSD}\,}
 & \rotatebox{90}{\textbf{Basalt-LC}\,}
 & \rotatebox{90}{\textbf{Basalt-LC-R}\,}
 & \rotatebox{90}{\textbf{Basalt-LC-R-CQ}\,}
-& \rotatebox{90}{\textbf{Basalt}\,}
+& \rotatebox{90}{\textbf{BasaltMSD}\,}
 & \rotatebox{90}{\textbf{Basalt-LC}\,}
 & \rotatebox{90}{\textbf{Basalt-LC-R}\,}
 & \rotatebox{90}{\textbf{Basalt-LC-R-CQ}\,}
-& \rotatebox{90}{\textbf{Basalt}\,}
+& \rotatebox{90}{\textbf{BasaltMSD}\,}
 & \rotatebox{90}{\textbf{Basalt-LC}\,}
 & \rotatebox{90}{\textbf{Basalt-LC-R}\,}
 & \rotatebox{90}{\textbf{Basalt-LC-R-CQ}\,} \\
@@ -636,15 +617,15 @@ La Tabla~\ref{tab:msdmg_ablation_all} muestra los resultados de ATE, RTE y ciclo
 & \multicolumn{4}{c|}{\textbf{ATE [cm]}} & \multicolumn{4}{c|}{\textbf{RTE [cm]}} & \multicolumn{4}{c}{\textbf{Ciclos}} \\
 \cmidrule(lr){2-5} \cmidrule(lr){6-9} \cmidrule(lr){10-13}
 \textbf{Secuencia}
-& \rotatebox{90}{\textbf{Basalt}\,}
+& \rotatebox{90}{\textbf{BasaltMSD}\,}
 & \rotatebox{90}{\textbf{Basalt-LC}\,}
 & \rotatebox{90}{\textbf{Basalt-LC-R}\,}
 & \rotatebox{90}{\textbf{Basalt-LC-R-CQ}\,}
-& \rotatebox{90}{\textbf{Basalt}\,}
+& \rotatebox{90}{\textbf{BasaltMSD}\,}
 & \rotatebox{90}{\textbf{Basalt-LC}\,}
 & \rotatebox{90}{\textbf{Basalt-LC-R}\,}
 & \rotatebox{90}{\textbf{Basalt-LC-R-CQ}\,}
-& \rotatebox{90}{\textbf{Basalt}\,}
+& \rotatebox{90}{\textbf{BasaltMSD}\,}
 & \rotatebox{90}{\textbf{Basalt-LC}\,}
 & \rotatebox{90}{\textbf{Basalt-LC-R}\,}
 & \rotatebox{90}{\textbf{Basalt-LC-R-CQ}\,} \\
@@ -671,7 +652,7 @@ Promedio & 21.7 & 4.8 & 4.0 & \textbf{3.0} & \textbf{1.4} & 1.5 & 1.6 & 2.0 & --
 \end{tabular}
 \end{table}
 
-La Tabla~\ref{tab:msdmo_ablation_all} muestra los resultados de ATE, RTE y ciclos detectados en las secuencias de MO*. Una vez más, Basalt-LC-R es el que consigue los mejores resultados en ATE, mejorando la mediana en un 50\% en comparación con Basalt. La incorporación de la consulta de covisibilidad en Basalt-LC-R-CQ logra la mayor precisión en algunas secuencias, con un resultado especialmente destacado en MOO15, donde es el único sistema que mantiene la localización. Además, se repite el problema de memoria previamente descrito, que impide al sistema completar la secuencia MOO12, de más de 40 minutos de duración. En términos de RTE, Basalt obtiene la mejor mediana y promedio, aunque todos los sistemas mantienen una precisión similar.
+La Tabla~\ref{tab:msdmo_ablation_all} muestra los resultados de ATE, RTE y ciclos detectados en las secuencias de MO*. Una vez más, Basalt-LC-R es el que consigue los mejores resultados en ATE, mejorando la mediana en un 50\% en comparación con Basalt. La incorporación de la consulta de covisibilidad en Basalt-LC-R-CQ logra la mayor precisión en algunas secuencias, con un resultado especialmente destacado en MOO15, donde es el único sistema que mantiene la localización. Además, se repite el problema de memoria previamente descrito, que impide al sistema completar la secuencia MOO12, de más de 40 minutos de duración. En términos de RTE, BasaltMSD obtiene la mejor mediana y promedio, aunque todos los sistemas mantienen una precisión similar.
 %
 \begin{table}[!htbp]
 \centering
@@ -682,15 +663,15 @@ La Tabla~\ref{tab:msdmo_ablation_all} muestra los resultados de ATE, RTE y ciclo
 & \multicolumn{4}{c|}{\textbf{ATE [cm]}} & \multicolumn{4}{c|}{\textbf{RTE [cm]}} & \multicolumn{4}{c}{\textbf{Ciclos}} \\
 \cmidrule(lr){2-5} \cmidrule(lr){6-9} \cmidrule(lr){10-13}
 \textbf{Secuencia}
-& \rotatebox{90}{\textbf{Basalt}\,}
+& \rotatebox{90}{\textbf{BasaltMSD}\,}
 & \rotatebox{90}{\textbf{Basalt-LC}\,}
 & \rotatebox{90}{\textbf{Basalt-LC-R}\,}
 & \rotatebox{90}{\textbf{Basalt-LC-R-CQ}\,}
-& \rotatebox{90}{\textbf{Basalt}\,}
+& \rotatebox{90}{\textbf{BasaltMSD}\,}
 & \rotatebox{90}{\textbf{Basalt-LC}\,}
 & \rotatebox{90}{\textbf{Basalt-LC-R}\,}
 & \rotatebox{90}{\textbf{Basalt-LC-R-CQ}\,}
-& \rotatebox{90}{\textbf{Basalt}\,}
+& \rotatebox{90}{\textbf{BasaltMSD}\,}
 & \rotatebox{90}{\textbf{Basalt-LC}\,}
 & \rotatebox{90}{\textbf{Basalt-LC-R}\,}
 & \rotatebox{90}{\textbf{Basalt-LC-R-CQ}\,} \\
@@ -780,7 +761,7 @@ Además, las Figuras~\ref{fig:mipp01_ablation_maps} y~\ref{fig:mgo01_ablation_ma
     \label{fig:mgo01_ablation_maps}
 \end{figure}
 
-La Figura \ref{fig:msd_ablation_timings} muestra los tiempos de procesamiento por frame de cada sistema en secuencias representativas de MSD. Basalt-LC-R no se incluyó en este análisis, ya que el tiempo de la optimización final no puede representarse en este tipo de gráficas; su rendimiento se analizará en las secciones siguientes. Para los cascos Odyssey+ y HP Reverb G2 V2, tanto Basalt-LC como Basalt-LC-CQ mantienen el tiempo de procesamiento por frame por debajo del límite de tiempo real, aunque con un promedio levemente superior al de Basalt. En el caso del Valve Index, Basalt-LC supera a Basalt en 0.6 ms de promedio; aun así, su promedio móvil se mantiene por debajo del límite de tiempo real, con un margen ajustado. Basalt-LC-CQ, en cambio, presenta un aumento de 5.1 ms de promedio respecto de Basalt, lo que hace que su promedio móvil supere dicho límite.
+La Figura \ref{fig:msd_ablation_timings} muestra los tiempos de procesamiento por frame de cada sistema en secuencias representativas de MSD. Basalt-LC-R no se incluyó en este análisis, ya que el tiempo de la optimización final no puede representarse en este tipo de gráficas; su rendimiento se analizará en las secciones siguientes. Para los cascos Odyssey+ y HP Reverb G2 V2, tanto Basalt-LC como Basalt-LC-CQ mantienen el tiempo de procesamiento por frame por debajo del límite de tiempo real, aunque con un promedio levemente superior al de Basalt. En el caso del Valve Index, Basalt-LC supera a BasaltMSD en 0.6 ms de promedio; aun así, su promedio móvil se mantiene por debajo del límite de tiempo real, con un margen ajustado. Basalt-LC-CQ, en cambio, presenta un aumento de 5.1 ms de promedio respecto de Basalt, lo que hace que su promedio móvil supere dicho límite.
 %
 \begin{figure}[!htbp]
     \centering
@@ -808,18 +789,18 @@ La Figura \ref{fig:msd_ablation_timings} muestra los tiempos de procesamiento po
     \label{fig:msd_ablation_timings}
 \end{figure}
 
-En conclusión, Basalt-LC-R es el sistema más robusto, obtiene la mejor precisión en ATE, mantiene un RTE comparable al de Basalt y opera dentro de los límites de tiempo real. La sección siguiente compara su rendimiento y precisión con los de otros sistemas de VI-SLAM del estado del arte.
+En conclusión, Basalt-LC-R es el sistema más robusto, obtiene la mejor precisión en ATE, mantiene un RTE comparable al de BasaltMSD y opera dentro de los límites de tiempo real. La sección siguiente compara su rendimiento y precisión con los de otros sistemas de VI-SLAM del estado del arte.
 
 \section{Sistema propuesto vs. estado del arte}
 
-El objetivo de este experimento es evaluar el rendimiento y precisión de Basalt-LC-R en comparación con otros sistemas del estado del arte. Se eligió ORB-SLAM3 y OKVIS2 como sistemas de referencia. Ambos fueron ejecutados en sus versiones VI-SLAM estéreo con loop closure y optimización final de bundle adjustment. Al igual que en el estudio de ablación, se analiza la estimación no causal de la trayectoria y el rendimiento de cada sistema.
+El objetivo de este experimento es evaluar el rendimiento y precisión de Basalt-LC-R en comparación con otros sistemas del estado del arte. Se eligió ORB-SLAM3 y OKVIS2 como sistemas de referencia. Ambos fueron ejecutados en sus versiones VI-SLAM estéreo con loop closure y optimización final de bundle adjustment. Además, se comparan con BasaltMSD, como referencia del punto de partida de este trabajo. Al igual que en el estudio de ablación, se analiza la estimación no causal de la trayectoria y el rendimiento de cada sistema.
 
 La Figura~\ref{fig:sota_trajectories} muestra ejemplos cualitativos de trayectorias para secuencias representativas de los tres datasets.
 %
 \begin{figure}[!htbp]
     \centering
     \includegraphics[width=\textwidth]{img/experiments/sota.trajectories-sp.pdf}
-    \caption{Ejemplos de trayectorias para secuencias de distintos datasets, con ampliaciones en partes que resultan de interés. Se comparan Basalt en su versión VIO, con Basalt-LC-R, y OKVIS2 y ORB-SLAM3 como referencias del estado del arte de VI-SLAM. En Magistrale 1 Basalt-LC-R fue el único capaz de detectar el ciclo al reingresar en la habitación. Como se observa en la ampliación de su trayectoria, esta secuencia solo cuenta con ground truth en la parte de la habitación, al comienzo y al final. En V102, si bien Basalt-LC-R mejora la estimación del VIO de Basalt, no alcanza la precisión de OKVIS2 y ORB-SLAM3. Por último, en MIPP01, Basalt-LC-R es el único capaz de mantener el drift acotado durante toda la secuencia. Tanto OKVIS2 como Basalt acumulan drift considerable, evidenciado por la gran separación entre el inicio y el fin de sus trayectorias. ORB-SLAM3 no es capaz de mantener el tracking y consigue estimar solo el 85\% del total de la secuencia.}
+    \caption{Ejemplos de trayectorias para secuencias de distintos datasets, con ampliaciones en partes que resultan de interés. Se comparan BasaltMSD en su versión VIO, con Basalt-LC-R, y OKVIS2 y ORB-SLAM3 como referencias del estado del arte de VI-SLAM. En Magistrale 1 Basalt-LC-R fue el único capaz de detectar el ciclo al reingresar en la habitación. Como se observa en la ampliación de su trayectoria, esta secuencia solo cuenta con ground truth en la parte de la habitación, al comienzo y al final. En V102, si bien Basalt-LC-R mejora la estimación del VIO de Basalt, no alcanza la precisión de OKVIS2 y ORB-SLAM3. Por último, en MIPP01, Basalt-LC-R es el único capaz de mantener el drift acotado durante toda la secuencia. Tanto OKVIS2 como BasaltMSD acumulan drift considerable, evidenciado por la gran separación entre el inicio y el fin de sus trayectorias. ORB-SLAM3 no es capaz de mantener el tracking y consigue estimar solo el 85\% del total de la secuencia.}
     \label{fig:sota_trajectories}
 \end{figure}
 
@@ -833,18 +814,18 @@ La Tabla~\ref{tab:corridor_sota_ate} muestra los resultados de ATE para las secu
 \centering
 \caption{Error de trayectoria absoluto (ATE) [m] en TUM-VI Corridor.}
 \label{tab:corridor_sota_ate}
-\begin{tabular}{lrrr}
+\begin{tabular}{lrrrr}
 \toprule
-\textbf{Secuencia} & \textbf{Basalt-LC-R} & \textbf{OKVIS2} & \textbf{ORB-SLAM3} \\
+\textbf{Secuencia} & \textbf{BasaltMSD} & \textbf{Basalt-LC-R} & \textbf{OKVIS2} & \textbf{ORB-SLAM3} \\
 \midrule
-TC1 & \textbf{0.03} & 0.09 & \textbf{0.03} \\
-TC2 & 0.07 & 0.06 & \textbf{0.02} \\
-TC3 & 0.06 & \textbf{0.02} & \textbf{0.02} \\
-TC4 & 0.22 & \textbf{0.18} & 0.21 \\
-TC5 & 0.03 & 0.09 & \textbf{0.01} \\
+TC1 & 0.32 & \textbf{0.03} & 0.09 & \textbf{0.03} \\
+TC2 & 0.44 & 0.07 & 0.06 & \textbf{0.02} \\
+TC3 & 0.61 & 0.06 & \textbf{0.02} & \textbf{0.02} \\
+TC4 & 0.22 & 0.22 & \textbf{0.18} & 0.21 \\
+TC5 & 0.36 & 0.03 & 0.09 & \textbf{0.01} \\
 \midrule
-Mediana & 0.06 & 0.09 & \textbf{0.02} \\
-Promedio & 0.08 & 0.09 & \textbf{0.06} \\
+Mediana & 0.36 & 0.06 & 0.09 & \textbf{0.02} \\
+Promedio & 0.39 & 0.08 & 0.09 & \textbf{0.06} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -855,19 +836,19 @@ La Tabla~\ref{tab:magistrale_sota_ate} muestra los resultados de ATE para las se
 \centering
 \caption{Error de trayectoria absoluto (ATE) [m] en TUM-VI Magistrale.}
 \label{tab:magistrale_sota_ate}
-\begin{tabular}{lrrr}
+\begin{tabular}{lrrrr}
 \toprule
-\textbf{Secuencia} & \textbf{Basalt-LC-R} & \textbf{OKVIS2} & \textbf{ORB-SLAM3} \\
+\textbf{Secuencia} & \textbf{BasaltMSD} & \textbf{Basalt-LC-R} & \textbf{OKVIS2} & \textbf{ORB-SLAM3} \\
 \midrule
-TM1 & 0.07 & \textbf{0.03} & 0.24 \\
-TM2 & 0.87 & \textbf{0.03} & 0.52 \\
-TM3 & 1.66 & \textbf{0.93} & 1.86 \\
-TM4 & 1.51 & \textbf{0.04} & 0.16 \\
-TM5 & 0.95 & \textbf{0.01} & 1.13 \\
-TM6 & \textbf{0.02} & 0.63 & 0.97 \\
+TM1 & 1.83 & 0.07 & \textbf{0.03} & 0.24 \\
+TM2 & 1.50 & 0.87 & \textbf{0.03} & 0.52 \\
+TM3 & 1.97 & 1.66 & \textbf{0.93} & 1.86 \\
+TM4 & 1.51 & 1.51 & \textbf{0.04} & 0.16 \\
+TM5 & 1.01 & 0.95 & \textbf{0.01} & 1.13 \\
+TM6 & 3.20 & \textbf{0.02} & 0.63 & 0.97 \\
 \midrule
-Mediana & 0.91 & \textbf{0.04} & 0.74 \\
-Promedio & 0.85 & \textbf{0.28} & 0.81 \\
+Mediana & 1.67 & 0.91 & \textbf{0.04} & 0.74 \\
+Promedio & 1.84 & 0.85 & \textbf{0.28} & 0.81 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -878,21 +859,21 @@ La Tabla~\ref{tab:outdoors_sota_ate} muestra los resultados de ATE para las secu
 \centering
 \caption{Error de trayectoria absoluto (ATE) [m] en TUM-VI Outdoors.}
 \label{tab:outdoors_sota_ate}
-\begin{tabular}{lrrr}
+\begin{tabular}{lrrrr}
 \toprule
-\textbf{Secuencia} & \textbf{Basalt-LC-R} & \textbf{OKVIS2} & \textbf{ORB-SLAM3} \\
+\textbf{Secuencia} & \textbf{BasaltMSD} & \textbf{Basalt-LC-R} & \textbf{OKVIS2} & \textbf{ORB-SLAM3} \\
 \midrule
-TO1 & 284.24 & \textbf{24.92} & 32.32 \\
-TO2 & 60.45 & \textbf{0.04} & 10.42 \\
-TO3 & 34.92 & \textbf{27.14} & 54.77 \\
-TO4 & 14.07 & \textbf{7.42} & 11.61 \\
-TO5 & 12.62 & \textbf{6.67} & 7.57 \\
-TO6 & 77.55 & 26.37 & \textbf{10.70} \\
-TO7 & 2.07 & \textbf{0.15} & 4.58 \\
-TO8 & 12.15 & \textbf{0.05} & 11.02 \\
+TO1 & 274.82 & 284.24 & \textbf{24.92} & 32.32 \\
+TO2 & 58.52 & 60.45 & \textbf{0.04} & 10.42 \\
+TO3 & 33.88 & 34.92 & \textbf{27.14} & 54.77 \\
+TO4 & 10.17 & 14.07 & \textbf{7.42} & 11.61 \\
+TO5 & 8.37 & 12.62 & \textbf{6.67} & 7.57 \\
+TO6 & 75.47 & 77.55 & 26.37 & \textbf{10.70} \\
+TO7 & 7.84 & 2.07 & \textbf{0.15} & 4.58 \\
+TO8 & 12.46 & 12.15 & \textbf{0.05} & 11.02 \\
 \midrule
-Mediana & 24.50 & \textbf{7.04} & 10.86 \\
-Promedio & 62.26 & \textbf{11.60} & 17.87 \\
+Mediana & 23.17 & 24.50 & \textbf{7.04} & 10.86 \\
+Promedio & 60.19 & 62.26 & \textbf{11.60} & 17.87 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -914,19 +895,19 @@ La Tabla~\ref{tab:room_sota_ate} muestra los resultados de ATE para las secuenci
 \centering
 \caption{Error de trayectoria absoluto (ATE) [m] en TUM-VI Room.}
 \label{tab:room_sota_ate}
-\begin{tabular}{lrrr}
+\begin{tabular}{lrrrr}
 \toprule
-\textbf{Secuencia} & \textbf{Basalt-LC-R} & \textbf{OKVIS2} & \textbf{ORB-SLAM3} \\
+\textbf{Secuencia} & \textbf{BasaltMSD} & \textbf{Basalt-LC-R} & \textbf{OKVIS2} & \textbf{ORB-SLAM3} \\
 \midrule
-TR1 & \textbf{0.01} & \textbf{0.01} & \textbf{0.01} \\
-TR2 & \textbf{0.01} & \textbf{0.01} & \textbf{0.01} \\
-TR3 & \textbf{0.01} & \textbf{0.01} & \textbf{0.01} \\
-TR4 & \textbf{0.01} & \textbf{0.01} & \textbf{0.01} \\
-TR5 & \textbf{0.01} & \textbf{0.01} & \textbf{0.01} \\
-TR6 & \textbf{0.01} & \textbf{0.01} & \textbf{0.01} \\
+TR1 & 0.11 & \textbf{0.01} & \textbf{0.01} & \textbf{0.01} \\
+TR2 & 0.07 & \textbf{0.01} & \textbf{0.01} & \textbf{0.01} \\
+TR3 & 0.11 & \textbf{0.01} & \textbf{0.01} & \textbf{0.01} \\
+TR4 & 0.04 & \textbf{0.01} & \textbf{0.01} & \textbf{0.01} \\
+TR5 & 0.17 & \textbf{0.01} & \textbf{0.01} & \textbf{0.01} \\
+TR6 & 0.02 & \textbf{0.01} & \textbf{0.01} & \textbf{0.01} \\
 \midrule
-Mediana & \textbf{0.01} & \textbf{0.01} & \textbf{0.01} \\
-Promedio & \textbf{0.01} & \textbf{0.01} & \textbf{0.01} \\
+Mediana & 0.09 & \textbf{0.01} & \textbf{0.01} & \textbf{0.01} \\
+Promedio & 0.09 & \textbf{0.01} & \textbf{0.01} & \textbf{0.01} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -937,16 +918,16 @@ La Tabla~\ref{tab:slides_sota_ate} muestra los resultados de ATE para las secuen
 \centering
 \caption{Error de trayectoria absoluto (ATE) [m] en TUM-VI Slides.}
 \label{tab:slides_sota_ate}
-\begin{tabular}{lrrr}
+\begin{tabular}{lrrrr}
 \toprule
-\textbf{Secuencia} & \textbf{Basalt-LC-R} & \textbf{OKVIS2} & \textbf{ORB-SLAM3} \\
+\textbf{Secuencia} & \textbf{BasaltMSD} & \textbf{Basalt-LC-R} & \textbf{OKVIS2} & \textbf{ORB-SLAM3} \\
 \midrule
-TS1 & \textbf{0.01} & 0.10 & 0.41 \\
-TS2 & 1.23 & \textbf{0.16} & 0.49 \\
-TS3 & 1.51 & 1.35 & \textbf{0.47} \\
+TS1 & 0.44 & \textbf{0.01} & 0.10 & 0.41 \\
+TS2 & 1.09 & 1.23 & \textbf{0.16} & 0.49 \\
+TS3 & 1.55 & 1.51 & 1.35 & \textbf{0.47} \\
 \midrule
-Mediana & 1.23 & \textbf{0.16} & 0.47 \\
-Promedio & 0.92 & 0.54 & \textbf{0.46} \\
+Mediana & 1.09 & 1.23 & \textbf{0.16} & 0.47 \\
+Promedio & 1.03 & 0.92 & 0.54 & \textbf{0.46} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -957,18 +938,18 @@ La Tabla~\ref{tab:MH_sota_ate} muestra los resultados de ATE para las secuencias
 \centering
 \caption{Error de trayectoria absoluto (ATE) [m] en EuRoC Machine Hall.}
 \label{tab:MH_sota_ate}
-\begin{tabular}{lrrr}
+\begin{tabular}{lrrrr}
 \toprule
-\textbf{Secuencia} & \textbf{Basalt-LC-R} & \textbf{OKVIS2} & \textbf{ORB-SLAM3} \\
+\textbf{Secuencia} & \textbf{BasaltMSD} & \textbf{Basalt-LC-R} & \textbf{OKVIS2} & \textbf{ORB-SLAM3} \\
 \midrule
-EMH01 & 0.08 & \textbf{0.03} & 0.04 \\
-EMH02 & 0.05 & \textbf{0.02} & 0.03 \\
-EMH03 & 0.05 & \textbf{0.03} & 0.04 \\
-EMH04 & 0.13 & 0.07 & \textbf{0.05} \\
-EMH05 & 0.09 & \textbf{0.07} & 0.08 \\
+EMH01 & 0.08 & 0.08 & \textbf{0.03} & 0.04 \\
+EMH02 & 0.05 & 0.05 & \textbf{0.02} & 0.03 \\
+EMH03 & 0.06 & 0.05 & \textbf{0.03} & 0.04 \\
+EMH04 & 0.13 & 0.13 & 0.07 & \textbf{0.05} \\
+EMH05 & 0.15 & 0.09 & \textbf{0.07} & 0.08 \\
 \midrule
-Mediana & 0.08 & \textbf{0.03} & 0.04 \\
-Promedio & 0.08 & \textbf{0.04} & 0.05 \\
+Mediana & 0.08 & 0.08 & \textbf{0.03} & 0.04 \\
+Promedio & 0.09 & 0.08 & \textbf{0.04} & 0.05 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -979,16 +960,16 @@ La Tabla~\ref{tab:V1_sota_ate} muestra los resultados de ATE para las secuencias
 \centering
 \caption{Error de trayectoria absoluto (ATE) [m] en EuRoC Vicon Room 1.}
 \label{tab:V1_sota_ate}
-\begin{tabular}{lrrr}
+\begin{tabular}{lrrrr}
 \toprule
-\textbf{Secuencia} & \textbf{Basalt-LC-R} & \textbf{OKVIS2} & \textbf{ORB-SLAM3} \\
+\textbf{Secuencia} & \textbf{BasaltMSD} & \textbf{Basalt-LC-R} & \textbf{OKVIS2} & \textbf{ORB-SLAM3} \\
 \midrule
-EV101 & \textbf{0.04} & \textbf{0.04} & \textbf{0.04} \\
-EV102 & 0.03 & \textbf{0.01} & \textbf{0.01} \\
-EV103 & 0.13 & \textbf{0.02} & \textbf{0.02} \\
+EV101 & \textbf{0.04} & \textbf{0.04} & \textbf{0.04} & \textbf{0.04} \\
+EV102 & 0.05 & 0.03 & \textbf{0.01} & \textbf{0.01} \\
+EV103 & 0.06 & 0.13 & \textbf{0.02} & \textbf{0.02} \\
 \midrule
-Mediana & 0.04 & \textbf{0.02} & \textbf{0.02} \\
-Promedio & 0.07 & \textbf{0.02} & 0.03 \\
+Mediana & 0.05 & 0.04 & \textbf{0.02} & \textbf{0.02} \\
+Promedio & 0.05 & 0.07 & \textbf{0.02} & 0.03 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -997,16 +978,16 @@ Promedio & 0.07 & \textbf{0.02} & 0.03 \\
 \centering
 \caption{Error de trayectoria absoluto (ATE) [m] en EuRoC Vicon Room 2.}
 \label{tab:V2_sota_ate}
-\begin{tabular}{lrrr}
+\begin{tabular}{lrrrr}
 \toprule
-\textbf{Secuencia} & \textbf{Basalt-LC-R} & \textbf{OKVIS2} & \textbf{ORB-SLAM3} \\
+\textbf{Secuencia} & \textbf{BasaltMSD} & \textbf{Basalt-LC-R} & \textbf{OKVIS2} & \textbf{ORB-SLAM3} \\
 \midrule
-EV201 & 0.04 & \textbf{0.02} & 0.03 \\
-EV202 & 0.10 & \textbf{0.01} & \textbf{0.01} \\
-EV203 & 0.14 & \textbf{0.02} & \textbf{0.02} \\
+EV201 & 0.04 & 0.04 & \textbf{0.02} & 0.03 \\
+EV202 & 0.04 & 0.10 & \textbf{0.01} & \textbf{0.01} \\
+EV203 & 0.16 & 0.14 & \textbf{0.02} & \textbf{0.02} \\
 \midrule
-Mediana & 0.10 & \textbf{0.02} & \textbf{0.02} \\
-Promedio & 0.09 & \textbf{0.02} & \textbf{0.02} \\
+Mediana & 0.04 & 0.10 & \textbf{0.02} & \textbf{0.02} \\
+Promedio & 0.08 & 0.09 & \textbf{0.02} & \textbf{0.02} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1021,59 +1002,64 @@ La Tabla~\ref{tab:msdmi_sota_all} muestra los resultados de ATE, RTE y porcentaj
 \centering
 \caption{ATE [cm], RTE [cm] y tasa de completitud (\%) en MSD Valve Index.}
 \label{tab:msdmi_sota_all}
-\begin{tabular}{l rrr | rrr | rrr}
+\resizebox{\textwidth}{!}{
+\begin{tabular}{l rrrr | rrrr | rrrr}
 \toprule
-& \multicolumn{3}{c|}{\textbf{ATE [cm]}} & \multicolumn{3}{c|}{\textbf{RTE [cm]}} & \multicolumn{3}{c}{\textbf{Completitud (\%)}} \\
-\cmidrule(lr){2-4} \cmidrule(lr){5-7} \cmidrule(lr){8-10}
+& \multicolumn{4}{c|}{\textbf{ATE [cm]}} & \multicolumn{4}{c|}{\textbf{RTE [cm]}} & \multicolumn{4}{c}{\textbf{Completitud (\%)}} \\
+\cmidrule(lr){2-5} \cmidrule(lr){6-9} \cmidrule(lr){10-13}
 \textbf{Secuencia}
+& \rotatebox{90}{\textbf{BasaltMSD}\,}
 & \rotatebox{90}{\textbf{Basalt-LC-R}\,}
 & \rotatebox{90}{\textbf{OKVIS2}\,}
 & \rotatebox{90}{\textbf{ORB-SLAM3}\,}
+& \rotatebox{90}{\textbf{BasaltMSD}\,}
 & \rotatebox{90}{\textbf{Basalt-LC-R}\,}
 & \rotatebox{90}{\textbf{OKVIS2}\,}
 & \rotatebox{90}{\textbf{ORB-SLAM3}\,}
+& \rotatebox{90}{\textbf{BasaltMSD}\,}
 & \rotatebox{90}{\textbf{Basalt-LC-R}\,}
 & \rotatebox{90}{\textbf{OKVIS2}\,}
 & \rotatebox{90}{\textbf{ORB-SLAM3}\,} \\
 \midrule
-MIO01 & \textbf{18.7} & 6912.6 & 63841.4 & \textbf{4.4} & 82.3 & 389.6 & \textbf{100} & \textbf{100} & 87 \\
-MIO02 & \textbf{23.6} & 146.7 & 9914.8 & 4.0 & \textbf{3.1} & 133.7 & \textbf{100} & \textbf{100} & 99 \\
-MIO03 & \textbf{2.5} & 4.4 & 4.3 & 1.0 & \textbf{0.7} & 1.1 & \textbf{100} & \textbf{100} & 97 \\
-MIO04 & \textbf{7.4} & 16.7 & 235.4 & 3.6 & \textbf{1.1} & 3.9 & \textbf{100} & \textbf{100} & 95 \\
-MIO05 & \textbf{1.9} & 2.4 & 2.0 & \textbf{0.3} & 1.2 & 0.8 & \textbf{100} & \textbf{100} & 78 \\
-MIO06 & \textbf{2.6} & 6.4 & 31.7 & \textbf{1.4} & 1.6 & 11.3 & \textbf{100} & \textbf{100} & \textbf{100} \\
-MIO07 & \textbf{1.2} & 1.6 & 1.3 & \textbf{0.2} & 0.6 & 0.7 & \textbf{100} & \textbf{100} & 98 \\
-MIO08 & 6.9 & 3.5 & \textbf{2.0} & 3.9 & \textbf{0.6} & 0.8 & \textbf{100} & \textbf{100} & 97 \\
-MIO09 & \textbf{0.2} & 0.5 & 0.4 & \textbf{0.2} & 0.4 & 0.4 & \textbf{100} & 99 & 90 \\
-MIO10 & 1.8 & \textbf{1.4} & -- & 0.6 & \textbf{0.5} & -- & \textbf{100} & \textbf{100} & -- \\
-MIO11 & \textbf{2.3} & 2.7 & -- & \textbf{0.6} & \textbf{0.6} & -- & \textbf{100} & \textbf{100} & -- \\
-MIO12 & \textbf{4.2} & 60.5 & 1141.6 & 0.6 & \textbf{0.5} & 221.3 & \textbf{100} & \textbf{100} & 95 \\
-MIO13 & \textbf{28.0} & 35.6 & 290233.0 & 2.7 & \textbf{0.6} & 871.3 & \textbf{100} & \textbf{100} & 43 \\
-MIO14 & \textbf{2.5} & 2.7 & -- & \textbf{0.3} & 0.4 & -- & \textbf{100} & \textbf{100} & -- \\
-MIO15 & \textbf{10.7} & 13.3 & 153132.8 & 1.3 & \textbf{0.5} & 756.7 & \textbf{100} & \textbf{100} & 63 \\
-MIO16 & 18.7 & \textbf{15.2} & 29.6 & 2.5 & \textbf{0.9} & 1.1 & \textbf{100} & \textbf{100} & 92 \\
-MIPB01 & 1.3 & 1.7 & \textbf{1.2} & 0.6 & \textbf{0.5} & 0.7 & \textbf{100} & \textbf{100} & 99 \\
-MIPB02 & 3.5 & 2.0 & \textbf{1.4} & 2.7 & \textbf{0.5} & 0.6 & \textbf{100} & \textbf{100} & 99 \\
-MIPB03 & \textbf{2.9} & 5.2 & 9.1 & 0.7 & \textbf{0.5} & 1.1 & \textbf{100} & \textbf{100} & 99 \\
-MIPB04 & 2.0 & 2.4 & \textbf{1.6} & 0.6 & \textbf{0.4} & 0.6 & \textbf{100} & \textbf{100} & 97 \\
-MIPB05 & \textbf{1.4} & 2.1 & 2.1 & 0.5 & \textbf{0.4} & 1.7 & \textbf{100} & \textbf{100} & 82 \\
-MIPB06 & 2.9 & 1.9 & \textbf{1.6} & \textbf{0.5} & \textbf{0.5} & 0.6 & \textbf{100} & \textbf{100} & 91 \\
-MIPB07 & 1.6 & 1.8 & \textbf{1.3} & 0.5 & \textbf{0.4} & 0.7 & \textbf{100} & \textbf{100} & 81 \\
-MIPB08 & 3.9 & \textbf{3.6} & 25.9 & 0.5 & \textbf{0.4} & 1.0 & \textbf{100} & \textbf{100} & 96 \\
-MIPP01 & \textbf{2.9} & 10.1 & 24.8 & 1.1 & \textbf{0.5} & 4.4 & \textbf{100} & \textbf{100} & 89 \\
-MIPP02 & 3.9 & \textbf{1.8} & 6.3 & 1.7 & \textbf{0.4} & 1.4 & \textbf{100} & \textbf{100} & 99 \\
-MIPP03 & 4.8 & \textbf{2.3} & 13.9 & 2.3 & \textbf{0.5} & 5.0 & \textbf{100} & \textbf{100} & 98 \\
-MIPP04 & 2.5 & \textbf{1.1} & 2.5 & 1.0 & \textbf{0.4} & 0.8 & \textbf{100} & \textbf{100} & 79 \\
-MIPP05 & 2.7 & 1.5 & \textbf{1.2} & 1.9 & \textbf{0.4} & 0.6 & \textbf{100} & \textbf{100} & 99 \\
-MIPP06 & 2.7 & \textbf{1.2} & 595.9 & 1.2 & \textbf{0.4} & 4.4 & \textbf{100} & \textbf{100} & 98 \\
-MIPT01 & 1.7 & 1.9 & \textbf{1.5} & 0.5 & \textbf{0.4} & 0.6 & \textbf{100} & \textbf{100} & \textbf{100} \\
-MIPT02 & 2.1 & 2.0 & \textbf{1.1} & 0.5 & \textbf{0.4} & 0.6 & \textbf{100} & \textbf{100} & 98 \\
-MIPT03 & \textbf{3.5} & 4.6 & 34.4 & \textbf{0.6} & \textbf{0.6} & 2.7 & \textbf{100} & \textbf{100} & 96 \\
+MIO01 & 62.0 & \textbf{18.7} & 6912.6 & 63841.4 & \textbf{3.7} & 4.4 & 82.3 & 389.6 & \textbf{100} & \textbf{100} & \textbf{100} & 87 \\
+MIO02 & 118.3 & \textbf{23.6} & 146.7 & 9914.8 & 6.5 & 4.0 & \textbf{3.1} & 133.7 & \textbf{100} & \textbf{100} & \textbf{100} & 99 \\
+MIO03 & 9.4 & \textbf{2.5} & 4.4 & 4.3 & \textbf{0.6} & 1.0 & 0.7 & 1.1 & \textbf{100} & \textbf{100} & \textbf{100} & 97 \\
+MIO04 & 20.7 & \textbf{7.4} & 16.7 & 235.4 & 1.3 & 3.6 & \textbf{1.1} & 3.9 & \textbf{100} & \textbf{100} & \textbf{100} & 95 \\
+MIO05 & 3.4 & \textbf{1.9} & 2.4 & 2.0 & \textbf{0.3} & \textbf{0.3} & 1.2 & 0.8 & \textbf{100} & \textbf{100} & \textbf{100} & 78 \\
+MIO06 & 4.9 & \textbf{2.6} & 6.4 & 31.7 & \textbf{1.0} & 1.4 & 1.6 & 11.3 & \textbf{100} & \textbf{100} & \textbf{100} & \textbf{100} \\
+MIO07 & 2.3 & \textbf{1.2} & 1.6 & 1.3 & \textbf{0.2} & \textbf{0.2} & 0.6 & 0.7 & \textbf{100} & \textbf{100} & \textbf{100} & 98 \\
+MIO08 & 5.7 & 6.9 & 3.5 & \textbf{2.0} & 0.7 & 3.9 & \textbf{0.6} & 0.8 & \textbf{100} & \textbf{100} & \textbf{100} & 97 \\
+MIO09 & 0.6 & \textbf{0.2} & 0.5 & 0.4 & 0.3 & \textbf{0.2} & 0.4 & 0.4 & \textbf{100} & \textbf{100} & 99 & 90 \\
+MIO10 & 1.5 & 1.8 & \textbf{1.4} & -- & \textbf{0.5} & 0.6 & \textbf{0.5} & -- & \textbf{100} & \textbf{100} & \textbf{100} & -- \\
+MIO11 & 2.4 & \textbf{2.3} & 2.7 & -- & 0.7 & \textbf{0.6} & \textbf{0.6} & -- & \textbf{100} & \textbf{100} & \textbf{100} & -- \\
+MIO12 & 43.5 & \textbf{4.2} & 60.5 & 1141.6 & 0.6 & 0.6 & \textbf{0.5} & 221.3 & \textbf{100} & \textbf{100} & \textbf{100} & 95 \\
+MIO13 & 108.4 & \textbf{28.0} & 35.6 & 290233.0 & 2.9 & 2.7 & \textbf{0.6} & 871.3 & \textbf{100} & \textbf{100} & \textbf{100} & 43 \\
+MIO14 & 9.7 & \textbf{2.5} & 2.7 & -- & \textbf{0.3} & \textbf{0.3} & 0.4 & -- & \textbf{100} & \textbf{100} & \textbf{100} & -- \\
+MIO15 & 79.5 & \textbf{10.7} & 13.3 & 153132.8 & 1.2 & 1.3 & \textbf{0.5} & 756.7 & \textbf{100} & \textbf{100} & \textbf{100} & 63 \\
+MIO16 & 53.1 & 18.7 & \textbf{15.2} & 29.6 & 1.3 & 2.5 & \textbf{0.9} & 1.1 & \textbf{100} & \textbf{100} & \textbf{100} & 92 \\
+MIPB01 & 27.9 & 1.3 & 1.7 & \textbf{1.2} & 0.7 & 0.6 & \textbf{0.5} & 0.7 & \textbf{100} & \textbf{100} & \textbf{100} & 99 \\
+MIPB02 & 23.5 & 3.5 & 2.0 & \textbf{1.4} & \textbf{0.5} & 2.7 & \textbf{0.5} & 0.6 & \textbf{100} & \textbf{100} & \textbf{100} & 99 \\
+MIPB03 & 18.9 & \textbf{2.9} & 5.2 & 9.1 & 0.6 & 0.7 & \textbf{0.5} & 1.1 & \textbf{100} & \textbf{100} & \textbf{100} & 99 \\
+MIPB04 & 10.4 & 2.0 & 2.4 & \textbf{1.6} & 0.5 & 0.6 & \textbf{0.4} & 0.6 & \textbf{100} & \textbf{100} & \textbf{100} & 97 \\
+MIPB05 & 4.4 & \textbf{1.4} & 2.1 & 2.1 & \textbf{0.4} & 0.5 & \textbf{0.4} & 1.7 & \textbf{100} & \textbf{100} & \textbf{100} & 82 \\
+MIPB06 & 4.8 & 2.9 & 1.9 & \textbf{1.6} & \textbf{0.4} & 0.5 & 0.5 & 0.6 & \textbf{100} & \textbf{100} & \textbf{100} & 91 \\
+MIPB07 & 6.2 & 1.6 & 1.8 & \textbf{1.3} & 0.5 & 0.5 & \textbf{0.4} & 0.7 & \textbf{100} & \textbf{100} & \textbf{100} & 81 \\
+MIPB08 & 63.0 & 3.9 & \textbf{3.6} & 25.9 & \textbf{0.4} & 0.5 & \textbf{0.4} & 1.0 & \textbf{100} & \textbf{100} & \textbf{100} & 96 \\
+MIPP01 & 43.9 & \textbf{2.9} & 10.1 & 24.8 & 1.0 & 1.1 & \textbf{0.5} & 4.4 & \textbf{100} & \textbf{100} & \textbf{100} & 89 \\
+MIPP02 & 24.1 & 3.9 & \textbf{1.8} & 6.3 & 1.0 & 1.7 & \textbf{0.4} & 1.4 & \textbf{100} & \textbf{100} & \textbf{100} & 99 \\
+MIPP03 & 26.9 & 4.8 & \textbf{2.3} & 13.9 & 0.9 & 2.3 & \textbf{0.5} & 5.0 & \textbf{100} & \textbf{100} & \textbf{100} & 98 \\
+MIPP04 & 28.7 & 2.5 & \textbf{1.1} & 2.5 & 0.8 & 1.0 & \textbf{0.4} & 0.8 & \textbf{100} & \textbf{100} & \textbf{100} & 79 \\
+MIPP05 & 18.3 & 2.7 & 1.5 & \textbf{1.2} & 0.6 & 1.9 & \textbf{0.4} & 0.6 & \textbf{100} & \textbf{100} & \textbf{100} & 99 \\
+MIPP06 & 28.3 & 2.7 & \textbf{1.2} & 595.9 & 1.0 & 1.2 & \textbf{0.4} & 4.4 & \textbf{100} & \textbf{100} & \textbf{100} & 98 \\
+MIPT01 & 10.6 & 1.7 & 1.9 & \textbf{1.5} & \textbf{0.4} & 0.5 & \textbf{0.4} & 0.6 & \textbf{100} & \textbf{100} & \textbf{100} & \textbf{100} \\
+MIPT02 & 19.8 & 2.1 & 2.0 & \textbf{1.1} & \textbf{0.4} & 0.5 & \textbf{0.4} & 0.6 & \textbf{100} & \textbf{100} & \textbf{100} & 98 \\
+MIPT03 & 39.9 & \textbf{3.5} & 4.6 & 34.4 & \textbf{0.6} & \textbf{0.6} & \textbf{0.6} & 2.7 & \textbf{100} & \textbf{100} & \textbf{100} & 96 \\
 \midrule
-Mediana & 2.7 & \textbf{2.4} & 5.3 & 0.7 & \textbf{0.5} & 1.1 & \textbf{100} & \textbf{100} & 96 \\
-Promedio & \textbf{5.4} & 220.4 & 17309.9 & \textbf{1.4} & 3.1 & 80.7 & \textbf{100} & \textbf{100} & 91 \\
+Mediana & 19.8 & 2.7 & \textbf{2.4} & 5.3 & 0.6 & 0.7 & \textbf{0.5} & 1.1 & \textbf{100} & \textbf{100} & \textbf{100} & 96 \\
+Promedio & 28.0 & \textbf{5.4} & 220.4 & 17309.9 & \textbf{1.0} & 1.4 & 3.1 & 80.7 & \textbf{100} & \textbf{100} & \textbf{100} & 91 \\
 \bottomrule
 \end{tabular}
+}
 \end{table}
 
 La Tabla~\ref{tab:msdmg_sota_all} muestra los resultados de ATE, RTE y porcentaje de secuencia completada de MG*. El comportamiento es similar al de MI*: OKVIS2 obtiene la mejor mediana en ATE y RTE, aunque Basalt-LC-R se mantiene competitivo en ambas métricas y alcanza el mejor promedio. ORB-SLAM3 presenta resultados inferiores y no completa numerosas secuencias.
@@ -1082,41 +1068,46 @@ La Tabla~\ref{tab:msdmg_sota_all} muestra los resultados de ATE, RTE y porcentaj
 \centering
 \caption{ATE [cm], RTE [cm] y tasa de completitud (\%) en MSD HP Reverb G2.}
 \label{tab:msdmg_sota_all}
-\begin{tabular}{l rrr | rrr | rrr}
+\resizebox{\textwidth}{!}{
+\begin{tabular}{l rrrr | rrrr | rrrr}
 \toprule
-& \multicolumn{3}{c|}{\textbf{ATE [cm]}} & \multicolumn{3}{c|}{\textbf{RTE [cm]}} & \multicolumn{3}{c}{\textbf{Completitud (\%)}} \\
-\cmidrule(lr){2-4} \cmidrule(lr){5-7} \cmidrule(lr){8-10}
+& \multicolumn{4}{c|}{\textbf{ATE [cm]}} & \multicolumn{4}{c|}{\textbf{RTE [cm]}} & \multicolumn{4}{c}{\textbf{Completitud (\%)}} \\
+\cmidrule(lr){2-5} \cmidrule(lr){6-9} \cmidrule(lr){10-13}
 \textbf{Secuencia}
+& \rotatebox{90}{\textbf{BasaltMSD}\,}
 & \rotatebox{90}{\textbf{Basalt-LC-R}\,}
 & \rotatebox{90}{\textbf{OKVIS2}\,}
 & \rotatebox{90}{\textbf{ORB-SLAM3}\,}
+& \rotatebox{90}{\textbf{BasaltMSD}\,}
 & \rotatebox{90}{\textbf{Basalt-LC-R}\,}
 & \rotatebox{90}{\textbf{OKVIS2}\,}
 & \rotatebox{90}{\textbf{ORB-SLAM3}\,}
+& \rotatebox{90}{\textbf{BasaltMSD}\,}
 & \rotatebox{90}{\textbf{Basalt-LC-R}\,}
 & \rotatebox{90}{\textbf{OKVIS2}\,}
 & \rotatebox{90}{\textbf{ORB-SLAM3}\,} \\
 \midrule
-MGO01 & 12.1 & 18.5 & \textbf{1.8} & 2.4 & \textbf{1.0} & 1.4 & \textbf{100} & \textbf{100} & \textbf{100} \\
-MGO02 & 7.5 & \textbf{7.0} & 42.2 & 3.1 & \textbf{1.7} & 2.2 & \textbf{100} & \textbf{100} & \textbf{100} \\
-MGO03 & \textbf{1.7} & 1.8 & 1.8 & 1.1 & \textbf{0.8} & 1.1 & \textbf{100} & \textbf{100} & 98 \\
-MGO04 & 5.4 & 3.6 & \textbf{2.4} & 2.8 & \textbf{1.0} & 1.6 & \textbf{100} & \textbf{100} & 98 \\
-MGO05 & 1.7 & \textbf{1.3} & 3.4 & \textbf{0.3} & 0.4 & 2.5 & \textbf{100} & \textbf{100} & 99 \\
-MGO06 & 4.1 & \textbf{2.4} & 23.7 & 1.6 & \textbf{1.1} & 2.5 & \textbf{100} & \textbf{100} & \textbf{100} \\
-MGO07 & 1.4 & \textbf{0.9} & 1.9 & \textbf{0.4} & 0.5 & 1.0 & \textbf{100} & \textbf{100} & 98 \\
-MGO08 & 5.0 & \textbf{1.6} & -- & 3.5 & \textbf{1.1} & -- & \textbf{100} & \textbf{100} & -- \\
-MGO09 & 1.1 & \textbf{0.7} & 1.8 & 0.7 & \textbf{0.6} & 1.7 & \textbf{100} & 99 & 92 \\
-MGO10 & 1.4 & \textbf{0.7} & 6.0 & \textbf{0.3} & \textbf{0.3} & 1.9 & \textbf{100} & \textbf{100} & 97 \\
-MGO11 & \textbf{1.0} & \textbf{1.0} & 5.5 & \textbf{0.4} & \textbf{0.4} & 2.0 & \textbf{100} & \textbf{100} & 98 \\
-MGO12 & 5.4 & \textbf{2.7} & 66.7 & 1.7 & \textbf{1.6} & 11.3 & \textbf{100} & \textbf{100} & \textbf{100} \\
-MGO13 & \textbf{8.6} & 60.5 & 11397.0 & 4.1 & \textbf{1.8} & 131.0 & \textbf{100} & \textbf{100} & 99 \\
-MGO14 & 1.9 & \textbf{1.5} & 2.0 & \textbf{0.9} & \textbf{0.9} & 1.2 & \textbf{100} & \textbf{100} & 99 \\
-MGO15 & \textbf{1.9} & 53.8 & 23.9 & \textbf{0.3} & 0.5 & 0.4 & \textbf{100} & \textbf{100} & \textbf{100} \\
+MGO01 & 68.0 & 12.1 & 18.5 & \textbf{1.8} & 2.3 & 2.4 & \textbf{1.0} & 1.4 & \textbf{100} & \textbf{100} & \textbf{100} & \textbf{100} \\
+MGO02 & 55.6 & 7.5 & \textbf{7.0} & 42.2 & 2.8 & 3.1 & \textbf{1.7} & 2.2 & \textbf{100} & \textbf{100} & \textbf{100} & \textbf{100} \\
+MGO03 & 14.5 & \textbf{1.7} & 1.8 & 1.8 & 1.3 & 1.1 & \textbf{0.8} & 1.1 & \textbf{100} & \textbf{100} & \textbf{100} & 98 \\
+MGO04 & 26.1 & 5.4 & 3.6 & \textbf{2.4} & 2.5 & 2.8 & \textbf{1.0} & 1.6 & \textbf{100} & \textbf{100} & \textbf{100} & 98 \\
+MGO05 & 3.0 & 1.7 & \textbf{1.3} & 3.4 & 0.4 & \textbf{0.3} & 0.4 & 2.5 & \textbf{100} & \textbf{100} & \textbf{100} & 99 \\
+MGO06 & 11.1 & 4.1 & \textbf{2.4} & 23.7 & 1.8 & 1.6 & \textbf{1.1} & 2.5 & \textbf{100} & \textbf{100} & \textbf{100} & \textbf{100} \\
+MGO07 & 2.1 & 1.4 & \textbf{0.9} & 1.9 & 0.6 & \textbf{0.4} & 0.5 & 1.0 & \textbf{100} & \textbf{100} & \textbf{100} & 98 \\
+MGO08 & 2.7 & 5.0 & \textbf{1.6} & -- & 1.3 & 3.5 & \textbf{1.1} & -- & \textbf{100} & \textbf{100} & \textbf{100} & -- \\
+MGO09 & 0.8 & 1.1 & \textbf{0.7} & 1.8 & \textbf{0.6} & 0.7 & \textbf{0.6} & 1.7 & \textbf{100} & \textbf{100} & 99 & 92 \\
+MGO10 & 0.8 & 1.4 & \textbf{0.7} & 6.0 & 0.4 & \textbf{0.3} & \textbf{0.3} & 1.9 & \textbf{100} & \textbf{100} & \textbf{100} & 97 \\
+MGO11 & 1.7 & \textbf{1.0} & \textbf{1.0} & 5.5 & 0.6 & \textbf{0.4} & \textbf{0.4} & 2.0 & \textbf{100} & \textbf{100} & \textbf{100} & 98 \\
+MGO12 & 60.7 & 5.4 & \textbf{2.7} & 66.7 & 1.7 & 1.7 & \textbf{1.6} & 11.3 & \textbf{100} & \textbf{100} & \textbf{100} & \textbf{100} \\
+MGO13 & 68.4 & \textbf{8.6} & 60.5 & 11397.0 & 2.6 & 4.1 & \textbf{1.8} & 131.0 & \textbf{100} & \textbf{100} & \textbf{100} & 99 \\
+MGO14 & 7.0 & 1.9 & \textbf{1.5} & 2.0 & 1.2 & \textbf{0.9} & \textbf{0.9} & 1.2 & \textbf{100} & \textbf{100} & \textbf{100} & 99 \\
+MGO15 & 3.5 & \textbf{1.9} & 53.8 & 23.9 & 0.4 & \textbf{0.3} & 0.5 & 0.4 & \textbf{100} & \textbf{100} & \textbf{100} & \textbf{100} \\
 \midrule
-Mediana & 1.9 & \textbf{1.8} & 4.4 & 1.1 & \textbf{0.9} & 1.8 & \textbf{100} & \textbf{100} & 99 \\
-Promedio & \textbf{4.0} & 10.5 & 827.1 & 1.6 & \textbf{0.9} & 11.5 & \textbf{100} & \textbf{100} & 98 \\
+Mediana & 7.0 & 1.9 & \textbf{1.8} & 4.4 & 1.3 & 1.1 & \textbf{0.9} & 1.8 & \textbf{100} & \textbf{100} & \textbf{100} & 99 \\
+Promedio & 21.7 & \textbf{4.0} & 10.5 & 827.1 & 1.4 & 1.6 & \textbf{0.9} & 11.5 & \textbf{100} & \textbf{100} & \textbf{100} & 98 \\
 \bottomrule
 \end{tabular}
+}
 \end{table}
 
 La Tabla~\ref{tab:msdmo_sota_all} muestra los resultados de ATE, RTE y porcentaje de secuencia completada de MO*. En este caso, ORB-SLAM3 resulta más competitivo, aunque nuevamente no logra completar la totalidad de frames en todas las secuencias. Basalt-LC-R obtiene el menor ATE promedio, mientras que OKVIS2 logra mayor precisión en RTE.
@@ -1125,42 +1116,47 @@ La Tabla~\ref{tab:msdmo_sota_all} muestra los resultados de ATE, RTE y porcentaj
 \centering
 \caption{ATE [cm], RTE [cm] y tasa de completitud (\%) en MSD Samsung Odyssey+.}
 \label{tab:msdmo_sota_all}
-\begin{tabular}{l rrr | rrr | rrr}
+\resizebox{\textwidth}{!}{
+\begin{tabular}{l rrrr | rrrr | rrrr}
 \toprule
-& \multicolumn{3}{c|}{\textbf{ATE [cm]}} & \multicolumn{3}{c|}{\textbf{RTE [cm]}} & \multicolumn{3}{c}{\textbf{Completitud (\%)}} \\
-\cmidrule(lr){2-4} \cmidrule(lr){5-7} \cmidrule(lr){8-10}
+& \multicolumn{4}{c|}{\textbf{ATE [cm]}} & \multicolumn{4}{c|}{\textbf{RTE [cm]}} & \multicolumn{4}{c}{\textbf{Completitud (\%)}} \\
+\cmidrule(lr){2-5} \cmidrule(lr){6-9} \cmidrule(lr){10-13}
 \textbf{Secuencia}
+& \rotatebox{90}{\textbf{BasaltMSD}\,}
 & \rotatebox{90}{\textbf{Basalt-LC-R}\,}
 & \rotatebox{90}{\textbf{OKVIS2}\,}
 & \rotatebox{90}{\textbf{ORB-SLAM3}\,}
+& \rotatebox{90}{\textbf{BasaltMSD}\,}
 & \rotatebox{90}{\textbf{Basalt-LC-R}\,}
 & \rotatebox{90}{\textbf{OKVIS2}\,}
 & \rotatebox{90}{\textbf{ORB-SLAM3}\,}
+& \rotatebox{90}{\textbf{BasaltMSD}\,}
 & \rotatebox{90}{\textbf{Basalt-LC-R}\,}
 & \rotatebox{90}{\textbf{OKVIS2}\,}
 & \rotatebox{90}{\textbf{ORB-SLAM3}\,} \\
 \midrule
-MOO01 & 3.4 & 2.3 & \textbf{1.5} & 1.7 & \textbf{1.2} & 1.3 & \textbf{100} & \textbf{100} & 99 \\
-MOO02 & 5.0 & 2.0 & \textbf{1.6} & 3.1 & \textbf{1.2} & 1.4 & \textbf{100} & \textbf{100} & 99 \\
-MOO03 & 3.7 & 10.3 & \textbf{1.6} & 1.2 & \textbf{1.0} & 1.3 & \textbf{100} & \textbf{100} & 99 \\
-MOO04 & 4.2 & 2.6 & \textbf{2.0} & 1.6 & \textbf{1.0} & 1.6 & \textbf{100} & \textbf{100} & 97 \\
-MOO05 & 1.2 & 1.6 & \textbf{1.1} & \textbf{0.3} & 0.4 & 0.6 & \textbf{100} & \textbf{100} & 98 \\
-MOO06 & 2.5 & \textbf{1.7} & 34.4 & 1.0 & \textbf{0.8} & 1.4 & \textbf{100} & \textbf{100} & 99 \\
-MOO07 & \textbf{1.3} & 1.4 & 1.7 & \textbf{0.3} & 0.5 & 1.0 & \textbf{100} & \textbf{100} & 98 \\
-MOO08 & 3.0 & 17.6 & \textbf{0.8} & 1.2 & 1.5 & \textbf{0.8} & \textbf{100} & \textbf{100} & 11 \\
-MOO09 & \textbf{0.5} & 0.6 & 0.7 & \textbf{0.3} & 0.6 & 1.3 & \textbf{100} & 99 & 88 \\
-MOO10 & 1.4 & \textbf{0.6} & -- & 0.4 & \textbf{0.3} & -- & \textbf{100} & \textbf{100} & -- \\
-MOO11 & 1.9 & \textbf{0.9} & 4.1 & \textbf{0.5} & 0.6 & 2.5 & \textbf{100} & \textbf{100} & 98 \\
-MOO12 & 10.6 & \textbf{2.1} & 236.0 & 1.0 & \textbf{0.7} & 94.4 & \textbf{100} & \textbf{100} & 98 \\
-MOO13 & 7.7 & 4.4 & \textbf{1.8} & 2.9 & \textbf{1.4} & 1.5 & \textbf{100} & \textbf{100} & 99 \\
-MOO14 & 3.0 & \textbf{1.9} & 15.6 & 1.7 & \textbf{0.7} & 1.2 & \textbf{100} & \textbf{100} & 99 \\
-MOO15 & 291.1 & 636.2 & \textbf{1.4} & 11.0 & 1.2 & \textbf{0.3} & \textbf{100} & \textbf{100} & \textbf{100} \\
-MOO16 & 1.2 & \textbf{0.3} & -- & \textbf{0.1} & 0.2 & -- & \textbf{100} & \textbf{100} & -- \\
+MOO01 & 28.1 & 3.4 & 2.3 & \textbf{1.5} & 1.7 & 1.7 & \textbf{1.2} & 1.3 & \textbf{100} & \textbf{100} & \textbf{100} & 99 \\
+MOO02 & 23.8 & 5.0 & 2.0 & \textbf{1.6} & 1.5 & 3.1 & \textbf{1.2} & 1.4 & \textbf{100} & \textbf{100} & \textbf{100} & 99 \\
+MOO03 & 17.7 & 3.7 & 10.3 & \textbf{1.6} & 1.4 & 1.2 & \textbf{1.0} & 1.3 & \textbf{100} & \textbf{100} & \textbf{100} & 99 \\
+MOO04 & 6.5 & 4.2 & 2.6 & \textbf{2.0} & \textbf{1.0} & 1.6 & \textbf{1.0} & 1.6 & \textbf{100} & \textbf{100} & \textbf{100} & 97 \\
+MOO05 & 1.8 & 1.2 & 1.6 & \textbf{1.1} & \textbf{0.3} & \textbf{0.3} & 0.4 & 0.6 & \textbf{100} & \textbf{100} & \textbf{100} & 98 \\
+MOO06 & 5.6 & 2.5 & \textbf{1.7} & 34.4 & \textbf{0.8} & 1.0 & \textbf{0.8} & 1.4 & \textbf{100} & \textbf{100} & \textbf{100} & 99 \\
+MOO07 & \textbf{1.3} & \textbf{1.3} & 1.4 & 1.7 & \textbf{0.3} & \textbf{0.3} & 0.5 & 1.0 & \textbf{100} & \textbf{100} & \textbf{100} & 98 \\
+MOO08 & 2.8 & 3.0 & 17.6 & \textbf{0.8} & 1.1 & 1.2 & 1.5 & \textbf{0.8} & \textbf{100} & \textbf{100} & \textbf{100} & 11 \\
+MOO09 & \textbf{0.4} & 0.5 & 0.6 & 0.7 & \textbf{0.3} & \textbf{0.3} & 0.6 & 1.3 & \textbf{100} & \textbf{100} & 99 & 88 \\
+MOO10 & 1.0 & 1.4 & \textbf{0.6} & -- & 0.4 & 0.4 & \textbf{0.3} & -- & \textbf{100} & \textbf{100} & \textbf{100} & -- \\
+MOO11 & 1.9 & 1.9 & \textbf{0.9} & 4.1 & \textbf{0.5} & \textbf{0.5} & 0.6 & 2.5 & \textbf{100} & \textbf{100} & \textbf{100} & 98 \\
+MOO12 & 69.0 & 10.6 & \textbf{2.1} & 236.0 & 0.8 & 1.0 & \textbf{0.7} & 94.4 & \textbf{100} & \textbf{100} & \textbf{100} & 98 \\
+MOO13 & 50.1 & 7.7 & 4.4 & \textbf{1.8} & 1.7 & 2.9 & \textbf{1.4} & 1.5 & \textbf{100} & \textbf{100} & \textbf{100} & 99 \\
+MOO14 & 11.3 & 3.0 & \textbf{1.9} & 15.6 & 0.8 & 1.7 & \textbf{0.7} & 1.2 & \textbf{100} & \textbf{100} & \textbf{100} & 99 \\
+MOO15 & 205.3 & 291.1 & 636.2 & \textbf{1.4} & 4.3 & 11.0 & 1.2 & \textbf{0.3} & \textbf{100} & \textbf{100} & \textbf{100} & \textbf{100} \\
+MOO16 & 1.4 & 1.2 & \textbf{0.3} & -- & 0.2 & \textbf{0.1} & 0.2 & -- & \textbf{100} & \textbf{100} & \textbf{100} & -- \\
 \midrule
-Mediana & 3.0 & 1.9 & \textbf{1.6} & 1.1 & \textbf{0.7} & 1.3 & \textbf{100} & \textbf{100} & 98 \\
-Promedio & \textbf{21.3} & 42.9 & 21.7 & 1.8 & \textbf{0.8} & 7.9 & \textbf{100} & \textbf{100} & 92 \\
+Mediana & 6.1 & 3.0 & 1.9 & \textbf{1.6} & 0.8 & 1.1 & \textbf{0.7} & 1.3 & \textbf{100} & \textbf{100} & \textbf{100} & 98 \\
+Promedio & 26.7 & \textbf{21.3} & 42.9 & 21.7 & 1.1 & 1.8 & \textbf{0.8} & 7.9 & \textbf{100} & \textbf{100} & \textbf{100} & 92 \\
 \bottomrule
 \end{tabular}
+}
 \end{table}
 
 Finalmente, la Figura~\ref{fig:msd_sota_timings} muestra el rendimiento de cada sistema en términos de tiempo de procesamiento por frame en secuencias de MO*, MG* y MI*. Dado que el tiempo de la optimización final de RootBA no puede representarse en este tipo de gráficas, se muestra el tiempo de procesamiento de Basalt-LC. OKVIS2 supera marcadamente el límite de tiempo real, con tiempos de procesamiento entre 6 y 12 veces mayores que Basalt-LC. En cuanto a ORB-SLAM3, para los cascos Odyssey+ y HP Reverb G2 V2 se ubica justo en el límite, mientras que para el Valve Index lo supera en más del doble; cabe notar, además, que en las secuencias del HP Reverb G2 V2 ORB-SLAM3 solo procesa dos de las cuatro cámaras. Como se observó en la Sección~\ref{sec:results_xr}, Basalt-LC mantiene tiempos de procesamiento considerablemente por debajo del límite de tiempo real para los cascos Odyssey+ y HP Reverb G2 V2 (aun procesando las cuatro cámaras), y justo por debajo para el Valve Index.
@@ -1293,7 +1289,7 @@ En las secuencias de \textit{Outdoors}, el tiempo de ejecución es elevado, aunq
 
 Esta sección presenta un resumen y las conclusiones generales de los resultados obtenidos en los experimentos realizados.
 
-El estudio de ablación muestra que Basalt-LC-R, que incorpora loop closure, culling de keyframes y optimización global con RootBA, es consistentemente la versión más precisa. La mejora es especialmente notoria en el Monado SLAM Dataset: la reducción en la mediana del ATE respecto de Basalt es superior al 85\% en MI* (de 19.8 a 2.7 cm), superior al 70\% en MG* (de 7.0 a 1.9 cm) y del 50\% en MO* (de 6.1 a 3.0 cm). En los datasets del estado del arte el comportamiento es más heterogéneo: en TUM-VI Room la precisión es milimétrica (mediana de ATE de 0.9 cm), mientras que en secuencias de exterior el sistema no logra mejorar respecto de Basalt porque los ciclos detectados corresponden a keyframes temporalmente cercanos y no corrigen el drift acumulado. En cuanto al rendimiento, la arquitectura asíncrona del sistema, con el VIO y el mapa ejecutándose en threads independientes, permite que Basalt-LC opere dentro de los límites de tiempo real en todos los headsets evaluados, con un margen ajustado para el Valve Index y sin degradar el rendimiento de Basalt original. En trayectorias extensas, el culling de keyframes es el mecanismo que mantiene esta estabilidad, al evitar que el tiempo de optimización del grafo de poses crezca indefinidamente. Basalt-LC-R-CQ incorpora una consulta de covisibilidad para reinsertar keyframes del mapa en la ventana del VIO. Si bien ofrece mejoras puntuales de precisión, resulta menos robusto y más lento (llegando a perder la operación en tiempo real en el Valve Index), y presenta un problema de memoria no resuelto que le impide completar secuencias de larga duración.
+El estudio de ablación muestra que Basalt-LC-R, que incorpora loop closure, culling de keyframes y optimización global con RootBA, es consistentemente la versión más precisa. La mejora es especialmente notoria en el Monado SLAM Dataset: la reducción en la mediana del ATE respecto de BasaltMSD es superior al 85\% en MI* (de 19.8 a 2.7 cm), superior al 70\% en MG* (de 7.0 a 1.9 cm) y del 50\% en MO* (de 6.1 a 3.0 cm). En los datasets del estado del arte el comportamiento es más heterogéneo: en TUM-VI Room la precisión es milimétrica (mediana de ATE de 0.9 cm), mientras que en secuencias de exterior el sistema no logra mejorar respecto de BasaltMSD porque los ciclos detectados corresponden a keyframes temporalmente cercanos y no corrigen el drift acumulado. En cuanto al rendimiento, la arquitectura asíncrona del sistema, con el VIO y el mapa ejecutándose en threads independientes, permite que Basalt-LC opere dentro de los límites de tiempo real en todos los headsets evaluados, con un margen ajustado para el Valve Index y sin degradar el rendimiento de BasaltMSD original. En trayectorias extensas, el culling de keyframes es el mecanismo que mantiene esta estabilidad, al evitar que el tiempo de optimización del grafo de poses crezca indefinidamente. Basalt-LC-R-CQ incorpora una consulta de covisibilidad para reinsertar keyframes del mapa en la ventana del VIO. Si bien ofrece mejoras puntuales de precisión, resulta menos robusto y más lento (llegando a perder la operación en tiempo real en el Valve Index), y presenta un problema de memoria no resuelto que le impide completar secuencias de larga duración.
 
 La comparación con OKVIS2 y ORB-SLAM3 confirma que el sistema propuesto ofrece la mejor combinación de precisión, robustez y rendimiento en tiempo real, principalmente en escenarios de XR. En el MSD, Basalt-LC-R y OKVIS2 completan el 100\% de los frames en todas las secuencias, mientras que ORB-SLAM3 completa en promedio el 91\% en MI*, el 92\% en MO* y el 98\% en MG*, aun reportando para cada secuencia la mejor de tres corridas. Aunque OKVIS2 obtiene medianas de ATE levemente inferiores en MI* (2.4 cm frente a 2.7 cm) y MG* (1.8 cm frente a 1.9 cm), su promedio es marcadamente peor debido a fallos puntuales (220 cm frente a 5.4 cm en MI*), lo que refleja una menor robustez ante las condiciones del MSD. El factor más diferenciador es el rendimiento: OKVIS2 supera el límite de tiempo real entre 6 y 12 veces, y ORB-SLAM3 lo supera más del doble en el Valve Index, mientras que Basalt-LC se mantiene por debajo en todos los casos. En los datasets del estado del arte el panorama es más matizado. En TUM-VI, Basalt-LC-R consigue una precisión comparable a la de los demás sistemas en las secuencias de tipo Room y Corridor. En las restantes secuencias de TUM-VI, OKVIS2 obtiene ventaja al detectar ciclos que los otros sistemas no logran identificar, con la excepción de TM6, donde Basalt-LC-R es el único capaz de detectar el ciclo al reingresar a la habitación, obteniendo 2 cm de ATE frente a 63 cm de OKVIS2. En la mayoría de las secuencias restantes ningún sistema detecta ciclos, por lo que la comparación refleja esencialmente el rendimiento de sus respectivos módulos VIO. En EuRoC, Basalt-LC-R resulta inferior a OKVIS2 y ORB-SLAM3.
 
