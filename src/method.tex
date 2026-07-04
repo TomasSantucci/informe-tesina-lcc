@@ -251,7 +251,7 @@ A partir del sistema descrito en la sección anterior, se propone la implementac
     \label{fig:arch_basaltslam}
 \end{figure}
 
-La Figura~\ref{fig:loop_decision} resume el flujo de comunicación entre \texttt{LoopClosing} y \texttt{MapDatabase}. Ante la detección de un ciclo, el mapa persistente evalúa si el drift acumulado es suficiente para justificar una corrección. De ser así, envía al thread \texttt{LoopClosing} un puntero a una copia liviana del mapa con las poses de los keyframes, junto con las aristas del grafo de poses necesarias para optimizar la trayectoria mediante PGO. Las poses optimizadas resultantes se devuelven al mapa persistente para su aplicación. De lo contrario, el mapa notifica al thread que la optimización no procederá, permitiéndole continuar su ejecución. En ambos casos, para el mapa persistente, el proceso finaliza con la etapa de fusión de mapa.
+La Figura~\ref{fig:loop_decision} resume el flujo de comunicación entre \texttt{LoopClosing} y \texttt{MapDatabase}. Ante la detección de un ciclo, el mapa persistente evalúa si el drift acumulado es suficiente para justificar una corrección. De ser así, envía al thread \texttt{LoopClosing} un puntero a una copia liviana del mapa con las poses de los keyframes, junto con las aristas del grafo de poses necesarias para optimizar la trayectoria mediante PGO. Las poses optimizadas resultantes se devuelven al mapa persistente para su aplicación. De lo contrario, el mapa notifica al otro thread que la optimización no procederá, permitiéndole continuar su ejecución. En ambos casos, para el mapa persistente, el proceso finaliza con la etapa de fusión de mapa.
 %
 \begin{figure}[!htbp]
     \centering
@@ -268,7 +268,7 @@ La Figura~\ref{fig:loop_decision} resume el flujo de comunicación entre \texttt
         \caption{Detección con drift insuficiente.}
         \label{fig:loop_decision_rej}
     \end{subfigure}
-    \caption{Comunicación entre \texttt{LoopClosing} y \texttt{MapDatabase} según el drift detectado.}
+    \caption{Comunicación entre \texttt{LoopClosing} y \texttt{MapDatabase} según el drift detectado. Los mensajes se implementan en las estructuras \texttt{LoopDetectionResult}, \texttt{LoopClosureDecision} y \texttt{LoopClosureResult}, detallados en la Sección~\ref{sec:map_interface}.}
     \label{fig:loop_decision}
 \end{figure}
 
@@ -459,14 +459,48 @@ Los cinco factores se describen a continuación, en orden de mayor a menor peso:
 Con este esquema, se fija un límite de 1500 keyframes en el mapa persistente. Cada vez que la llegada
 de un nuevo \texttt{MapStamp} supera ese límite, se eliminan los 30 keyframes con menor puntaje.
 
-\subsection{Interfaz final del mapa persistente}
+\subsection{Interfaz final del mapa persistente} \label{sec:map_interface}
 
 Toda la comunicación que se dirija al mapa persistente, pasa por una de las dos colas de trabajo
 disponibles: \texttt{read\_queue} y \texttt{write\_queue}. Dada la variedad de mensajes que pueden
 recibir, se definen tipos variante para cada una de las colas, como se muestra en el Código
-\ref{lst:map_message_types}.
+\ref{lst:map_message_types}. Además, el mensaje que contiene la copia del mapa para ser usado en PGO se detalla en el Código~\ref{lst:loop_closure_decision}.
 %
 \begin{lstlisting}[language=C++, caption={Definición de los tipos de mensajes aceptados por las colas de lectura y escritura del mapa persistente.}, label={lst:map_message_types}]
+struct LoopDetectionResult {
+  // Keyframes involved in the loop
+  FrameId candidate_kf_id, current_kf_id;
+  std::vector<FrameId> candidates_island;
+
+  // Matches and estimated pose
+  Sophus::SE3f current_kf_corrected_pose;
+  std::unordered_map<LandmarkId, LandmarkId> lm_fusions;
+  std::unordered_map<TimeCamId, Keypoints> curr_kf_obs;
+};
+
+struct LoopClosureResult {
+  std::shared_ptr<Eigen::aligned_map<FrameId, Sophus::SE3f>> keyframe_poses;
+  std::shared_ptr<LoopDetectionResult> loop_detection_result;
+};
+
+struct MapStamp {
+  int64_t t_ns;
+  LandmarkDatabase<float>::Ptr lmdb;
+};
+
+struct MarginalizationStamp {
+  std::set<FrameId> keyframe_ids;
+};
+
+struct CovisibilityRequest {
+  std::vector<KeypointId> keypoints;
+};
+
+struct IslandRequest {
+  FrameId keyframe;
+  size_t num_neighbors;
+};
+
 using MapWriteMessage = std::variant<MapStamp::Ptr,
                                      MarginalizationStamp::Ptr,
                                      LoopDetectionResult::Ptr,
@@ -476,6 +510,17 @@ using MapWriteMessage = std::variant<MapStamp::Ptr,
 using MapReadMessage = std::variant<CovisibilityRequest::Ptr,
                                     IslandRequest::Ptr,
                                     StopMsg>;
+\end{lstlisting}
+%
+\begin{lstlisting}[language=C++, caption={Definición del tipo de mensaje mediante el cual el mapa le indica a \texttt{LoopClosing} si debe optimizar el ciclo detectado.}, label={lst:loop_closure_decision}]
+struct LoopClosureDecision {
+  // Lightweight copy of the map to be optimized
+  std::shared_ptr<Eigen::aligned_map<FrameId, Sophus::SE3f>> keyframe_poses;
+  CovisibilityGraph covisibility_graph;
+  std::set<FrameId> active_keyframes;
+
+  bool close_loop;
+};
 \end{lstlisting}
 
 Luego, cada thread del mapa persistente se implementa como se muestra en el Código \ref{lst:map_read_thread}
