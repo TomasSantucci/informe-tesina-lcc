@@ -6,7 +6,7 @@ En este capítulo se presentan los conceptos matemáticos necesarios para compre
 % https://ethaneade.com/lie.pdf
 % https://asrl.utias.utoronto.ca/~tdb/bib/barfoot_ser17.pdf
 
-En esta sección se presentan conceptos relacionados a dos grupos importantes para la robótica: el grupo $SO(3)$, que puede representar rotaciones, y $SE(3)$ que puede representar poses.
+En esta sección se presentan conceptos relacionados con dos grupos importantes para la robótica: el grupo $SO(3)$, que puede representar rotaciones, y $SE(3)$, que puede representar poses.
 
 \subsection{Grupo de rotaciones}
 
@@ -71,7 +71,7 @@ En este trabajo se utilizan los sistemas de referencia $w$ (mundo), $c$ (cámara
 
 Un grupo de Lie es una estructura matemática que combina una estructura de grupo con una estructura de \textit{manifold} diferenciable. La estructura de grupo define operaciones válidas de composición e inversión, que satisfacen cuatro axiomas: clausura, asociatividad, existencia de elemento neutro y existencia de inverso; la estructura de manifold garantiza que dichas operaciones sean suaves y diferenciables, lo que permite aplicar optimización y cálculo sobre el grupo. De manera intuitiva, un manifold es un espacio que puede tener una estructura global curva, pero que localmente se asemeja al espacio euclídeo. Esto significa que alrededor de cada punto es posible definir un sistema de coordenadas local en el que las operaciones vectoriales estándar son válidas.
 
-Para comprender por qué es necesaria esta abstracción, considérese que los grupos $SO(3)$ y $SE(3)$ no pueden representarse correctamente mediante vectores euclidianos sin restricciones. Es decir, las rotaciones y transformaciones rígidas no forman un espacio vectorial. Sin embargo, se puede demostrar que estos grupos satisfacen las condiciones de los grupos de Lie.
+Para comprender por qué es necesaria esta abstracción, considérese que los grupos $SO(3)$ y $SE(3)$ no pueden representarse correctamente mediante vectores euclídeos sin restricciones. Es decir, las rotaciones y transformaciones rígidas no forman un espacio vectorial. Sin embargo, se puede demostrar que estos grupos satisfacen las condiciones de los grupos de Lie.
 
 Los métodos de optimización como Gauss-Newton se basan en aproximaciones lineales locales. Por ello, al optimizar cantidades definidas sobre manifolds, las actualizaciones se realizan en esa aproximación euclídea local, denominada espacio tangente.
 
@@ -132,7 +132,7 @@ Supóngase que una estimación de pose $\mathbf{T}$ debe refinarse mediante un i
 \mathbf{T} \leftarrow \exp(\Delta\boldsymbol{\xi}^{\wedge})\,\mathbf{T}.
 \]
 
-Esto se denomina modelo de perturbación a izquierda (\textit{left perturbation model}): el incremento se calcula en el espacio euclídeo, se mapea al manifold mediante el mapa exponencial, y se compone con la estimación actual. Este marco permite aplicar técnicas de optimización estándar, como mínimos cuadrados no lineales a introducirse en la Sección~\ref{sec:least_squares}, respetando la geometría de las transformaciones rígidas.
+Esto se denomina modelo de perturbación a izquierda (\textit{left perturbation model}): el incremento se calcula en el espacio euclídeo, se mapea al manifold mediante el mapa exponencial, y se compone con la estimación actual. Este marco permite aplicar técnicas de optimización estándar, como mínimos cuadrados no lineales que se introduce en la Sección~\ref{sec:least_squares}, respetando la geometría de las transformaciones rígidas.
 
 \subsection{Representación adjunta}
 
@@ -231,7 +231,7 @@ El proceso inverso, denominado desproyección (\textit{unprojection}), recupera 
     \label{eq:unprojection}
 \end{equation}
 
-En la práctica, las lentes reales introducen distorsión que hace que la imagen se desvíe del modelo pinhole ideal. Existen modelos de cámara más complejos que incorporan parámetros adicionales para caracterizar estos efectos, como la distorsión radial, que hace que las líneas rectas aparezcan curvadas. Durante la \textit{calibración de la cámara} se optimizan estos parámetros, tras lo cual los puntos 3D pueden proyectarse, y los puntos 2D desproyectarse de acuerdo a las ecuaciones del modelo con los parámetros establecidos. En este trabajo, se utilizan los modelos Double Sphere~\cite{usenko2018doublesphere}, Radial-Tangential con 8 parámetros~\cite{opencv_calib} y Kannala-Brandt~\cite{kannala2006kannalabrandt}.
+En la práctica, las lentes reales introducen distorsión que hace que la imagen se desvíe del modelo pinhole ideal. Existen modelos de cámara más complejos que incorporan parámetros adicionales para caracterizar estos efectos, como la distorsión radial, que hace que las líneas rectas aparezcan curvadas. Durante la \textit{calibración de la cámara} se optimizan estos parámetros, tras lo cual los puntos 3D pueden proyectarse, y los puntos 2D desproyectarse de acuerdo con las ecuaciones del modelo con los parámetros establecidos. En este trabajo, se utilizan los modelos Double Sphere~\cite{usenko2018doublesphere}, Radial-Tangential con 8 parámetros~\cite{opencv_calib} y Kannala-Brandt~\cite{kannala2006kannalabrandt}.
 
 \section{Sistemas multi-cámara}
 
@@ -379,7 +379,7 @@ Dadas las poses estimadas $\hat{\mathbf{T}}_{wi}$ y $\hat{\mathbf{T}}_{wj}$, y u
 \in \mathbb{R}^6.
 \]
 
-El término $\hat{\mathbf{T}}_{wi}^{-1}\hat{\mathbf{T}}_{wj} = \hat{\mathbf{T}}_{ij}$ es la transformación relativa estimada. El factor $\tilde{\mathbf{T}}_{ij}^{-1}\hat{\mathbf{T}}_{ij}$ compara medición y estimación. Cuando ambas coinciden el resultado es la identidad y el error es nulo. Dado que el resultado de dicha comparación pertenece a $SE(3)$ y el error debe expresarse en $\mathbb{R}^6$ para poder optimizarse, se aplica el mapa logarítmico de la pose seguido del operador $(\cdot)^\vee$, que extrae el vector de coordenadas. Estos conceptos, junto con la estructura de $SE(3)$, se introducen en la Sección~\ref{sec:lie}.
+El término $\hat{\mathbf{T}}_{wi}^{-1}\hat{\mathbf{T}}_{wj} = \hat{\mathbf{T}}_{ij}$ es la transformación relativa estimada. El factor $\tilde{\mathbf{T}}_{ij}^{-1}\hat{\mathbf{T}}_{ij}$ compara medición y estimación. Cuando ambas coinciden, el resultado es la identidad y el error es nulo. Dado que el resultado de dicha comparación pertenece a $SE(3)$ y el error debe expresarse en $\mathbb{R}^6$ para poder optimizarse, se aplica el mapa logarítmico de la pose seguido del operador $(\cdot)^\vee$, que extrae el vector de coordenadas. Estos conceptos, junto con la estructura de $SE(3)$, se introducen en la Sección~\ref{sec:lie}.
 
 El objetivo de la optimización es minimizar la suma de los errores para todas las restricciones del grafo:
 \[
@@ -578,7 +578,7 @@ Una forma muy habitual de resolver las ecuaciones normales es aplicar el truco d
 con
 \begin{align}
 \tilde{\mathbf{H}}_{pp} &= \mathbf{H}_{pp} - \mathbf{H}_{pl}\mathbf{H}_{ll}^{-1}\mathbf{H}_{lp}, \\
-\tilde{\mathbf{b}}_p    &= \mathbf{b}_p   - \mathbf{H}_{pl}\mathbf{H}_{pp}^{-1}\mathbf{b}_l.
+\tilde{\mathbf{b}}_p    &= \mathbf{b}_p   - \mathbf{H}_{pl}\mathbf{H}_{ll}^{-1}\mathbf{b}_l.
 \end{align}
 La solución $\Delta\mathbf{x}_p^*$ de este sistema es idéntica a la componente de poses de la solución completa, pero la matriz del sistema ahora tiene tamaño $N_p^2$, típicamente del orden de miles por miles. Dado que $\mathbf{H}_{ll}$ es diagonal de bloques con bloques de $3\times3$, la multiplicación por $\mathbf{H}_{ll}^{-1}$ es computacionalmente barata. Obtenida la actualización óptima de poses $\Delta\mathbf{x}_p^*$, la actualización óptima de landmarks se recupera por sustitución hacia atrás:
 \[
