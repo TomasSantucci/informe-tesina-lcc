@@ -795,6 +795,8 @@ En conclusión, BasaltLCR es el sistema más robusto, obtiene la mejor precisió
 
 El objetivo de este experimento es evaluar el rendimiento y precisión de BasaltLCR en comparación con otros sistemas del estado del arte. Se eligió ORB-SLAM3 y OKVIS2 como sistemas de referencia. Ambos fueron ejecutados en sus versiones VI-SLAM estéreo con loop closure y optimización final de bundle adjustment. Además, se comparan con BasaltMSD, como referencia del punto de partida de este trabajo. Al igual que en el estudio de ablación, se analiza la estimación no causal de la trayectoria y el rendimiento de cada sistema.
 
+Los resultados de OKVIS2 y ORB-SLAM3 se tomaron de evaluaciones ya publicadas: para los datasets del estado del arte, de sus respectivos trabajos; para los datasets de XR, de la evaluación realizada en~\cite{demayo2025monadoslamdataset}, disponible públicamente en el repositorio del dataset.\footnote{\href{https://huggingface.co/datasets/collabora/monado-slam-datasets}{huggingface.co/datasets/collabora/monado-slam-datasets}} En este último caso, dado el carácter no determinístico de ambos sistemas, cada secuencia se ejecutó tres veces, reportándose la corrida que procesó más frames y, en caso de empate, la de menor ATE y luego menor RTE. Las evaluaciones de BasaltMSD y BasaltLCR, en cambio, se realizaron como parte de este trabajo.
+
 La Figura~\ref{fig:sota_trajectories} muestra ejemplos cualitativos de trayectorias para secuencias representativas de los tres datasets.
 %
 \begin{figure}[!htbp]
@@ -993,8 +995,6 @@ Promedio & 0.08 & 0.09 & \textbf{0.02} & \textbf{0.02} \\
 \end{table}
 
 \subsection{Resultados en datasets de XR}
-
-Dado su carácter no determinístico, ORB-SLAM3 y OKVIS2 se ejecutaron tres veces en cada secuencia, reportándose la corrida que procesó más frames y, en caso de empate, la de menor ATE y luego menor RTE.
 
 La Tabla~\ref{tab:msdmi_sota_all} muestra los resultados de ATE, RTE y porcentaje de secuencia completada de MI*. OKVIS2 obtiene la mejor mediana tanto en ATE como en RTE, aunque BasaltLCR se sitúa apenas 0.3 y 0.2 cm por encima, respectivamente. Sin embargo, BasaltLCR demuestra mayor robustez, lo que se refleja en el mejor promedio de ambas métricas. ORB-SLAM3 presenta resultados inferiores en ATE y RTE, y no completa un gran número de secuencias.
 %
