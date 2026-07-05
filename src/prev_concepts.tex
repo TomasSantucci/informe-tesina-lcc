@@ -314,7 +314,7 @@ un grafo de factores de un sistema SLAM.
 
 El error de reproyección mide la distancia entre la posición observada de un punto en la
 imagen de una cámara y la posición proyectada de ese mismo punto, calculada a partir de su
-posición estimada en el espacio 3D y la pose de la cámara. Este error se mide típicamente en
+posición estimada en el espacio 3D y la pose de la cámara. En la Figura~\ref{fig:reproj_error} se muestra una representación gráfica. Este error se mide típicamente en
 píxeles y se puede expresar como:
 \[
 e_{\text{reproyección}} = \|\mathbf{p}_j - \hat{\mathbf{p}}_j\|,
@@ -324,12 +324,6 @@ donde:
     \item $\mathbf{p}_j \in \mathbb{R}^2$ son las coordenadas observadas del punto $j$ en la imagen,
     \item $\hat{\mathbf{p}}_j \in \mathbb{R}^2$ son las coordenadas proyectadas del punto $j$ en la imagen, calculadas a partir de su posición estimada en 3D y la pose de la cámara.
 \end{itemize}
-
-\[
-\hat{\mathbf{u}}
-=
-\pi(\mathbf{T}_{cw}\mathbf{p}_w),
-\]
 
 \begin{figure}[!htbp]
     \centering
@@ -350,12 +344,6 @@ donde:
     \item $\mathbf{p}_{i,j} \in \mathbb{R}^2$ son las coordenadas observadas del punto $j$ en la imagen de la cámara $i$,
     \item $\hat{\mathbf{p}}_{i,j} \in \mathbb{R}^2$ son las coordenadas proyectadas del punto $j$ en la imagen de la cámara $i$, calculadas a partir de la estimación de su posición 3D y la pose de la cámara.
 \end{itemize}
-
-Este proceso de optimización ajusta tanto las posiciones estimadas de los puntos clave en
-3D como las poses de las cámaras, reduciendo la discrepancia entre las proyecciones estimadas
-y las observaciones reales, mejorando así la precisión en la localización del dispositivo y la
-reconstrucción del mapa. En la Figura \ref{fig:reproj_error} se muestra una representación gráfica del error de
-reproyección.
 
 \subsection{Error de pose relativa}
 
@@ -379,7 +367,7 @@ Dadas las poses estimadas $\hat{\mathbf{T}}_{wi}$ y $\hat{\mathbf{T}}_{wj}$, y u
 \in \mathbb{R}^6.
 \]
 
-El término $\hat{\mathbf{T}}_{wi}^{-1}\hat{\mathbf{T}}_{wj} = \hat{\mathbf{T}}_{ij}$ es la transformación relativa estimada. El factor $\tilde{\mathbf{T}}_{ij}^{-1}\hat{\mathbf{T}}_{ij}$ compara medición y estimación. Cuando ambas coinciden, el resultado es la identidad y el error es nulo. Dado que el resultado de dicha comparación pertenece a $SE(3)$ y el error debe expresarse en $\mathbb{R}^6$ para poder optimizarse, se aplica el mapa logarítmico de la pose seguido del operador $(\cdot)^\vee$, que extrae el vector de coordenadas. Estos conceptos, junto con la estructura de $SE(3)$, se introducen en la Sección~\ref{sec:lie}.
+El término $\hat{\mathbf{T}}_{wi}^{-1}\hat{\mathbf{T}}_{wj} = \hat{\mathbf{T}}_{ij}$ es la transformación relativa estimada. El factor $\tilde{\mathbf{T}}_{ij}^{-1}\hat{\mathbf{T}}_{ij}$ compara medición y estimación. Cuando ambas coinciden, el resultado es la identidad y el error es nulo. Dado que el resultado de dicha comparación pertenece a $SE(3)$ y el error debe expresarse en $\mathbb{R}^6$ para poder optimizarse, se aplica el mapa logarítmico de la pose seguido del operador $(\cdot)^\vee$, que extrae el vector de coordenadas.
 
 El objetivo de la optimización es minimizar la suma de los errores para todas las restricciones del grafo:
 \[
@@ -459,7 +447,7 @@ el método aproxima $f(x_i, \mathbf{x})$ mediante una expansión de Taylor de pr
 \[
 f(x_i, \mathbf{x}) \approx f(x_i, \mathbf{x}_k) + \mathbf{J}(x_i)(\mathbf{x} - \mathbf{x}_k),
 \]
-donde $\mathbf{J}(x_i)$ es la matriz Jacobiana de $f$ respecto a $\mathbf{x}$, evaluada en $\mathbf{x}_k$. Sustituyendo en la función objetivo se obtiene un problema de mínimos cuadrados lineal. Igualando su gradiente a cero se llega al sistema de ecuaciones normales:
+donde $\mathbf{J}(x_i)$ es la matriz Jacobiana de $f$ respecto a $\mathbf{x}$, evaluada en $\mathbf{x}_k$. Sustituyendo en la función objetivo, se obtiene un problema de mínimos cuadrados lineal. Igualando su gradiente a cero se llega al sistema de ecuaciones normales:
 \[
 \mathbf{J}^\top \mathbf{J}\,\Delta\mathbf{x} = \mathbf{J}^\top \mathbf{r},
 \]
@@ -633,7 +621,7 @@ El problema completo se reduce entonces a minimizar únicamente el segundo térm
 + \mathbf{Q}_2^\top\mathbf{J}_{p}\,\Delta\mathbf{x}_p
 \right\|^2,
 \]
-cuyo tamaño es significativamente menor que el del sistema original. A diferencia del complemento de Schur, este enfoque nunca forma la Hessiana $\mathbf{H}$ explícitamente, lo que puede mejorar la estabilidad numérica. La Figura~\ref{fig:qr-ba} ilustra la estructura del problema antes y después de aplicar la factorización QR.
+cuyo tamaño es significativamente menor que el del sistema original. A diferencia del complemento de Schur, este enfoque nunca forma la Hessiana $\mathbf{H}$ explícitamente, lo que mejora la estabilidad numérica. La Figura~\ref{fig:qr-ba} ilustra la estructura del problema antes y después de aplicar la factorización QR.
 
 \begin{figure}[!htbp]
     \centering
@@ -703,7 +691,7 @@ Aunque puede generalizarse, el método opera exclusivamente sobre descriptores b
 
 Dado que índices de bits elegidos aleatoriamente pueden distribuir los descriptores de forma desigual, HashBoW utiliza un procedimiento de entrenamiento basado en entropía para seleccionarlos. Los índices de bits se eligen de forma greedy y secuencial, seleccionando en cada paso el índice que maximiza la entropía de la distribución hash resultante, condicionada a los índices ya seleccionados. Esto garantiza que el vocabulario discretice el espacio de descriptores de la manera más uniforme posible para un conjunto de imágenes de entrenamiento.
 
-Comparado con otros métodos, HashBoW emplea una transformación de features locales a palabras visuales más simple, lo que le otorga mayor eficiencia como se observa en la Tabla~\ref{tab:hashbow-performance}, en detrimento de cierta precisión en el retrieval (véase Figura~\ref{fig:hashbow-precision}). Por esta razón, dentro de un sistema SLAM, debería complementarse con verificaciones de consistencia adicionales para filtrar falsos candidatos. Su simplicidad y bajo costo computacional lo convierten, en consecuencia, en una opción atractiva para la detección de ciclos en entornos con recursos limitados.
+Comparado con otros métodos, HashBoW emplea una transformación de features locales a palabras visuales más simple, lo que le otorga mayor eficiencia como se observa en la Tabla~\ref{tab:hashbow-performance}, en detrimento de cierta precisión en el retrieval (véase Figura~\ref{fig:hashbow-precision}). Por esta razón, dentro de un sistema SLAM, debería complementarse con verificaciones de consistencia adicionales para filtrar falsos candidatos. Su simplicidad y bajo costo computacional lo convierten, en consecuencia, en una opción atractiva para la detección de ciclos con recursos limitados.
 %
 \begin{figure}[!htbp]
     \centering
