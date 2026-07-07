@@ -36,7 +36,7 @@ Para llevarlos a cabo se utilizaron todas las secuencias de los siguientes datas
 \section{Datasets utilizados} \label{sec:datasets}
 
 \subsection*{EuRoC}
-El dataset EuRoC (European Robotics Challenge) MAV (Micro Aerial Vehicle) es uno de los más populares y utilizados en la comunidad de robótica y visión por computadora. Consiste en 11 secuencias grabadas en tres entornos diferentes, visibles en la Figura \ref{fig:euroc_mav_frames}: una sala de máquinas (Machine Hall) y dos salas de laboratorio de la Escuela Politécnica de Zurich (Vicon Room 1 y 2). Cada secuencia incluye datos de ground truth con una precisión milimétrica y están disponibles los datos de calibración tanto intrínseca como extrínseca. Todas las secuencias fueron capturadas utilizando un helicóptero Asctec Firefly equipado con una cámara estéreo de 752 x 480 px de resolución a 20 fps y una IMU modelo ADIS16448 a 200 Hz. Los tres entornos presentan características diferenciadas:
+El dataset EuRoC (European Robotics Challenge) MAV (Micro Aerial Vehicle) es uno de los más populares y utilizados en la comunidad de robótica y visión por computadora. Consiste en 11 secuencias grabadas en tres entornos diferentes, visibles en la Figura \ref{fig:euroc_mav_frames}: una sala de máquinas (Machine Hall) y dos salas de laboratorio de la Escuela Politécnica de Zurich (Vicon Room 1 y 2). Cada secuencia incluye datos de ground-truth con una precisión milimétrica y están disponibles los datos de calibración tanto intrínseca como extrínseca. Todas las secuencias fueron capturadas utilizando un helicóptero Asctec Firefly equipado con una cámara estéreo de 752 x 480 px de resolución a 20 fps y una IMU modelo ADIS16448 a 200 Hz. Los tres entornos presentan características diferenciadas:
 \begin{itemize}
     \item Machine Hall: Secuencias grabadas en una sala de máquinas equipada con maquinaria pesada, proporcionando un entorno con desafíos de iluminación y superficies reflectantes.
     \item Vicon Room 1 y 2: Secuencias grabadas en salas de laboratorio controladas, equipadas con un sistema de captura de movimiento Vicon, diseñadas para experimentos de robótica con condiciones bien definidas y texturas variadas.
@@ -71,13 +71,13 @@ El dataset EuRoC (European Robotics Challenge) MAV (Micro Aerial Vehicle) es uno
 \subsection*{TUM-VI benchmark}
 El TUM-VI Benchmark (Technical University of Munich Visual-Inertial Benchmark) es otro dataset de referencia ampliamente utilizado en la comunidad de visión por computadora. Incluye secuencias grabadas en entornos tanto interiores como exteriores, que ofrecen un amplio espectro de condiciones y desafíos para los sistemas VI-SLAM.
 
-Las secuencias fueron capturadas con un dispositivo sostenido manualmente (\textit{handheld}), lo que las hace particularmente relevantes para evaluar la localización en sistemas XR. Se empleó una cámara estéreo de 512 x 512 px a 20 fps junto con una IMU de alta precisión a 200 Hz, garantizando una sincronización precisa entre los datos visuales e inerciales. Los datos de ground truth se obtuvieron mediante métodos de captura de movimiento, lo que asegura una referencia de alta calidad para la evaluación de los algoritmos. El dataset se organiza en cinco categorías de secuencias, cada una con características y desafíos particulares, como se ilustra en la Figura \ref{fig:tum_vi_frames}:
+Las secuencias fueron capturadas con un dispositivo sostenido manualmente (\textit{handheld}), lo que las hace particularmente relevantes para evaluar la localización en sistemas XR. Se empleó una cámara estéreo de 512 x 512 px a 20 fps junto con una IMU de alta precisión a 200 Hz, garantizando una sincronización precisa entre los datos visuales e inerciales. Los datos de ground-truth se obtuvieron mediante métodos de captura de movimiento, lo que asegura una referencia de alta calidad para la evaluación de los algoritmos. El dataset se organiza en cinco categorías de secuencias, cada una con características y desafíos particulares, como se ilustra en la Figura \ref{fig:tum_vi_frames}:
 \begin{itemize}
-    \item Corridor: Secuencias en pasillos y oficinas; el ground truth cubre solo los segmentos inicial y final.
-    \item Magistrale: Secuencias en una oficina, una sala amplia y pasillos; el ground truth cubre los segmentos inicial y final correspondientes a la oficina.
-    \item Outdoors: Secuencias al aire libre; el ground truth corresponde a los segmentos de oficina al inicio y al final.
-    \item Room: Secuencias en una sala equipada con un sistema de captura de movimiento; el ground truth cubre la trayectoria completa.
-    \item Slides: Secuencias especialmente desafiantes que incluyen deslizamientos en un tubo cerrado con iluminación muy deficiente; el ground truth cubre los segmentos inicial y final correspondientes a una oficina.
+    \item Corridor: Secuencias en pasillos y oficinas; el ground-truth cubre solo los segmentos inicial y final.
+    \item Magistrale: Secuencias en una oficina, una sala amplia y pasillos; el ground-truth cubre los segmentos inicial y final correspondientes a la oficina.
+    \item Outdoors: Secuencias al aire libre; el ground-truth corresponde a los segmentos de oficina al inicio y al final.
+    \item Room: Secuencias en una sala equipada con un sistema de captura de movimiento; el ground-truth cubre la trayectoria completa.
+    \item Slides: Secuencias especialmente desafiantes que incluyen deslizamientos en un tubo cerrado con iluminación muy deficiente; el ground-truth cubre los segmentos inicial y final correspondientes a una oficina.
 \end{itemize}
 
 \begin{figure}[!htbp]
@@ -122,7 +122,7 @@ Las secuencias fueron capturadas con un dispositivo sostenido manualmente (\text
 
 \subsection*{Monado SLAM Dataset}
 
-El Monado SLAM Dataset (MSD) es un dataset visual-inercial de licencia permisiva creado específicamente para el caso de uso de aplicaciones XR. Incluye varios tipos de secuencias, desde juegos de VR hasta escenarios de inspección y mapeo de una habitación, proporcionando una amplia variedad de datos para evaluar algoritmos de SLAM en contextos de XR. El dataset contiene datos de ground truth con una precisión de 1 cm, capturados mediante un sistema de tres sensores externos lighthouses. Cuenta con 64 secuencias, con un total de 5 horas y 15 minutos de grabación en escenarios del mundo real, incluyendo secuencias largas e ininterrumpidas de hasta 40 minutos y secuencias de juego de ritmo rápido.
+El Monado SLAM Dataset (MSD) es un dataset visual-inercial de licencia permisiva creado específicamente para el caso de uso de aplicaciones XR. Incluye varios tipos de secuencias, desde juegos de VR hasta escenarios de inspección y mapeo de una habitación, proporcionando una amplia variedad de datos para evaluar algoritmos de SLAM en contextos de XR. El dataset contiene datos de ground-truth con una precisión de 1 cm, capturados mediante un sistema de tres sensores externos lighthouses. Cuenta con 64 secuencias, con un total de 5 horas y 15 minutos de grabación en escenarios del mundo real, incluyendo secuencias largas e ininterrumpidas de hasta 40 minutos y secuencias de juego de ritmo rápido.
 
 Todas las secuencias son capturadas por una persona utilizando diferentes cascos XR de uso comercial para aumentar la diversidad de los datos, como se puede ver en la Figura~\ref{fig:msd_devices}.
 %
@@ -170,7 +170,7 @@ Las secuencias se clasifican de la siguiente manera:
 
 Para evaluar los resultados de los experimentos es necesario contar con métricas que permitan comparar la precisión y robustez de las trayectorias estimadas por los distintos sistemas VI-SLAM.
 
-En este trabajo se emplean dos métricas ampliamente utilizadas en el estado del arte: el Error de Trayectoria Absoluto (ATE, \textit{Absolute Trajectory Error}) y el Error de Trayectoria Relativo (RTE, \textit{Relative Trajectory Error}). Denotando con $P_i \in SE(3)$ las poses estimadas alineadas al ground truth mediante la transformación de Umeyama~\cite{umeyama1991umeyama} y con $R_i \in SE(3)$ las poses del ground truth, siendo $i = 1, \ldots, N$ el índice de frame y $N$ el número total de frames de la secuencia, el ATE se define como:
+En este trabajo se emplean dos métricas ampliamente utilizadas en el estado del arte: el Error de Trayectoria Absoluto (ATE, \textit{Absolute Trajectory Error}) y el Error de Trayectoria Relativo (RTE, \textit{Relative Trajectory Error}). Denotando con $P_i \in SE(3)$ las poses estimadas alineadas al ground-truth mediante la transformación de Umeyama~\cite{umeyama1991umeyama} y con $R_i \in SE(3)$ las poses del ground-truth, siendo $i = 1, \ldots, N$ el índice de frame y $N$ el número total de frames de la secuencia, el ATE se define como:
 \begin{equation}
     E_{\mathrm{ATE}} = \sqrt{\frac{1}{N}\sum_{i=1}^{N} \left\| \mathrm{trans}(P_i^{-1} R_i) \right\|^2}
 \end{equation}
@@ -180,7 +180,7 @@ donde $\mathrm{trans}(\cdot)$ extrae el componente de traslación. El ATE captur
 \end{equation}
 donde $\delta(X, k) = X_{k\Delta}^{-1}\,X_{(k+1)\Delta}$ es el movimiento relativo en el intervalo $k$, y $M = \lfloor N/\Delta \rfloor$. En este trabajo se emplea $\Delta = 6$ frames, igual que en~\cite{demayo2025monadoslamdataset}.
 
-Además, existen dos modalidades de evaluación de trayectorias: causal y no causal. En la evaluación causal, cada pose se compara con el ground truth en el mismo instante en que el sistema la estima, usando únicamente las mediciones disponibles hasta ese momento; es decir, la pose no se beneficia de ninguna corrección posterior. En la evaluación no causal, en cambio, se compara la trayectoria final que entrega el sistema luego de haber procesado toda la secuencia, donde todas las poses han sido refinadas globalmente incorporando, por ejemplo, correcciones de loop closure. La distinción es relevante porque una misma pose puede diferir significativamente entre ambas evaluaciones: el sistema puede haberla estimado con error en tiempo real, pero luego corregirla al cerrar un ciclo.
+Además, existen dos modalidades de evaluación de trayectorias: causal y no causal. En la evaluación causal, cada pose se compara con el ground-truth en el mismo instante en que el sistema la estima, usando únicamente las mediciones disponibles hasta ese momento; es decir, la pose no se beneficia de ninguna corrección posterior. En la evaluación no causal, en cambio, se compara la trayectoria final que entrega el sistema luego de haber procesado toda la secuencia, donde todas las poses han sido refinadas globalmente incorporando, por ejemplo, correcciones de loop closure. La distinción es relevante porque una misma pose puede diferir significativamente entre ambas evaluaciones: el sistema puede haberla estimado con error en tiempo real, pero luego corregirla al cerrar un ciclo.
 
 En los sistemas tradicionales, en la evaluación causal el error de drift acumulado puede dominar las estadísticas del ATE, ya que la trayectoria contiene los característicos ``saltos'' cuando se cierran ciclos. En cambio, para el sistema implementado en este trabajo, esto no sucede en las evaluaciones causales, porque la pose del keyframe más reciente se mantiene fija en la etapa de PGO. Sin embargo, el error causal no tendrá ninguna corrección de drift, y esto hará que sea exactamente igual al error de BasaltMSD en su versión VIO. Por estos motivos, en la totalidad de los experimentos, se opta por usar la trayectoria no causal.
 
@@ -367,7 +367,7 @@ Promedio & 8.7 & 3.7 & \textbf{0.9} & \textbf{0.9} & 0.6 & 0.8 & \textbf{0.4} & 
 \end{tabular}
 \end{table}
 
-La Tabla~\ref{tab:slides_ablation_all} muestra los resultados de ATE, RTE y ciclos detectados en las secuencias de \textit{Slides}. Allí se observa un comportamiento similar a las secuencias de \textit{Magistrale}. En TS1, se observa una mejora significativa, tanto para ATE como para RTE. Esto se debe a la detección de ciclos entre keyframes temporalmente distantes. En cambio, en TS2 y TS3, aunque se detectaron ciclos, estos correspondieron a keyframes muy cercanos temporalmente, por lo que el drift acumulado durante la trayectoria no se corrige. Cabe destacar que, para estas secuencias, el ground truth solo está disponible para los segmentos de inicio y fin. Esto explica las buenas métricas obtenidas en TS1, aunque el resto de la trayectoria probablemente presente menor precisión, dada la dificultad inherente de las secuencias de \textit{Slides}.
+La Tabla~\ref{tab:slides_ablation_all} muestra los resultados de ATE, RTE y ciclos detectados en las secuencias de \textit{Slides}. Allí se observa un comportamiento similar a las secuencias de \textit{Magistrale}. En TS1, se observa una mejora significativa, tanto para ATE como para RTE. Esto se debe a la detección de ciclos entre keyframes temporalmente distantes. En cambio, en TS2 y TS3, aunque se detectaron ciclos, estos correspondieron a keyframes muy cercanos temporalmente, por lo que el drift acumulado durante la trayectoria no se corrige. Cabe destacar que, para estas secuencias, el ground-truth solo está disponible para los segmentos de inicio y fin. Esto explica las buenas métricas obtenidas en TS1, aunque el resto de la trayectoria probablemente presente menor precisión, dada la dificultad inherente de las secuencias de \textit{Slides}.
 %
 \begin{table}[!htbp]
 \centering
@@ -433,7 +433,7 @@ Promedio & 102.5 & 92.6 & \textbf{91.8} & 117.4 & 11.8 & 10.9 & \textbf{10.8} & 
         \label{fig:loops_to7}
     \end{subfigure}
 
-    \caption{Detecciones de ciclo para algunas secuencias del TUM-VI Benchmark dataset.}
+    \caption{Detecciones de ciclo de BasaltLC para algunas secuencias del TUM-VI Benchmark dataset.}
     \label{fig:loops_tumvi}
 \end{figure}
 
@@ -802,8 +802,8 @@ La Figura~\ref{fig:sota_trajectories} muestra ejemplos cualitativos de trayector
 %
 \begin{figure}[!htbp]
     \centering
-    \includegraphics[width=\textwidth]{img/experiments/sota.trajectories-sp.pdf}
-    \caption{Ejemplos de trayectorias para secuencias de distintos datasets, con ampliaciones en partes que resultan de interés. Se comparan BasaltMSD en su versión VIO, con BasaltLCR, y OKVIS2 y ORB-SLAM3 como referencias del estado del arte de VI-SLAM. En Magistrale 1 BasaltLCR fue el único capaz de detectar el ciclo al reingresar en la habitación. Como se observa en la ampliación de su trayectoria, esta secuencia solo cuenta con ground truth en la parte de la habitación, al comienzo y al final. En V102, si bien BasaltLCR mejora la estimación del VIO de BasaltMSD, no alcanza la precisión de OKVIS2 y ORB-SLAM3. Por último, en MIPP01, BasaltLCR es el único capaz de mantener el drift acotado durante toda la secuencia. Tanto OKVIS2 como BasaltMSD acumulan drift considerable, evidenciado por la gran separación entre el inicio y el fin de sus trayectorias. ORB-SLAM3 no es capaz de mantener el tracking y consigue estimar solo el 85\% del total de la secuencia.}
+    \includegraphics[width=\textwidth]{img/experiments/sota.trajectories.pdf}
+    \caption{Ejemplos de trayectorias para secuencias de distintos datasets, con ampliaciones en partes que resultan de interés. Se comparan BasaltMSD en su versión VIO, con BasaltLCR, y OKVIS2 y ORB-SLAM3 como referencias del estado del arte de VI-SLAM. En Magistrale 1 BasaltLCR fue el único capaz de detectar el ciclo al reingresar en la habitación. Como se observa en la ampliación de su trayectoria, esta secuencia solo cuenta con ground-truth en la parte de la habitación, al comienzo y al final. En V102, si bien BasaltLCR mejora la estimación del VIO de BasaltMSD, no alcanza la precisión de OKVIS2 y ORB-SLAM3. Por último, en MIPP01, BasaltLCR es el único capaz de mantener el drift acotado durante toda la secuencia. Tanto OKVIS2 como BasaltMSD acumulan drift considerable, evidenciado por la gran separación entre el inicio y el fin de sus trayectorias. ORB-SLAM3 no es capaz de mantener el tracking y consigue estimar solo el 85\% del total de la secuencia.}
     \label{fig:sota_trajectories}
 \end{figure}
 
@@ -886,7 +886,7 @@ La Figura \ref{fig:to2_hard_loop} muestra un ejemplo de BasaltLCR con los parám
 \begin{figure}[!htbp]
     \centering
     \includegraphics[width=0.8\textwidth]{img/experiments/TO2.hard_loop-sp.pdf}
-    \caption{Ciclo detectado en la secuencia TO2, con una intersección pequeña entre la escena inicial y la final. Para detectarlo, se redujeron los parámetros de detección de BasaltLCR a solo 10 inliers. Se muestra la trayectoria de ground truth en lugar de la estimada, dado que esta última presentó un gran número de falsos positivos que la corrompieron.}
+    \caption{Ciclo detectado en la secuencia TO2, con una intersección pequeña entre la escena inicial y la final. Para detectarlo, se redujeron los parámetros de detección de BasaltLCR a solo 10 inliers. Se muestra la trayectoria de ground-truth en lugar de la estimada, dado que esta última presentó un gran número de falsos positivos que la corrompieron.}
     \label{fig:to2_hard_loop}
 \end{figure}
 
