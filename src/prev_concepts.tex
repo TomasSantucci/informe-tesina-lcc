@@ -311,6 +311,7 @@ un grafo de factores de un sistema SLAM.
 \end{figure}
 
 \subsection{Error de reproyección}
+\label{sec:reproj_error}
 
 El error de reproyección mide la distancia entre la posición observada de un punto en la
 imagen de una cámara y la posición proyectada de ese mismo punto, calculada a partir de su
@@ -462,7 +463,7 @@ Este proceso se repite hasta que $\|\Delta\mathbf{x}\|$ es suficientemente peque
 
 Bundle adjustment es una técnica de optimización que estima conjuntamente poses de cámaras y posiciones 3D de landmarks minimizando los errores de reproyección sobre todas las observaciones.
 
-Las variables de optimización se dividen en una componente de poses $x_p$, que agrupa todos los parámetros extrínsecos (y opcionalmente intrínsecos también) asociados a las cámaras, y una componente de landmarks $x_l$, que agrupa todas las posiciones 3D. Dado que las poses de las cámaras pertenecen al manifold $SE(3)$, se parametrizan localmente mediante perturbaciones en el álgebra de Lie $\mathfrak{se}(3)$, mientras que los landmarks se representan directamente en $\mathbb{R}^3$.
+Las variables de optimización se dividen en una componente de poses $x_p$, que agrupa las poses de las cámaras (y opcionalmente los parámetros del modelo), y una componente de landmarks $x_l$, que agrupa todas las posiciones 3D. Dado que las poses de las cámaras pertenecen al manifold $SE(3)$, se parametrizan localmente mediante perturbaciones en el álgebra de Lie $\mathfrak{se}(3)$, mientras que los landmarks se representan directamente en $\mathbb{R}^3$.
 
 El problema de bundle adjustment minimiza la suma de los cuadrados de los residuales de reproyección sobre todas las cámaras $i$ y sus landmarks observados $j \in O(i)$:
 \[
@@ -473,6 +474,14 @@ E(x_p, x_l)
 \mathbf{r}_{ij}(x_p, x_l)
 \right\|^2.
 \]
+Cada residual es la forma vectorial del error de reproyección de la Sección~\ref{sec:reproj_error}, escrito explícitamente en función de las variables de optimización:
+\[
+\mathbf{r}_{ij}(x_p, x_l)
+=
+\mathbf{p}_{ij} - \pi\!\left(\mathbf{T}_{wi}^{-1}\,\mathbf{P}_j\right)
+\in \mathbb{R}^2,
+\]
+donde $\mathbf{p}_{ij}$ es la observación en píxeles del landmark $j$ en la cámara $i$, $\mathbf{T}_{wi}$ la pose de esa cámara, contenida en $x_p$, y $\mathbf{P}_j$ la posición 3D del landmark, contenida en $x_l$. Al derivar respecto de las poses, el incremento se toma sobre el espacio tangente según el modelo de perturbación a izquierda de la Sección~\ref{sec:lie}.
 
 Linealizando cada residual alrededor de la estimación actual $x_0 = (x_p^0, x_l^0)$ se obtiene
 \[
