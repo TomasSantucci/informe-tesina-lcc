@@ -633,7 +633,7 @@ Aplicando la regla de la cadena, el jacobiano del residual respecto a $x_b$ qued
 \frac{\partial r}{\partial \Delta x_b} = \frac{\partial r}{\partial \Delta x_{c_k}} \cdot \frac{\partial \Delta x_{c_k}}{\partial \Delta x_b} = \frac{\partial r}{\partial \Delta x_{c_k}}\cdot \mathrm{Ad}_{T_{c_k b}}.
 \end{equation}
 
-En la práctica, adoptar la parametrización por body equivale simplemente a postmultiplicar el jacobiano calculado por la formulación original por la matriz adjunta $\mathrm{Ad}_{T_{c_k b}}$. Esta es una modificación local que no altera la estructura global del sistema de ecuaciones normales. Adicionalmente, una consecuencia favorable de esta parametrización es que las observaciones de distintas cámaras del rig en un mismo keyframe se acumulan en una única columna del Landmark Block, correspondiente a la variable $x_b$ de ese keyframe.
+En la práctica, adoptar la parametrización por body equivale simplemente a postmultiplicar el jacobiano calculado por la formulación original por la matriz adjunta $\mathrm{Ad}_{T_{c_k b}}$. Esta es una modificación local que no altera la estructura global del sistema de ecuaciones normales. Adicionalmente, una consecuencia favorable de esta parametrización es que las observaciones de distintas cámaras del rig en un mismo keyframe se acumulan en una única columna del Landmark Block, correspondiente a la variable $x_b$ de ese keyframe. Esto reduce el tamaño de la matriz de cada Landmark Block, lo que podría traducirse en un menor consumo de memoria.
 
 La Figura~\ref{fig:landmark_block} ilustra el efecto conjunto de ambas modificaciones sobre la estructura de un Landmark Block.
 %
