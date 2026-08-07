@@ -351,7 +351,7 @@ Una vez finalizada la optimización, las poses resultantes se devuelven al mapa 
 
 \subsection{Fusión de mapa}
 
-La fusión de mapa se ejecuta como etapa final del proceso, independientemente de si se ejecutó PGO. Comprende tres pasos: aplicar las poses optimizadas, registrar el ciclo en el grafo y fusionar los landmarks correspondientes.
+La fusión de mapa se ejecuta como etapa final del proceso, independientemente de si se ejecutó PGO. Comprende dos pasos: aplicar las poses optimizadas y fusionar los landmarks correspondientes.
 
 Si se realizó PGO, se aplican las poses resultantes al mapa mediante \texttt{mergeKeyframesPoses} (Código~\ref{lst:map_merge_opt_poses}). Este método reemplaza las poses del mapa por las optimizadas, incorporando además los keyframes que se hayan introducido entre el momento en que se tomó el snapshot del mapa y el fin de la optimización.
 
@@ -370,8 +370,6 @@ void LandmarkDatabase<Scalar_>::mergeKeyframesPoses(
   keyframe_poses = optimized_poses;
 }
 \end{lstlisting}
-
-A continuación, se registra el ciclo detectado en el grafo de ciclos, agregando una arista que conecta $k_r$ con $k_c$.
 
 Finalmente, se fusionan los landmarks que resultaron inliers durante la verificación geométrica. Para cada correspondencia se presentan dos casos:
 \begin{itemize}
