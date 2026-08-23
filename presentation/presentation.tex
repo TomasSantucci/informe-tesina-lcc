@@ -29,6 +29,10 @@
 % Imagen encajada en una caja común (normaliza tamaños con distintas relaciones de aspecto)
 \newcommand{\boxedimg}[3]{\includegraphics[width=#1,height=#2,keepaspectratio]{#3}}
 
+% Mitad de una figura vertical: #1 es el recorte (trim) y #2 el archivo.
+% Se dimensiona respecto de \paperwidth para poder usar todo el ancho de la pagina.
+\newcommand{\halfimg}[2]{\includegraphics[trim=#1,clip,width=0.487\paperwidth,height=0.88\textheight,keepaspectratio]{#2}}
+
 % Logo centrado verticalmente respecto a los otros de la misma fila
 % (cada uno se baja media altura, de modo que su centro quede en la línea base).
 \newcommand{\rowlogo}[2]{\raisebox{-0.5\height}{\includegraphics[height=#1]{#2}}}
@@ -36,6 +40,22 @@
 % Item con "spotlight": normal en la diapositiva 1 (todos visibles),
 % resaltado en azul (color del tema) en la diapositiva #1, atenuado en las demás.
 \newcommand{\focusitem}[2]{\alt<1,#1>{\alt<#1>{\structure{#2}}{#2}}{\textcolor{gray!55}{#2}}}
+
+% Video a pantalla completa: diapositiva sin titulo ni margenes, la caja del
+% video se escala hasta ocupar toda la pagina (respetando su relacion de aspecto).
+% El clic reproduce en pdfpc / Acrobat; en otros visores se ve el frame poster.
+\newcommand{\fullscreenmovie}[2]{%
+  \begingroup
+  \setbeamertemplate{headline}{}%
+  \setbeamertemplate{frametitle}{}%
+  \begin{frame}[plain]
+    \vbox to \textheight{\vfil
+      \makebox[\textwidth][c]{%
+        \movie[showcontrols,loop]{%
+          \includegraphics[width=\paperwidth,height=\paperheight,keepaspectratio]{#1}}{#2}}%
+      \vfil}%
+  \end{frame}
+  \endgroup}
 
 % Placeholder grande (reemplazar por la imagen real)
 \newcommand{\phbox}[1]{\fbox{\parbox[c][5.5cm][c]{0.85\linewidth}{\centering \textit{Placeholder}\\[0.4em] #1}}}
@@ -137,7 +157,7 @@ Universidad Nacional de Rosario}
       \begin{itemize}
         \item \focusitem{2}{Front-end}
         \item \focusitem{3}{Back-end (Basado en grafos)}
-        \item \focusitem{4}{Cierre de ciclos}
+        \item \focusitem{4-5}{Cierre de ciclos}
       \end{itemize}
     \end{column}
     \begin{column}{0.6\textwidth}
@@ -147,13 +167,21 @@ Universidad Nacional de Rosario}
       % visores se ve el frame poster. El .webm debe quedar junto al PDF.
       \only<2>{\movie[showcontrols,loop]{\includegraphics[height=8cm]{videos/front-end.poster.jpg}}{videos/front-end.webm}}%
       \only<3>{%
-        \boxedimg{\linewidth}{4.8cm}{factor-graph.pdf}\\[0.9em]
+        \boxedimg{\linewidth}{4.8cm}{factor-graph.pdf}\\[0.25em]
+        {\tiny Imagen extraída de Dellaert y Kaess, \emph{Factor Graphs for Robot Perception} (2017).}\\[0.7em]
         {\footnotesize $\displaystyle
           E = \sum_{\substack{i \in L \\ t \in \text{obs}(i)}} r_{it}^\top \Sigma_{it}^{-1} r_{it}
             + \sum_{(i,j) \in C} r_{ij}^\top \Sigma_{ij}^{-1} r_{ij} + E_m$}\\[0.6em]
         {\scriptsize reproyección de landmarks + IMU + prior de marginalización.}%
       }%
-      \only<4>{\boxedimg{\linewidth}{6cm}{loop-closure.png}}%
+      \only<4>{%
+        \boxedimg{\linewidth}{6cm}{before-loop-closure.png}\\[0.25em]
+        {\tiny Imagen extraída de Rady, \emph{Information-Theoretic Environment Modeling for Mobile Robot Localization} (2012).}%
+      }%
+      \only<5>{%
+        \boxedimg{\linewidth}{6cm}{after-loop-closure.png}\\[0.25em]
+        {\tiny Imagen extraída de Rady, \emph{Information-Theoretic Environment Modeling for Mobile Robot Localization} (2012).}%
+      }%
     \end{column}
   \end{columns}
 \end{frame}
@@ -204,8 +232,9 @@ Universidad Nacional de Rosario}
   \only<2>{\\[5em]
     \boxedimg{\linewidth}{0.6\textheight}{bow-process.pdf}%
   }
-  \only<3->{\\[1em]
-    \boxedimg{\linewidth}{0.6\textheight}{hashbow.pdf}%
+  \only<3->{\\[0.5em]
+    \boxedimg{\linewidth}{0.57\textheight}{hashbow.pdf}\\[0.25em]
+    {\tiny Imagen extraída de Stricker, \emph{Efficient Techniques for Accurate Visual Place Recognition} (2020).}%
   }
 \end{frame}
 
@@ -273,6 +302,19 @@ Universidad Nacional de Rosario}
   \end{columns}
 \end{frame}
 
+\begin{frame}{3- RootBA: idea clave}
+  \begin{itemize}
+    \item<1-> Para minimizar $E(x_p, x_l)$ hay que calcular
+      los jacobianos $\mathbf{J}_p$ y $\mathbf{J}_l$:
+      \[ \min_{\Delta\mathbf{x}_p,\,\Delta\mathbf{x}_l} \left\|
+         \mathbf{r} + \begin{pmatrix} \mathbf{J}_p & \mathbf{J}_l \end{pmatrix}
+         \begin{pmatrix} \Delta\mathbf{x}_p \\ \Delta\mathbf{x}_l \end{pmatrix} \right\|^2 \]
+    \item<2-> RootBA marginaliza $\mathbf{J}_l$ mediante la factorización QR.
+    \item<3-> Reduce el tamaño del problema.
+    \item<4-> Evita el cómputo de la matriz hessiana $\mathbf{H} = \mathbf{J}^\top\mathbf{J}$.
+  \end{itemize}
+\end{frame}
+
 \begin{frame}{3- RootBA: en optimización global de SLAM}
   \begin{columns}[c]
     \begin{column}{0.55\textwidth}
@@ -280,13 +322,14 @@ Universidad Nacional de Rosario}
         \item<2-> No optimiza los parámetros intrínsecos de las cámaras.
         \item<3-> Reparametriza el estado para soportar sistemas multi-cámara.
         \item<4-> Soporte para modelos de cámaras arbitrarios.
-        \item<5-> Nuevo estado: $s=(s_b, s_l)$.
+%        \item<5-> Nuevo estado: $s=(s_b, s_l)$.
       \end{itemize}
     \end{column}
     \begin{column}{0.45\textwidth}
       \centering
       \includegraphics[width=\textwidth]{rig.pdf}\\
-      {\scriptsize Ejemplo de un sistema multi-cámara.}
+      {\scriptsize Ejemplo de un sistema multi-cámara.}\\[0.3em]
+      {\tiny Imagen extraída de De Mayo, Cremers y Pire, \emph{The Monado SLAM Dataset} (IROS 2025).}
     \end{column}
   \end{columns}
   \note{asumimos que las cámaras no se mueven y también que los intrínsecos no cambian}
@@ -302,9 +345,9 @@ Universidad Nacional de Rosario}
 
   \only<2->{%
   Aplicando la regla de la cadena, el jacobiano del residual respecto a $x_b$ queda:
-  \begin{equation}
+  \begin{equation*}
   \frac{\partial r}{\partial \Delta x_b} = \frac{\partial r}{\partial \Delta x_{c_k}} \cdot \frac{\partial \Delta x_{c_k}}{\partial \Delta x_b} = \frac{\partial r}{\partial \Delta x_{c_k}}\cdot \mathrm{Ad}_{T_{c_k b}}.
-  \end{equation}%
+  \end{equation*}%
   }
 \end{frame}
 
@@ -384,7 +427,6 @@ Universidad Nacional de Rosario}
     \end{column}
   \end{columns}
   \vspace{0.8em}
-  {\footnotesize Cubren baja textura, movimientos rápidos y trayectorias largas.}
 \end{frame}
 
 \begin{frame}{Estudio de ablación}
@@ -396,10 +438,7 @@ Universidad Nacional de Rosario}
   \end{itemize}
 \end{frame}
 
-\begin{frame}{BasaltLC - GUI}
-  \centering
-  \movie[showcontrols,loop]{\boxedimg{\linewidth}{0.88\textheight}{videos/MPX.poster.jpg}}{videos/MPX.webm}
-\end{frame}
+\fullscreenmovie{videos/MPX.poster.jpg}{videos/MPX.webm}
 
 \begin{frame}{Mapas obtenidos por BasaltMSD, BasaltLC y BasaltLCR}
   \centering
@@ -407,17 +446,17 @@ Universidad Nacional de Rosario}
     \begin{column}{0.33\textwidth}
       \centering
       \boxedimg{\linewidth}{0.72\textheight}{MGO01.vio.map.png}\\[0.3em]
-      {\scriptsize BasaltMSD (VIO)}
+      {\scriptsize BasaltMSD}
     \end{column}
     \begin{column}{0.33\textwidth}
       \centering
       \boxedimg{\linewidth}{0.72\textheight}{MGO01.lc.map.png}\\[0.3em]
-      {\scriptsize BasaltLC (+ loop closure)}
+      {\scriptsize BasaltLC}
     \end{column}
     \begin{column}{0.33\textwidth}
       \centering
       \boxedimg{\linewidth}{0.72\textheight}{MGO01.full.map.png}\\[0.3em]
-      {\scriptsize BasaltLCR (+ BA global)}
+      {\scriptsize BasaltLCR}
     \end{column}
   \end{columns}
 \end{frame}
@@ -425,7 +464,7 @@ Universidad Nacional de Rosario}
 \begin{frame}{Sistema propuesto vs. estado del arte en EuRoC y TUM-VI}
   \begin{table}[!htbp]
   \centering
-  \caption{Resumen de la comparación con el estado del arte: ATE [m] promedio por grupo de secuencias en los datasets EuRoC y TUM-VI.}
+  \caption{ATE [m] promedio por grupo de secuencias.}
   \label{tab:sota_summary_ate}
   \begin{tabular}{ll rrrr}
   \toprule
@@ -450,14 +489,14 @@ Universidad Nacional de Rosario}
 \begin{frame}{Sistema propuesto vs. estado del arte en MSD}
   \begin{table}[!htbp]
   \centering
-  \caption{Resumen de la comparación con el estado del arte: ATE [cm], RTE [cm] y tasa de completitud (\%) promedio por headset en MSD.}
+  \caption{ATE [cm], RTE [cm] y tasa de completitud (\%) promedio por casco.}
   \label{tab:msd_sota_summary}
   \resizebox{\textwidth}{!}{
   \begin{tabular}{l rrrr | rrrr | rrrr}
   \toprule
   & \multicolumn{4}{c|}{\textbf{ATE [cm]}} & \multicolumn{4}{c|}{\textbf{RTE [cm]}} & \multicolumn{4}{c}{\textbf{Completitud (\%)}} \\
   \cmidrule(lr){2-5} \cmidrule(lr){6-9} \cmidrule(lr){10-13}
-  \textbf{Headset}
+  \textbf{Casco}
   & \rotatebox{90}{\textbf{BasaltMSD}\,}
   & \rotatebox{90}{\textbf{BasaltLCR}\,}
   & \rotatebox{90}{\textbf{OKVIS2}\,}
@@ -494,24 +533,24 @@ Universidad Nacional de Rosario}
 \section{Conclusión}
 %============================================================
 
-\begin{frame}{Conclusiones: aportes}
+\begin{frame}{Conclusiones}
   \begin{itemize}
-    \item VI-SLAM eficiente sobre BasaltMSD: \textbf{cierre de ciclos, eliminación de keyframes y Bundle Adjustment global}, bajo arquitectura asíncrona (sin degradar el rendimiento).
-    \item Detección de ciclos con \textbf{HashBoW} y cadena de verificaciones robustas.
-    \item \textbf{Primera aplicación de RootBA} como BA global en VI-SLAM: multicámara y precisión simple ($-50\%$ de tiempo).
-    \item Mejor combinación de \textbf{precisión, robustez y tiempo real} en XR; supera a ORB-SLAM3 y OKVIS2.
-    \item Se envió el trabajo a las Jornadas Argentinas de Robótica (JAR) 2026.
-    \item Se utilizó el cierre de ciclos en un trabajo de Mattis Krauch para el Hilti x Trimble SLAM Challenge 2026, quedando \#9.
-    \note{Se esta usando en un sisteme de Gaussian Splatting en real-time}
+    \item<1-> VI-SLAM eficiente sobre BasaltMSD: cierre de ciclos, eliminación de keyframes y Bundle Adjustment global.
+    \item<2-> Detección de ciclos con HashBoW y cadena de verificaciones robustas.
+    \item<3-> Primera aplicación de RootBA como BA global en VI-SLAM: multicámara y precisión simple (float32).
+    \item<4-> Mejor combinación de precisión, robustez y tiempo real en XR; supera a ORB-SLAM3 y OKVIS2.
+    \item<5-> Se envió el trabajo a las Jornadas Argentinas de Robótica (JAR) 2026.
+    \item<6-> Cierre de ciclos usado en un trabajo del TUM CVG para el Hilti x Trimble SLAM Challenge 2026, quedando \#9.
+    \note{Se esta usando en un sistema de Gaussian Splatting en real-time}
   \end{itemize}
 \end{frame}
 
 \begin{frame}{Trabajo futuro}
   \begin{itemize}
-    \item BA online, integrado al mapa persistente.
-    \item Términos de IMU / pose relativa en la optimización global.
-    \item Verificación de ciclos más robusta (entornos difíciles).
-    \item Colaboración multiagente sobre un mapa compartido.
+    \item<1-> BA online, integrado al mapa persistente.
+    \item<2-> Términos de IMU / pose relativa en la optimización global.
+    \item<3-> Verificación de ciclos más robusta (entornos difíciles).
+    \item<4-> Colaboración multiagente sobre un mapa compartido.
     \note{La intencion es publicar en ICRA}
   \end{itemize}
 \end{frame}
@@ -534,102 +573,98 @@ Universidad Nacional de Rosario}
 %---------------- Backup: no cuenta para el total de páginas ----------------
 \backupbegin
 
-\begin{frame}{Fusión de mapa}
-  Etapa final del proceso, se ejecute o no PGO. Comprende tres pasos:
-  \vspace{0.5em}
-  \begin{enumerate}
-    \item \textbf{Aplicar} las poses optimizadas al mapa (incorporando keyframes llegados durante la optimización).
-    \item \textbf{Registrar} el ciclo en el grafo de ciclos (arista $k_r \leftrightarrow k_c$).
-    \item \textbf{Fusionar} landmarks duplicados: un mismo punto del mundo con dos identificadores distintos se unifica, transfiriendo todas sus observaciones.
-  \end{enumerate}
-  \vspace{0.5em}
-  \begin{itemize}
-    \item Tras cada modificación se actualiza el grafo de covisibilidad ponderado para mantener el mapa consistente.
-  \end{itemize}
+%\begin{frame}{Fusión de mapa}
+%  Etapa final del proceso, se ejecute o no PGO. Comprende tres pasos:
+%  \vspace{0.5em}
+%  \begin{enumerate}
+%    \item \textbf{Aplicar} las poses optimizadas al mapa (incorporando keyframes llegados durante la optimización).
+%    \item \textbf{Registrar} el ciclo en el grafo de ciclos (arista $k_r \leftrightarrow k_c$).
+%    \item \textbf{Fusionar} landmarks duplicados: un mismo punto del mundo con dos identificadores distintos se unifica, transfiriendo todas sus observaciones.
+%  \end{enumerate}
+%  \vspace{0.5em}
+%  \begin{itemize}
+%    \item Tras cada modificación se actualiza el grafo de covisibilidad ponderado para mantener el mapa consistente.
+%  \end{itemize}
+%\end{frame}
+
+%\begin{frame}{Métricas y tiempo real}
+%  \begin{itemize}
+%    \item \textbf{ATE} (Absolute Trajectory Error): precisión global de la trayectoria.
+%    \item \textbf{RTE} (Relative Trajectory Error): consistencia local.
+%    \item Evaluación \textbf{no causal} (trayectoria final, con correcciones aplicadas).
+%  \end{itemize}
+%  \vspace{0.4em}
+%  \begin{block}{Límites de tiempo real (ms por frame)}
+%    \centering
+%    Valve Index: \textbf{18.5} \quad | \quad Odyssey+ / Reverb G2: \textbf{33.3} \quad | \quad EuRoC / TUM-VI: \textbf{50}
+%  \end{block}
+%  \begin{itemize}
+%    \item Tres modos de ejecución: síncrono, \textbf{asíncrono}, y síncrono con mapa asíncrono.
+%  \end{itemize}
+%\end{frame}
+
+\begin{frame}{Rendimiento: tiempo real}
+  \centering
+  \boxedimg{0.8\linewidth}{0.72\textheight}{mean.timings.barplot-sp.pdf}\\[0.4em]
 \end{frame}
 
-\begin{frame}{Métricas y tiempo real}
-  \begin{itemize}
-    \item \textbf{ATE} (Absolute Trajectory Error): precisión global de la trayectoria.
-    \item \textbf{RTE} (Relative Trajectory Error): consistencia local.
-    \item Evaluación \textbf{no causal} (trayectoria final, con correcciones aplicadas).
-  \end{itemize}
-  \vspace{0.4em}
-  \begin{block}{Límites de tiempo real (ms por frame)}
-    \centering
-    Valve Index: \textbf{18.5} \quad | \quad Odyssey+ / Reverb G2: \textbf{33.3} \quad | \quad EuRoC / TUM-VI: \textbf{50}
-  \end{block}
-  \begin{itemize}
-    \item Tres modos de ejecución: síncrono, \textbf{asíncrono}, y síncrono con mapa asíncrono.
-  \end{itemize}
+\begin{frame}{Rendimiento: trayectorias extensas}
+  \centering
+  \boxedimg{0.8\linewidth}{0.72\textheight}{kftimings.MGO12-sp.pdf}\\[0.4em]
 \end{frame}
 
-\begin{frame}{Rendimiento: trayectorias extensas y tiempo real (cambiarlo por el gráfico de PGO)}
-  \begin{columns}[c]
-    \begin{column}{0.5\textwidth}
-      \centering
-      \includegraphics[width=\textwidth]{kftimings.MGO12-sp.pdf}\\
-      {\scriptsize El \textbf{culling} mantiene estable el tiempo por frame en trayectorias $>40$ min; sin él, el costo de PGO crece indefinidamente.}
-    \end{column}
-    \begin{column}{0.5\textwidth}
-      \centering
-      \includegraphics[width=\textwidth]{mean.timings.barplot-sp.pdf}\\
-      {\scriptsize La arquitectura asíncrona permite a BasaltLC operar dentro de los límites de tiempo real en todos los headsets, sin degradar el rendimiento base.}
-    \end{column}
-  \end{columns}
+\begin{frame}{Impacto de la eliminación de keyframes}
+  \centering
+  \boxedimg{\linewidth}{0.82\textheight}{pgo.timings.MGO12-sp.pdf}
 \end{frame}
 
-\begin{frame}{Front-end}
-  \begin{columns}[c]
-    \begin{column}{0.55\textwidth}
-      \begin{itemize}
-        \item \textbf{Optical flow} (Lucas-Kanade), con la IMU como \emph{prior} de la posición del keypoint.
-        \item \textbf{Recall}: recupera features perdidos por oclusiones o movimientos rápidos, proyectando landmarks del back-end.
-        \item Detección \textbf{FAST} por celdas (buena distribución).
-        \item \textbf{Matching} multicámara y filtrado por restricción \textbf{epipolar}.
-      \end{itemize}
-    \end{column}
-    \begin{column}{0.45\textwidth}
-      \centering
-      \includegraphics[width=\textwidth]{recall_982.jpg}\\
-      {\scriptsize Recall: el feature ocluido se reidentifica proyectando el landmark (en rosa).}
-    \end{column}
-  \end{columns}
-\end{frame}
+%\begin{frame}{Front-end}
+%  \begin{columns}[c]
+%    \begin{column}{0.55\textwidth}
+%      \begin{itemize}
+%        \item \textbf{Optical flow} (Lucas-Kanade), con la IMU como \emph{prior} de la posición del keypoint.
+%        \item \textbf{Recall}: recupera features perdidos por oclusiones o movimientos rápidos, proyectando landmarks del back-end.
+%        \item Detección \textbf{FAST} por celdas (buena distribución).
+%        \item \textbf{Matching} multicámara y filtrado por restricción \textbf{epipolar}.
+%      \end{itemize}
+%    \end{column}
+%    \begin{column}{0.45\textwidth}
+%      \centering
+%      \includegraphics[width=\textwidth]{recall_982.jpg}\\
+%      {\scriptsize Recall: el feature ocluido se reidentifica proyectando el landmark (en rosa).}
+%    \end{column}
+%  \end{columns}
+%\end{frame}
 
-\begin{frame}{Back-end: VIO}
-  \begin{columns}[c]
-    \begin{column}{0.55\textwidth}
-      \begin{itemize}
-        \item Mantiene una \textbf{ventana deslizante} de keyframes, frames y landmarks (\texttt{LandmarkDatabase}).
-        \item Preintegra la IMU y optimiza el estado por mínimos cuadrados no lineales (Levenberg-Marquardt):
-        \[ E = E_L + E_I + E_m \]
-        {\scriptsize reproyección de landmarks + IMU + prior de marginalización.}
-        \item \textbf{Marginalización}: elimina variables antiguas condensando su información, para acotar el tamaño del sistema.
-      \end{itemize}
-    \end{column}
-    \begin{column}{0.45\textwidth}
-      \centering
-      \includegraphics[width=\textwidth]{basalt.vio.window.cam0.pdf}\\
-      {\scriptsize Observaciones en la ventana local del VIO.}
-    \end{column}
-  \end{columns}
-\end{frame}
+%\begin{frame}{Back-end: VIO}
+%  \begin{columns}[c]
+%    \begin{column}{0.55\textwidth}
+%      \begin{itemize}
+%        \item Mantiene una \textbf{ventana deslizante} de keyframes, frames y landmarks (\texttt{LandmarkDatabase}).
+%        \item Preintegra la IMU y optimiza el estado por mínimos cuadrados no lineales (Levenberg-Marquardt):
+%        \[ E = E_L + E_I + E_m \]
+%        {\scriptsize reproyección de landmarks + IMU + prior de marginalización.}
+%        \item \textbf{Marginalización}: elimina variables antiguas condensando su información, para acotar el tamaño del sistema.
+%      \end{itemize}
+%    \end{column}
+%    \begin{column}{0.45\textwidth}
+%      \centering
+%      \includegraphics[width=\textwidth]{basalt.vio.window.cam0.pdf}\\
+%      {\scriptsize Observaciones en la ventana local del VIO.}
+%    \end{column}
+%  \end{columns}
+%\end{frame}
 
 \begin{frame}{Back-end: mapa persistente}
+  \centering
   \begin{columns}[c]
     \begin{column}{0.5\textwidth}
-      \begin{itemize}
-        \item Almacena keyframes y landmarks a \textbf{largo plazo} $\Rightarrow$ convierte al sistema en \textbf{VI-SLAM}.
-        \item Comunicación \textbf{asíncrona} mediante colas: no bloquea al VIO.
-        \item \textbf{Consulta de covisibilidad}: reintroduce keyframes ya marginalizados en la ventana local del VIO.
-      \end{itemize}
+      \centering
+      \boxedimg{\linewidth}{0.75\textheight}{persistent.map.png}
     \end{column}
     \begin{column}{0.5\textwidth}
       \centering
-      \includegraphics[height=3.2cm]{persistent.map.png}
-      \includegraphics[height=3.2cm]{covisibility-sp.pdf}\\
-      {\scriptsize Mapa persistente y reintroducción de keyframes covisibles.}
+      \boxedimg{\linewidth}{0.75\textheight}{covisibility-sp.pdf}
     \end{column}
   \end{columns}
 \end{frame}
@@ -667,39 +702,14 @@ Universidad Nacional de Rosario}
   {\scriptsize MSD: BasaltMSD (VIO) \quad LC: BasaltLC \quad LCR: BasaltLCR. Mejor valor de cada fila en negrita.}
 \end{frame}
 
-\begin{frame}{Impacto de la eliminación de keyframes}
-  \centering
-  \boxedimg{\linewidth}{0.82\textheight}{pgo.timings.MGO12-sp.pdf}
-\end{frame}
-
 \begin{frame}{Ablación: Timings}
   \centering
   \boxedimg{\linewidth}{0.82\textheight}{MGO04.timings.ablation-sp.pdf}
 \end{frame}
 
-\begin{frame}{Trayectorias obtenidas por BasaltMSD, BasaltLC y BasaltLCR}
-\end{frame}
-
 \begin{frame}{BasaltLC - GUI: Valve Index (MI*)}
   \centering
   \movie[showcontrols,loop]{\boxedimg{\linewidth}{0.88\textheight}{videos/MI.poster.jpg}}{videos/MI.webm}
-\end{frame}
-
-\begin{frame}{3- RootBA: en SfM}
-  \begin{columns}[c]
-    \begin{column}{0.55\textwidth}
-      \begin{itemize}
-        \item Minimiza el error de reproyección total, mediante mínimos cuadrados no lineales.
-        \item Optimiza $s=(s_c, s_i, s_l)$.
-        \item Aplica la factorización QR a una matriz de Jacobianos: más eficiente y numéricamente estable.
-      \end{itemize}
-    \end{column}
-    \begin{column}{0.45\textwidth}
-      \centering
-      \includegraphics[width=\textwidth]{ba.png}\\
-      {\scriptsize Bundle adjustment en Structure from Motion.}
-    \end{column}
-  \end{columns}
 \end{frame}
 
 \begin{frame}{BasaltLC - GUI: HP Reverb G2 V2 (MG*)}
@@ -710,7 +720,7 @@ Universidad Nacional de Rosario}
 \begin{frame}{3- RootBA: formulación}
 $\mathbf{J}_l = \mathbf{Q}\mathbf{R}$, donde $\mathbf{Q}$ es ortogonal y $\mathbf{R}$ es triangular superior, y particionando $\mathbf{Q} = [\mathbf{Q}_1\ \mathbf{Q}_2]$ de manera conforme con las filas no nulas de $\mathbf{R}$
 
-  \begin{align}
+  \begin{align*}
   \left\|
   \mathbf{r}
   +
@@ -728,18 +738,134 @@ $\mathbf{J}_l = \mathbf{Q}\mathbf{R}$, donde $\mathbf{Q}$ es ortogonal y $\mathb
   \mathbf{Q}_2^\top\mathbf{r}
   + \mathbf{Q}_2^\top\mathbf{J}_{p}\,\Delta\mathbf{x}_p
   \right\|^2.
-  \end{align}
+  \end{align*}
 
   \[
   \min_{\Delta\mathbf{x}_p}
   \left\|
   \mathbf{Q}_2^\top\mathbf{r}
   + \mathbf{Q}_2^\top\mathbf{J}_{p}\,\Delta\mathbf{x}_p
-  \right\|^2,
+  \right\|^2.
   \]
-
 \end{frame}
 
+
+\begin{frame}{RootBA: precisión simple vs. doble (ATE)}
+  \centering
+  \footnotesize
+  \begin{table}[!htbp]
+  \centering
+  \caption{ATE medio [cm]}
+  \begin{tabular}{llrr}
+  \toprule
+  \textbf{Dataset} & \textbf{Secuencia} & \textbf{RootBA (float)} & \textbf{RootBA (double)} \\
+  \midrule
+  \multirow{3}{*}{\textit{MSD}}    & MI*       & 5.3               & \textbf{5.2}    \\
+                                    & MG*       & \textbf{4.2}      & \textbf{4.2}    \\
+                                    & MO*       & 7.7               & \textbf{7.6}    \\
+  \midrule
+  \multirow{5}{*}{\textit{TUM-VI}} & Corridor  & \textbf{7.7}      & 7.8             \\
+                                    & Magistrale& 89.4              & \textbf{88.8}   \\
+                                    & Outdoors  & \textbf{6007.6}   & 6008.3          \\
+                                    & Room      & \textbf{0.9}      & \textbf{0.9}    \\
+                                    & Slides    & \textbf{82.3}     & \textbf{82.3}   \\
+  \midrule
+  \multirow{3}{*}{\textit{EuRoC}}  & MH        & \textbf{8.2}      & \textbf{8.2}    \\
+                                    & V1        & 7.1               & \textbf{7.0}    \\
+                                    & V2        & \textbf{9.2}      & 9.4             \\
+  \bottomrule
+  \end{tabular}
+  \end{table}
+\end{frame}
+
+\begin{frame}{Trayectorias estimadas en EuRoC y TUM-VI}
+  % La figura original es vertical (4 secuencias x 2 paneles); se parte en dos
+  % mitades (secuencias 1-2 y 3-4) que se ubican lado a lado para aprovechar el
+  % ancho de la diapositiva (el \makebox permite exceder los margenes del texto).
+  \vfill
+  \makebox[\linewidth][c]{%
+    \halfimg{0 729 0 0}{trajectories.ablation.euroc.tum.pdf}\hspace{0.01\paperwidth}%
+    \halfimg{0 0 0 783}{trajectories.ablation.euroc.tum.pdf}}
+  \vfill
+  \note{El VIO (azul) acumula drift; con loop closure (verde) y BA global (amarillo) la trayectoria se alinea con el ground-truth.}
+\end{frame}
+
+\begin{frame}{Trayectorias estimadas en MSD}
+  \vfill
+  \makebox[\linewidth][c]{%
+    \halfimg{0 720 0 0}{trajectories.ablation.msd.pdf}\hspace{0.01\paperwidth}%
+    \halfimg{0 0 0 785}{trajectories.ablation.msd.pdf}}
+  \vfill
+  \note{En las secuencias de XR el drift de BasaltMSD es notorio; BasaltLC y BasaltLCR mantienen el error acotado.}
+\end{frame}
+
+\begin{frame}{Sistema propuesto vs. estado del arte: Trayectorias}
+  \centering
+  \boxedimg{\linewidth}{0.82\textheight}{sota.trajectories.pdf}
+  \note{Magistrale 1: solo BasaltLCR detecta el ciclo al reingresar a la habitación. V102: BasaltLCR mejora al VIO pero no alcanza a OKVIS2/ORB-SLAM3. MIPP01: BasaltLCR es el único que mantiene el drift acotado; ORB-SLAM3 estima solo el 85\% de la secuencia.}
+\end{frame}
+
+\begin{frame}{Detecciones de ciclo en TUM-VI: Corridor y Magistrale}
+  \vfill
+  % Los graficos 3D son casi cuadrados: se dimensionan respecto de \paperwidth
+  % (el \makebox permite exceder los margenes) para aprovechar la diapositiva.
+  \makebox[\linewidth][c]{%
+    \begin{minipage}[t]{0.48\paperwidth}
+      \centering
+      \boxedimg{\linewidth}{0.86\textheight}{TC1.loops-sp.pdf}\\[0.2em]
+      {\scriptsize Corridor 1 (TC1)}
+    \end{minipage}\hspace{0.02\paperwidth}%
+    \begin{minipage}[t]{0.48\paperwidth}
+      \centering
+      \boxedimg{\linewidth}{0.86\textheight}{TM1.loops-sp.pdf}\\[0.2em]
+      {\scriptsize Magistrale 1 (TM1)}
+    \end{minipage}}
+  \vfill
+  \note{El eje vertical es el tiempo: cada línea une los dos instantes de la trayectoria que se conectan. En verde los ciclos aceptados, en rojo los detectados pero rechazados por la verificación.}
+\end{frame}
+
+\begin{frame}{Detecciones de ciclo en TUM-VI: Outdoors}
+  \vfill
+  % Los graficos 3D son casi cuadrados: se dimensionan respecto de \paperwidth
+  % (el \makebox permite exceder los margenes) para aprovechar la diapositiva.
+  \makebox[\linewidth][c]{%
+    \begin{minipage}[t]{0.48\paperwidth}
+      \centering
+      \boxedimg{\linewidth}{0.86\textheight}{TO3.loops-sp.pdf}\\[0.2em]
+      {\scriptsize Outdoors 3 (TO3)}
+    \end{minipage}\hspace{0.02\paperwidth}%
+    \begin{minipage}[t]{0.48\paperwidth}
+      \centering
+      \boxedimg{\linewidth}{0.86\textheight}{TO7.loops-sp.pdf}\\[0.2em]
+      {\scriptsize Outdoors 7 (TO7)}
+    \end{minipage}}
+  \vfill
+  \note{En exteriores los ciclos se concentran al inicio y al final, cuando se vuelve al punto de partida.}
+\end{frame}
+
+\begin{frame}{Comunicación entre \texttt{LoopClosing} y \texttt{MapDatabase}}
+  \centering
+  % Diagramas verticales: la altura es la que limita, sobra ancho en la diapositiva.
+  \begin{columns}[t]
+    \begin{column}{0.45\textwidth}
+      \centering
+      \boxedimg{\linewidth}{0.76\textheight}{loop_decision_ok-sp.pdf}\\[0.3em]
+      {\scriptsize Detección con suficiente drift}
+    \end{column}
+    \begin{column}{0.45\textwidth}
+      \centering
+      \boxedimg{\linewidth}{0.76\textheight}{loop_decision_rej-sp.pdf}\\[0.3em]
+      {\scriptsize Detección con drift insuficiente}
+    \end{column}
+  \end{columns}
+  \note{Ante un ciclo, MapDatabase evalúa el drift acumulado. Si amerita corrección, envía a LoopClosing una copia liviana del mapa y las aristas del grafo para el PGO, y luego aplica las poses optimizadas. Si no, le avisa que la optimización no procede. En ambos casos el proceso termina con la fusión de mapa.}
+\end{frame}
+
+\begin{frame}{Búsqueda de correspondencias por reproyección}
+  \centering
+  \boxedimg{\linewidth}{0.8\textheight}{reprojection_illustration-sp.pdf}
+  \note{Los landmarks de la isla de candidatos que quedaron sin emparejar se reproyectan sobre el keyframe más reciente usando la pose de la verificación geométrica previa. En una ventana de 16 px alrededor de cada proyección se detectan keypoints con FAST y se computan descriptores ORB; si alguno coincide con el del landmark, la correspondencia se suma a la verificación siguiente.}
+\end{frame}
 
 \backupend
 
