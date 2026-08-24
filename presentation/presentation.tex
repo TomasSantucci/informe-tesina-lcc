@@ -229,10 +229,7 @@ Universidad Nacional de Rosario}
 \begin{frame}[t]{1- Cierre de ciclos: detección}
   \centering
   \boxedimg{\linewidth}{0.2\textheight}{loop-closure-1.png}%
-  \only<2>{\\[5em]
-    \boxedimg{\linewidth}{0.6\textheight}{bow-process.pdf}%
-  }
-  \only<3->{\\[0.5em]
+  \only<2->{\\[0.5em]
     \boxedimg{\linewidth}{0.57\textheight}{hashbow.pdf}\\[0.25em]
     {\tiny Imagen extraída de Stricker, \emph{Efficient Techniques for Accurate Visual Place Recognition} (2020).}%
   }
@@ -292,12 +289,6 @@ Universidad Nacional de Rosario}
     \begin{column}{0.5\textwidth}
       Minimiza el \textbf{error de reproyección} acumulado sobre todas las observaciones:
       \[ E(x_p, x_l) = \sum_{i}\ \sum_{j \in \mathcal{O}(i)} \left\| r_{ij}(x_p, x_l) \right\|^2 \]
-      {\footnotesize
-      \begin{itemize}
-        \item $x_p$: poses de las cámaras; $x_l$: landmarks.
-        \item $j \in \mathcal{O}(i)$: el landmark $j$ se observa en el frame $i$.
-        \item $r_{ij}$: residual de reproyección.
-      \end{itemize}}
     \end{column}
   \end{columns}
 \end{frame}
@@ -333,22 +324,6 @@ Universidad Nacional de Rosario}
     \end{column}
   \end{columns}
   \note{asumimos que las cámaras no se mueven y también que los intrínsecos no cambian}
-\end{frame}
-
-\begin{frame}[t]{3- RootBA: adaptaciones detalle}
-  \begin{figure}[!htbp]
-      \centering
-      \includegraphics[width=0.8\linewidth]{img/method/rootba-mod.pdf}
-      \caption{Estructura de un Landmark Block.}
-      \label{fig:landmark_block}
-  \end{figure}
-
-  \only<2->{%
-  Aplicando la regla de la cadena, el jacobiano del residual respecto a $x_b$ queda:
-  \begin{equation*}
-  \frac{\partial r}{\partial \Delta x_b} = \frac{\partial r}{\partial \Delta x_{c_k}} \cdot \frac{\partial \Delta x_{c_k}}{\partial \Delta x_b} = \frac{\partial r}{\partial \Delta x_{c_k}}\cdot \mathrm{Ad}_{T_{c_k b}}.
-  \end{equation*}%
-  }
 \end{frame}
 
 %============================================================
@@ -433,33 +408,12 @@ Universidad Nacional de Rosario}
   Se incorporan las mejoras progresivamente:
   \begin{itemize}
     \item \textbf{BasaltMSD}: sistema original (VIO).
-    \item \textbf{BasaltLC}: mapa persistente, loop closure y culling.
+    \item \textbf{BasaltLC}: cierre de ciclos y eliminación de keyframes.
     \item \textbf{BasaltLCR}: optimización global con RootBA.
   \end{itemize}
 \end{frame}
 
 \fullscreenmovie{videos/MPX.poster.jpg}{videos/MPX.webm}
-
-\begin{frame}{Mapas obtenidos por BasaltMSD, BasaltLC y BasaltLCR}
-  \centering
-  \begin{columns}[t]
-    \begin{column}{0.33\textwidth}
-      \centering
-      \boxedimg{\linewidth}{0.72\textheight}{MGO01.vio.map.png}\\[0.3em]
-      {\scriptsize BasaltMSD}
-    \end{column}
-    \begin{column}{0.33\textwidth}
-      \centering
-      \boxedimg{\linewidth}{0.72\textheight}{MGO01.lc.map.png}\\[0.3em]
-      {\scriptsize BasaltLC}
-    \end{column}
-    \begin{column}{0.33\textwidth}
-      \centering
-      \boxedimg{\linewidth}{0.72\textheight}{MGO01.full.map.png}\\[0.3em]
-      {\scriptsize BasaltLCR}
-    \end{column}
-  \end{columns}
-\end{frame}
 
 \begin{frame}{Sistema propuesto vs. estado del arte en EuRoC y TUM-VI}
   \begin{table}[!htbp]
@@ -524,11 +478,6 @@ Universidad Nacional de Rosario}
   \boxedimg{\linewidth}{0.82\textheight}{MGO04.timings-sp.pdf}
 \end{frame}
 
-\begin{frame}{RootBA: precisión simple vs. doble}
-  \centering
-  \boxedimg{\linewidth}{0.82\textheight}{msd.rootba.times-sp.pdf}
-\end{frame}
-
 %============================================================
 \section{Conclusión}
 %============================================================
@@ -550,7 +499,7 @@ Universidad Nacional de Rosario}
     \item<1-> BA online, integrado al mapa persistente.
     \item<2-> Términos de IMU / pose relativa en la optimización global.
     \item<3-> Verificación de ciclos más robusta (entornos difíciles).
-    \item<4-> Colaboración multiagente sobre un mapa compartido.
+%    \item<4-> Colaboración multiagente sobre un mapa compartido.
     \note{La intencion es publicar en ICRA}
   \end{itemize}
 \end{frame}
@@ -606,6 +555,11 @@ Universidad Nacional de Rosario}
 \begin{frame}{Rendimiento: tiempo real}
   \centering
   \boxedimg{0.8\linewidth}{0.72\textheight}{mean.timings.barplot-sp.pdf}\\[0.4em]
+\end{frame}
+
+\begin{frame}{RootBA: precisión simple vs. doble}
+  \centering
+  \boxedimg{\linewidth}{0.82\textheight}{msd.rootba.times-sp.pdf}
 \end{frame}
 
 \begin{frame}{Rendimiento: trayectorias extensas}
@@ -699,7 +653,6 @@ Universidad Nacional de Rosario}
   & Samsung Odyssey+ & 26.7 & 21.6 & \textbf{21.3} & \textbf{1.1} & 1.3 & 1.8 \\
   \bottomrule
   \end{tabular}\\[0.5em]
-  {\scriptsize MSD: BasaltMSD (VIO) \quad LC: BasaltLC \quad LCR: BasaltLCR. Mejor valor de cada fila en negrita.}
 \end{frame}
 
 \begin{frame}{Ablación: Timings}
@@ -749,6 +702,21 @@ $\mathbf{J}_l = \mathbf{Q}\mathbf{R}$, donde $\mathbf{Q}$ es ortogonal y $\mathb
   \]
 \end{frame}
 
+\begin{frame}[t]{3- RootBA: adaptaciones detalle}
+  \begin{figure}[!htbp]
+      \centering
+      \includegraphics[width=0.8\linewidth]{img/method/rootba-mod.pdf}
+      \caption{Estructura de un Landmark Block.}
+      \label{fig:landmark_block}
+  \end{figure}
+
+  \only<2->{%
+  Aplicando la regla de la cadena, el jacobiano del residual respecto a $x_b$ queda:
+  \begin{equation*}
+  \frac{\partial r}{\partial \Delta x_b} = \frac{\partial r}{\partial \Delta x_{c_k}} \cdot \frac{\partial \Delta x_{c_k}}{\partial \Delta x_b} = \frac{\partial r}{\partial \Delta x_{c_k}}\cdot \mathrm{Ad}_{T_{c_k b}}.
+  \end{equation*}%
+  }
+\end{frame}
 
 \begin{frame}{RootBA: precisión simple vs. doble (ATE)}
   \centering
@@ -865,6 +833,34 @@ $\mathbf{J}_l = \mathbf{Q}\mathbf{R}$, donde $\mathbf{Q}$ es ortogonal y $\mathb
   \centering
   \boxedimg{\linewidth}{0.8\textheight}{reprojection_illustration-sp.pdf}
   \note{Los landmarks de la isla de candidatos que quedaron sin emparejar se reproyectan sobre el keyframe más reciente usando la pose de la verificación geométrica previa. En una ventana de 16 px alrededor de cada proyección se detectan keypoints con FAST y se computan descriptores ORB; si alguno coincide con el del landmark, la correspondencia se suma a la verificación siguiente.}
+\end{frame}
+
+\begin{frame}{Detección de ciclos: recuperación de candidatos con BoW}
+  \centering
+  \vfill
+  \boxedimg{\linewidth}{0.5\textheight}{bow-process.pdf}
+  \vfill
+\end{frame}
+
+\begin{frame}{Mapas obtenidos por BasaltMSD, BasaltLC y BasaltLCR}
+  \centering
+  \begin{columns}[t]
+    \begin{column}{0.33\textwidth}
+      \centering
+      \boxedimg{\linewidth}{0.72\textheight}{MGO01.vio.map.png}\\[0.3em]
+      {\scriptsize BasaltMSD}
+    \end{column}
+    \begin{column}{0.33\textwidth}
+      \centering
+      \boxedimg{\linewidth}{0.72\textheight}{MGO01.lc.map.png}\\[0.3em]
+      {\scriptsize BasaltLC}
+    \end{column}
+    \begin{column}{0.33\textwidth}
+      \centering
+      \boxedimg{\linewidth}{0.72\textheight}{MGO01.full.map.png}\\[0.3em]
+      {\scriptsize BasaltLCR}
+    \end{column}
+  \end{columns}
 \end{frame}
 
 \backupend
